@@ -15,14 +15,16 @@ import {
   loadUserComponents,
   loadUserPatterns,
   openAppModule,
+  registerImportedLibraryBundle,
   saveUserComponents,
   subscribeEdaEvents
 } from '../../../core/store';
 import { GOST_COMPONENT_LIBRARIES } from '../../../gost/libraries/gostComponents';
 import { makeGostRectangularIcPart } from '../../../gost/libraries/components/helpers';
 import { GOST_PATTERN_LIBRARIES, findPatternById } from '../../../gost/libraries/gostPatterns';
-import { GostConversionReport, importCadLibrary } from '../../../engines/importers';
-import { pickCadFile, saveTextFile } from '../../../core/utils/fileIo';
+import { GostConversionReport, importExternalCadLibrary } from '../../../engines/importers';
+import { pickCadFiles, saveTextFile } from '../../../core/utils/fileIo';
+import { CadLibraryManagerDialog } from '../../components/CadLibraryManagerDialog';
 import { GostConversionDialog } from '../../components/GostConversionDialog';
 import { MenuBar, TopMenuSpec } from '../../components/MenuBar';
 import { StatusBar } from '../../components/StatusBar';
@@ -69,6 +71,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
   const [cursorMm, setCursorMm] = useState<Point2D>({ x: 0, y: 0 });
   const [draftStart, setDraftStart] = useState<Point2D | null>(null);
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
+  const panRef = useRef<{ startX: number; startY: number; ox: number; oy: number } | null>(null);
   const [statusText, setStatusText] = useState('Редактор компонентов (УГО ГОСТ 2.721 / 2.743). Выберите элемент или рисуйте символ.');
   const [showPatternDialog, setShowPatternDialog] = useState(false);
   const [showIcWizard, setShowIcWizard] = useState(false);
@@ -77,31 +80,39 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
   const [icLeftPins, setIcLeftPins] = useState(4);
   const [icRightPins, setIcRightPins] = useState(4);
   const [conversionReport, setConversionReport] = useState<GostConversionReport | null>(null);
+  const [showCadLibDialog, setShowCadLibDialog] = useState(false);
 
   const handleImportCompLibrary = async () => {
-    const picked = await pickCadFile('.eli,.kicad_sym,.lbr,.gostlib,.json', [
-      { name: 'Библиотеки компонентов (DipTrace .eli / KiCad .kicad_sym / Eagle .lbr / .gostlib)', extensions: ['eli', 'kicad_sym', 'lbr', 'gostlib', 'json'] }
-    ]);
-    if (!picked) return;
+    const pickedList = await pickCadFiles('.eli,.lib,.kicad_sym,.kicad_mod,.lbr,.gostlib,.json,.zip');
+    if (pickedList.length === 0) return;
     try {
-      const res = await importCadLibrary(picked.bytes, picked.name);
-      if (res.components.length > 0) {
-        const nextList = [...userComps];
-        for (const c of res.components) {
-          const item = { ...c, library: 'lib_user' };
-          const idx = nextList.findIndex((x) => x.id === item.id || x.name === item.name);
-          if (idx >= 0) nextList[idx] = item;
-          else nextList.push(item);
+      const importedComps: ComponentDef[] = [];
+      let lastRes: Awaited<ReturnType<typeof importExternalCadLibrary>> | null = null;
+      for (const picked of pickedList) {
+        const res = await importExternalCadLibrary(picked.bytes, picked.name, { adaptToGost: true });
+        lastRes = res;
+        importedComps.push(...res.components);
+        if (res.components.length > 0 || res.patterns.length > 0) {
+          registerImportedLibraryBundle({
+            name: res.libraryName,
+            sourceFormat: res.detectedFormat,
+            sourceFile: picked.name,
+            category: res.categories[0] || 'Импорт CAD',
+            gostAdapted: true,
+            components: res.components,
+            patterns: res.patterns
+          });
         }
-        setUserComps(nextList);
-        saveUserComponents(nextList);
-        setComp(structuredClone(res.components[0]));
+      }
+      setUserComps(loadUserComponents());
+      setUserPatterns(loadUserPatterns());
+      if (importedComps.length > 0) {
+        setComp(structuredClone(importedComps[0]));
         setPartIdx(1);
-        broadcastEdaEvent('libraries:updated', { kind: 'components' });
-        setStatusText(`Импортировано компонентов (${res.detectedFormat}): ${res.components.length} -> ГОСТ УГО.`);
-        setConversionReport(res.report);
+        setStatusText(`Импортировано компонентов (${lastRes?.detectedFormat ?? 'CAD'}): ${importedComps.length} -> ГОСТ УГО.`);
+        if (lastRes) setConversionReport(lastRes.report);
       } else {
-        setStatusText(`В файле ${picked.name} не найдено компонентов схемы.`);
+        setStatusText(`В выбранных файлах не найдено компонентов схемы.`);
       }
     } catch (err) {
       setStatusText(`Ошибка импорта библиотеки: ${(err as Error).message}`);
@@ -130,6 +141,10 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
         setShowPatternDialog(false);
         setShowIcWizard(false);
         setDraftStart(null);
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedPinId && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement)) {
+        e.preventDefault();
+        updateActivePart((p) => ({ ...p, pins: p.pins.filter((x) => x.id !== selectedPinId) }));
+        setSelectedPinId(null);
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -176,18 +191,50 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
     const errs: string[] = [];
     if (!comp.refDesPrefix) errs.push('Не задан буквенный префикс ГОСТ (R, C, DA, DD...)');
     if (!comp.patternId) errs.push('Не привязан посадочный корпус');
+    const padNums = attachedPattern ? new Set(attachedPattern.pads.filter(p => p.number).map(p => p.number)) : null;
     for (const pt of comp.parts) {
       const nums = new Set<string>();
       for (const p of pt.pins) {
         if (nums.has(p.number)) errs.push(`Дубликат номера вывода ${p.number} в секции ${pt.partIndex}`);
         nums.add(p.number);
+        const mapped = p.padMapping ?? p.number;
+        if (padNums && mapped && !padNums.has(mapped)) {
+          errs.push(`Вывод ${p.number} (pad «${mapped}») отсутствует в корпусе ${comp.patternId}`);
+        }
+        if (Math.abs(Math.round(p.x / 2.5) * 2.5 - p.x) > 0.05 || Math.abs(Math.round(p.y / 2.5) * 2.5 - p.y) > 0.05) {
+          errs.push(`Вывод ${p.number} (${p.x}, ${p.y}) не на сетке 2.5 мм`);
+        }
       }
     }
     setStatusText(
       errs.length === 0
         ? `Проверка компонента «${comp.name}»: ошибок нет (${activePart.pins.length} выводов, корпус ${comp.patternId}).`
-        : `Ошибки проверки: ${errs.join('; ')}`
+        : `Ошибки проверки (${errs.length}): ${errs.slice(0, 4).join('; ')}`
     );
+  };
+
+  const zoomToFit = () => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const w = wrap.clientWidth || 700;
+    const h = wrap.clientHeight || 500;
+    const xs = activePart.pins.map(p => p.x);
+    const ys = activePart.pins.map(p => p.y);
+    for (const pr of activePart.primitives) {
+      if ('x' in pr && 'w' in pr) { xs.push(pr.x, pr.x + pr.w); ys.push(pr.y, pr.y + pr.h); }
+      else if ('x1' in pr) { xs.push(pr.x1, pr.x2); ys.push(pr.y1, pr.y2); }
+      else if ('cx' in pr) { xs.push(pr.cx - pr.r, pr.cx + pr.r); ys.push(pr.cy - pr.r, pr.cy + pr.r); }
+    }
+    const minX = xs.length ? Math.min(...xs) - 10 : -20;
+    const maxX = xs.length ? Math.max(...xs) + 10 : 20;
+    const minY = ys.length ? Math.min(...ys) - 10 : -20;
+    const maxY = ys.length ? Math.max(...ys) + 10 : 20;
+    const scale = Math.max(2, Math.min(20, Math.min(w / Math.max(10, maxX - minX), h / Math.max(10, maxY - minY)) * 0.82));
+    setViewport({
+      pxPerMm: scale,
+      ox: w / 2 - ((minX + maxX) / 2) * scale,
+      oy: h / 2 - ((minY + maxY) / 2) * scale
+    });
   };
 
   // Canvas Render
@@ -298,6 +345,16 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
   };
 
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (e.button === 1 || e.button === 2) {
+      e.preventDefault();
+      if (e.button === 2 && (tool !== 'select' || draftStart)) {
+        setDraftStart(null);
+        setTool('select');
+        return;
+      }
+      panRef.current = { startX: e.clientX, startY: e.clientY, ox: viewport.ox, oy: viewport.oy };
+      return;
+    }
     if (e.button !== 0) return;
     const wp = screenToWorld(e.clientX, e.clientY);
     const pt = snapPoint(wp, gridMm);
@@ -438,12 +495,14 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
         <button className={`dt-tb-btn ${tool === 'circle' ? 'active' : ''}`} title="Окружность УГО" onClick={() => { setDraftStart(null); setTool('circle'); }}><DipIcon name="shapeCircle" /></button>
         <button className={`dt-tb-btn ${tool === 'text' ? 'active' : ''}`} title="Текст (& / 1 / TT)" onClick={() => setTool('text')}><DipIcon name="shapeText" /></button>
         <div className="dt-tb-sep" />
+        <button className="dt-tb-btn" title="Показать весь компонент" onClick={zoomToFit}><DipIcon name="zoomAll" /></button>
         <select className="dt-tb-select" style={{ width: 72 }} value={gridMm} onChange={(e) => setGridMm(parseFloat(e.target.value))}>
           <option value={1.25}>1,25 мм</option>
           <option value={2.5}>2,5 мм</option>
           <option value={5.0}>5,0 мм</option>
         </select>
         <button className="dt-btn" onClick={() => setShowIcWizard(true)}>Мастер УГО ИМС</button>
+        <button className="dt-btn" data-testid="comped-cadlib-btn" onClick={() => setShowCadLibDialog(true)}>Библиотеки CAD...</button>
         <button className="dt-btn" onClick={handleVerifyComponent}>Проверить УГО</button>
         <button className="dt-btn primary" onClick={handleSaveToUserLibrary}>Сохранить в библиотеку</button>
       </div>
@@ -489,7 +548,16 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
               ref={canvasRef}
               style={{ display: 'block', width: '100%', height: '100%', cursor: tool === 'select' ? 'default' : 'crosshair' }}
               onMouseDown={handleCanvasMouseDown}
-              onMouseMove={(e) => setCursorMm(snapPoint(screenToWorld(e.clientX, e.clientY), gridMm))}
+              onMouseMove={(e) => {
+                if (panRef.current) {
+                  setViewport((v) => ({ ...v, ox: panRef.current!.ox + (e.clientX - panRef.current!.startX), oy: panRef.current!.oy + (e.clientY - panRef.current!.startY) }));
+                  return;
+                }
+                setCursorMm(snapPoint(screenToWorld(e.clientX, e.clientY), gridMm));
+              }}
+              onMouseUp={() => { panRef.current = null; }}
+              onMouseLeave={() => { panRef.current = null; }}
+              onContextMenu={(e) => e.preventDefault()}
               onWheel={(e) => {
                 const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
                 setViewport((v) => ({ ...v, pxPerMm: Math.max(2, Math.min(35, v.pxPerMm * factor)) }));
@@ -523,6 +591,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                     <th>№</th>
                     <th>Имя</th>
                     <th>Ориент.</th>
+                    <th>Стиль</th>
                     <th>Тип</th>
                     <th>Pad</th>
                   </tr>
@@ -537,7 +606,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                       <td>
                         <input
                           className="dt-prop-input"
-                          style={{ width: 26 }}
+                          style={{ width: 24 }}
                           value={pin.number}
                           onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === pin.id ? { ...x, number: e.target.value } : x) }))}
                         />
@@ -545,7 +614,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                       <td>
                         <input
                           className="dt-prop-input"
-                          style={{ width: 52 }}
+                          style={{ width: 44 }}
                           value={pin.name}
                           onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === pin.id ? { ...x, name: e.target.value } : x) }))}
                         />
@@ -565,6 +634,18 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                       <td>
                         <select
                           className="dt-prop-input"
+                          value={pin.style}
+                          onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === pin.id ? { ...x, style: e.target.value as any } : x) }))}
+                        >
+                          <option value="Line">Line</option>
+                          <option value="Inverted">Inv</option>
+                          <option value="Clock">Clk</option>
+                          <option value="InvertedClock">InvClk</option>
+                        </select>
+                      </td>
+                      <td>
+                        <select
+                          className="dt-prop-input"
                           value={pin.electricalType}
                           onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === pin.id ? { ...x, electricalType: e.target.value as PinElectricalType } : x) }))}
                         >
@@ -573,12 +654,15 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                           <option value="Output">Output</option>
                           <option value="Bidirectional">BiDir</option>
                           <option value="Power">Power</option>
+                          <option value="OpenCollector">OC</option>
+                          <option value="TriState">3-State</option>
+                          <option value="NotConnected">NC</option>
                         </select>
                       </td>
                       <td>
                         <input
                           className="dt-prop-input"
-                          style={{ width: 26 }}
+                          style={{ width: 24 }}
                           value={pin.padMapping ?? pin.number}
                           onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === pin.id ? { ...x, padMapping: e.target.value } : x) }))}
                         />
@@ -690,7 +774,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                     gostStandard: 'ГОСТ 2.743-91',
                     refDesPrefix: icPrefix,
                     defaultValue: icName,
-                    patternId: totalPins <= 8 ? 'PAT_DIP8' : totalPins <= 14 ? 'PAT_DIP14' : totalPins <= 16 ? 'PAT_DIP16' : 'PAT_DIP28_N',
+                    patternId: totalPins <= 8 ? 'PAT_DIP8' : totalPins <= 14 ? 'PAT_DIP14' : totalPins <= 16 ? 'PAT_DIP16' : totalPins <= 28 ? 'PAT_DIP28_N' : totalPins <= 48 ? 'PAT_QFP48' : 'PAT_LQFP64',
                     description: `ИМС ${icName} (создано Мастером УГО ГОСТ)`,
                     parts: [part]
                   });
@@ -709,6 +793,18 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
 
       {conversionReport && (
         <GostConversionDialog report={conversionReport} onClose={() => setConversionReport(null)} />
+      )}
+
+      {showCadLibDialog && (
+        <CadLibraryManagerDialog
+          initialTab="components"
+          onClose={() => setShowCadLibDialog(false)}
+          onSelectComponent={(c) => {
+            setComp(structuredClone(c));
+            setPartIdx(1);
+            setStatusText(`Загружен компонент «${c.name}» из библиотеки «${c.library}».`);
+          }}
+        />
       )}
     </div>
   );

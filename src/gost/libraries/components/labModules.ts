@@ -17,8 +17,8 @@ const LCD_16X2_HD44780: ComponentDef = {
       subHeaderText: 'HD44780 / WH1602A',
       halfWidthMm: 17.5,
       extraPrimitives: [
-        { type: 'rect', x: -7.5, y: -19, w: 15, h: 6.5, width: 0.28 },
-        { type: 'text', x: 0, y: -15.7, text: '16×2 LCD', size: 2.0, align: 'center' }
+        { type: 'rect', x: -7.5, y: -13.5, w: 15, h: 6.5, width: 0.28 },
+        { type: 'text', x: 0, y: -10.2, text: '16×2 LCD', size: 2.0, align: 'center' }
       ],
       leftPins: [
         { num: '1', name: 'VSS (GND)', type: 'Power' },
@@ -118,13 +118,13 @@ const SERVO_SG90: ComponentDef = {
 
 const ENCODER_EC11: ComponentDef = {
   id: 'COMP_B_ENCODER_EC11',
-  name: 'Энкодер инкрементальный EC11 / KY-040',
+  name: 'Энкодер инкрементальный EC11 (3+2 выв.)',
   library: 'Индикаторы, датчики и приводы (ГОСТ)',
   refDesPrefix: 'B',
   defaultValue: 'EC11 (20 имп/об)',
   gostStandard: 'ГОСТ 2.722-68 / 2.755',
-  description: 'Инкрементальный квадратурный датчик угла поворота (выходы A/CLK, B/DT, кнопка SW)',
-  manufacturer: 'Alps / Keyes',
+  description: 'Инкрементальный квадратурный датчик угла поворота с кнопкой (A, B, C-общий, SW1, SW2)',
+  manufacturer: 'Alps / Bourns',
   patternId: 'PAT_ENCODER_EC11',
   parts: [
     makeGostRectangularIcPart({
@@ -132,13 +132,13 @@ const ENCODER_EC11: ComponentDef = {
       subHeaderText: 'A/B + Кнопка',
       halfWidthMm: 12.5,
       leftPins: [
-        { num: '4', name: '+5V', type: 'Power' },
-        { num: '5', name: 'GND', type: 'Power' }
+        { num: '5', name: 'C (GND)', type: 'Passive' },
+        { num: '3', name: 'SW1', type: 'Passive' },
+        { num: '4', name: 'SW2', type: 'Passive' }
       ],
       rightPins: [
-        { num: '1', name: 'CLK (A)', type: 'Output' },
-        { num: '2', name: 'DT (B)', type: 'Output' },
-        { num: '3', name: 'SW (Кн.)', type: 'Output' }
+        { num: '1', name: 'A (CLK)', type: 'Output' },
+        { num: '2', name: 'B (DT)', type: 'Output' }
       ]
     })
   ]
@@ -673,7 +673,7 @@ const LMV358_DUAL_OPAMP: ComponentDef = {
         { type: 'rect', x: -7.5, y: -7.5, w: 15, h: 15, width: 0.4 },
         { type: 'text', x: -4.5, y: -2.5, text: '+', size: 2.6, align: 'center' },
         { type: 'text', x: -4.5, y: 2.5, text: '−', size: 2.6, align: 'center' },
-        { type: 'text', x: 0, y: 0, text: '▷', size: 3.0, align: 'center' }
+        { type: 'polyline', points: [{ x: -1.4, y: -2.0 }, { x: 2.0, y: 0 }, { x: -1.4, y: 2.0 }], closed: true, width: 0.3 }
       ],
       pins: [
         { id: 'oa1_p', number: '3', name: '+IN', x: -12.5, y: -2.5, length: 5, orientation: 0, electricalType: 'Input', style: 'Line', showName: false, showNumber: true, padMapping: '3' },
@@ -690,7 +690,7 @@ const LMV358_DUAL_OPAMP: ComponentDef = {
         { type: 'rect', x: -7.5, y: -7.5, w: 15, h: 15, width: 0.4 },
         { type: 'text', x: -4.5, y: -2.5, text: '+', size: 2.6, align: 'center' },
         { type: 'text', x: -4.5, y: 2.5, text: '−', size: 2.6, align: 'center' },
-        { type: 'text', x: 0, y: 0, text: '▷', size: 3.0, align: 'center' }
+        { type: 'polyline', points: [{ x: -1.4, y: -2.0 }, { x: 2.0, y: 0 }, { x: -1.4, y: 2.0 }], closed: true, width: 0.3 }
       ],
       pins: [
         { id: 'oa2_p', number: '5', name: '+IN', x: -12.5, y: -2.5, length: 5, orientation: 0, electricalType: 'Input', style: 'Line', showName: false, showNumber: true, padMapping: '5' },
@@ -722,6 +722,7 @@ const PMOS_FDN340P: ComponentDef = {
         { type: 'line', x1: -0.5, y1: -0.8, x2: -0.5, y2: 0.8, width: 0.4 },
         { type: 'line', x1: -0.5, y1: 1.3, x2: -0.5, y2: 3.4, width: 0.4 },
         { type: 'line', x1: -0.5, y1: 0, x2: 2.5, y2: 0, width: 0.32 },
+        { type: 'line', x1: 2.5, y1: -2.5, x2: 2.5, y2: 0, width: 0.32 },
         { type: 'line', x1: -0.5, y1: 2.5, x2: 2.5, y2: 2.5, width: 0.32 },
         { type: 'line', x1: -0.5, y1: -2.5, x2: 2.5, y2: -2.5, width: 0.32 },
         // P-channel outward substrate arrow

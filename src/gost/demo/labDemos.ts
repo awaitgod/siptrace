@@ -147,7 +147,7 @@ export function createLabUsartLcdSchematic(): SchematicProject {
   const comps: PlacedComponent[] = [
     { ...comp('u_dd1', 'COMP_DD_ATMEGA8_PU', 'DD1', 'ATmega8A-PU', 'ATmega8A-PU', 'PAT_DIP28_N', 145, 130), refDesOffset: { x: 0, y: -48 }, valueOffset: { x: 0, y: 49 } },
     { ...comp('u_hg1', 'COMP_HG_LCD1602', 'HG1', 'WH1602A (16×2)', 'HD44780 LCD', 'PAT_LCD_16X2', 260, 120), refDesOffset: { x: 0, y: -34 }, valueOffset: { x: 0, y: 35 } },
-    { ...comp('u_p1', 'COMP_PI_VIRTUAL_TERMINAL', 'P1', '9600 8N1', 'Терминал UART', 'PAT_PLS_3', 260, 185), refDesOffset: { x: 0, y: -18 }, valueOffset: { x: 0, y: 19 } },
+    { ...comp('u_p1', 'COMP_PI_VIRTUAL_TERMINAL', 'P1', '9600 8N1', 'Терминал UART', 'PAT_PLS_4', 260, 185), refDesOffset: { x: 0, y: -18 }, valueOffset: { x: 0, y: 19 } },
     comp('u_sb1', 'COMP_SB_KN1', 'SB1', 'Кнопка 1', 'КМ1-1', 'PAT_KN_TACT', 210, 75),
     comp('u_v1', 'COMP_VCC_5V', '#PWR1', '+5V', '+5В', '', 115, 75),
     comp('u_g1', 'COMP_GND', '#GND1', 'GND', 'Земля', '', 115, 175),
@@ -217,7 +217,7 @@ export function createLabAdcBargraphSchematic(): SchematicProject {
   ];
   const wires = [
     orthoWire('aw1', comps, '#PWR1', '1', 'DD1', '7', '+5V'),
-    orthoWire('aw2', comps, '#PWR1', '1', 'DD1', '21', '+5V'),
+    orthoWire('aw2', comps, '#PWR1', '1', 'DD1', '20', '+5V'),
     orthoWire('aw3', comps, '#PWR1', '1', 'R9', '1', '+5V'),
     orthoWire('aw4', comps, 'R9', '2', 'DD1', '23', 'ADC0_IN', 230),
     orthoWire('aw5', comps, 'R9', '3', '#GND1', '1', 'GND'),

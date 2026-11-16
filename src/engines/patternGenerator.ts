@@ -28,6 +28,8 @@ export interface PatternGeneratorParams {
   bgaCols?: number;
   bgaRows?: number;
   thermalPadSize?: number; // mm for QFN
+  polarized?: boolean;
+  bodyShape?: 'circle' | 'rect';
 }
 
 export function generateParametricPattern(p: PatternGeneratorParams): PatternDef {
@@ -116,7 +118,7 @@ export function generateParametricPattern(p: PatternGeneratorParams): PatternDef
         id: 'pad_1',
         number: '1',
         type: 'THT',
-        shape: 'Rect',
+        shape: p.polarized ? 'Rect' : 'Round',
         x: -span,
         y: 0,
         width: padW,
@@ -137,9 +139,32 @@ export function generateParametricPattern(p: PatternGeneratorParams): PatternDef
         layer: 'All'
       }
     );
-    const r = p.bodyWidth / 2;
-    graphics.push({ type: 'circle', layer: 'TopSilk', cx: 0, cy: 0, r, width: 0.18 });
-    graphics.push({ type: 'text', layer: 'TopSilk', x: -span - 0.8, y: -r * 0.7, text: '+', size: 1.0 });
+    const isRectBody = p.bodyShape === 'rect' || p.bodyLength > p.bodyWidth * 1.35;
+    if (isRectBody) {
+      const halfL = p.bodyLength / 2;
+      const halfW = p.bodyWidth / 2;
+      addSilkRect(p.bodyLength, p.bodyWidth, 'TopAssembly', 0.12);
+      graphics.push(
+        { type: 'line', layer: 'TopSilk', x1: -halfL + 0.6, y1: -halfW, x2: halfL - 0.6, y2: -halfW, width: 0.18 },
+        { type: 'line', layer: 'TopSilk', x1: -halfL + 0.6, y1: halfW, x2: halfL - 0.6, y2: halfW, width: 0.18 }
+      );
+    } else {
+      const r = p.bodyWidth / 2;
+      const hitsPad = Math.abs(r - span) <= padW / 2 + 0.25;
+      if (hitsPad) {
+        graphics.push({ type: 'circle', layer: 'TopAssembly', cx: 0, cy: 0, r, width: 0.12 });
+        graphics.push(
+          { type: 'arc', layer: 'TopSilk', cx: 0, cy: 0, r, startAngle: 35, endAngle: 145, width: 0.18 },
+          { type: 'arc', layer: 'TopSilk', cx: 0, cy: 0, r, startAngle: 215, endAngle: 325, width: 0.18 }
+        );
+      } else {
+        graphics.push({ type: 'circle', layer: 'TopSilk', cx: 0, cy: 0, r, width: 0.18 });
+      }
+      if (p.polarized) {
+        const px = -Math.max(r + 0.55, span + padW / 2 + 0.55);
+        graphics.push({ type: 'text', layer: 'TopSilk', x: px, y: -Math.max(0.8, r * 0.45), text: '+', size: 1.0 });
+      }
+    }
   } else if (p.family === 'DIP' || p.family === 'SOIC') {
     const perSide = Math.max(2, Math.floor(p.pinCount / 2));
     const yStart = -((perSide - 1) * p.pitch) / 2;
@@ -277,7 +302,7 @@ export function generateParametricPattern(p: PatternGeneratorParams): PatternDef
     graphics.push({
       type: 'circle',
       layer: 'TopSilk',
-      cx: -span - padW / 2 - 0.45,
+      cx: -span - padW / 2 - 0.35,
       cy: offsetStart,
       r: 0.25,
       width: 0.15,

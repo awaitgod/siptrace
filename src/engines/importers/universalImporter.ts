@@ -2,8 +2,14 @@ import { validateSchematic } from '../../core/schematic/validation';
 import { ComponentDef, PatternDef, PcbProject, SchematicProject } from '../../core/types';
 import { extractZipEntries, isZipBuffer, utf8Decode } from '../../core/utils/zipArchive';
 import { convertSchematicToPcb } from '../netlist/schematicToPcbConverter';
-import { parseDipTraceAsciiLibrary, parseDipTraceAsciiPcbWithReport, parseDipTraceAsciiSchematicWithReport, parseDipTraceXmlPcbWithReport, parseDipTraceXmlSchematicWithReport } from './dipTraceImporter';
-import { parseDxfToPcb, parseEagleXml, parseExcellonToPcb, parseForeignLibrary, parseGerberToPcb, parseKicadPcb, parseKicadSchematic, parseMultiEcadPcb, parseMultiEcadSchematic, parseProteusInput } from './ecadFormatsImporter';
+import { importExternalCadLibrary } from './cadLibraryImporter';
+import {
+    detectDipTraceBinaryFormat,
+    parseDipTraceBinaryPcb,
+    parseDipTraceBinarySchematic
+} from './dipTraceBinaryParser';
+import { parseDipTraceAsciiPcbWithReport, parseDipTraceAsciiSchematicWithReport, parseDipTraceXmlPcbWithReport, parseDipTraceXmlSchematicWithReport } from './dipTraceImporter';
+import { parseDxfToPcb, parseEagleXml, parseExcellonToPcb, parseGerberToPcb, parseKicadPcb, parseKicadSchematic, parseMultiEcadPcb, parseMultiEcadSchematic, parseProteusInput } from './ecadFormatsImporter';
 import { convertImportedPcbToGost, convertImportedSchematicToGost, GostConversionReport } from './gostConverter';
 import { createImportedPcbProject, createImportedSchematicProject } from './projectShells';
 export interface ImportedSchematicResult {
@@ -42,15 +48,19 @@ function isDipTraceXml(text: string): boolean {
 function isDipTraceAscii(text: string): boolean {
     return text.startsWith('(Source') || text.startsWith('(Schematic') || text.startsWith('(Board') || text.includes('(Part ') || text.includes('(Component ');
 }
-const nativeDipTraceSchematicMessage = 'Нативный двоичный файл DipTrace .dch пока не поддерживается. В DipTrace Schematic выполните «File → Save As» и сохраните копию в XML, затем импортируйте её. Проверьте результат: импорт XML пока неполный.';
-function isNativeDipTraceSchematic(bytes: Uint8Array): boolean {
-    // Native DipTrace schematics start with the length-prefixed DTSCHEM signature.
-    return bytes.length >= 8 && bytes[0] === 7 && 'DTSCHEM'.split('').every((ch, i) => bytes[i + 1] === ch.charCodeAt(0));
+function binaryStringToBytes(text: string): Uint8Array {
+    const out = new Uint8Array(text.length);
+    for (let i = 0; i < text.length; i++) out[i] = text.charCodeAt(i) & 0xff;
+    return out;
 }
-/** Synchronous schematic importer supporting all plain-text ECAD formats and GOST-Trace JSON. */
+/** Synchronous schematic importer supporting all plain-text ECAD formats, native DipTrace binary strings, and GOST-Trace JSON. */
 export function importCadSchematicSync(text: string, filename = 'Импорт.gostsch'): ImportedSchematicResult {
-    if (text.startsWith('\x07DTSCHEM'))
-        throw new Error(nativeDipTraceSchematicMessage);
+    const rawPrefixBytes = binaryStringToBytes(text.slice(0, 32));
+    const binId = detectDipTraceBinaryFormat(rawPrefixBytes);
+    if (binId?.family === 'schematic') {
+        const res = parseDipTraceBinarySchematic(binaryStringToBytes(text), filename);
+        return { ...res, detectedFormat: res.report.sourceFormat };
+    }
     const trimmed = text.trim();
     const ext = filename.toLowerCase();
     const baseName = stripExt(filename);
@@ -145,8 +155,11 @@ export async function importCadSchematic(input: string | Uint8Array, filename = 
             }
             throw new Error(`Внутри ZIP-архива ${filename} не найден поддерживаемый файл схемы.`);
         }
-        if (isNativeDipTraceSchematic(input))
-            throw new Error(nativeDipTraceSchematicMessage);
+        const binId = detectDipTraceBinaryFormat(input);
+        if (binId?.family === 'schematic') {
+            const res = parseDipTraceBinarySchematic(input, filename);
+            return { ...res, detectedFormat: res.report.sourceFormat };
+        }
         const decoded = utf8Decode(input);
         if (ext.endsWith('.pdsprj') || ext.endsWith('.dsn')) {
             const res = await parseProteusInput(input, baseName);
@@ -300,51 +313,42 @@ export async function importCadPcb(input: string | Uint8Array, filename = 'Им�
             }
             const pcbEntry = names.find((n) => /\.(kicad_pcb|brd|dip|pcbdoc|xml|dxf|json|epcb)$/i.test(n));
             if (pcbEntry) {
-                return importCadPcbSync(utf8Decode(entries[pcbEntry]), pcbEntry);
+                return importCadPcb(entries[pcbEntry], pcbEntry);
             }
             const schEntry = names.find((n) => /\.(kicad_sch|sch|dch|asc|cir)$/i.test(n));
             if (schEntry) {
-                return importCadPcbSync(utf8Decode(entries[schEntry]), schEntry);
+                return importCadPcb(entries[schEntry], schEntry);
             }
             throw new Error(`ZIP-архив ${filename} не содержит распознанных файлов платы или Gerber.`);
         }
+        const binId = detectDipTraceBinaryFormat(input);
+        if (binId?.family === 'pcb') {
+            const res = parseDipTraceBinaryPcb(input, filename);
+            return { ...res, detectedFormat: res.report.sourceFormat };
+        }
+        if (binId?.family === 'schematic') {
+            const schRes = parseDipTraceBinarySchematic(input, filename);
+            const pcb = convertSchematicToPcb(schRes.project);
+            const conv = convertImportedPcbToGost(pcb, `${schRes.report.sourceFormat} → Плата ГОСТ`, { preserveEmptyPads: true });
+            return { ...conv, detectedFormat: `${schRes.report.sourceFormat} → Плата` };
+        }
         return importCadPcbSync(utf8Decode(input), filename);
+    }
+    const rawPrefixBytes = binaryStringToBytes(input.slice(0, 32));
+    const strBinId = detectDipTraceBinaryFormat(rawPrefixBytes);
+    if (strBinId?.family === 'pcb') {
+        const res = parseDipTraceBinaryPcb(binaryStringToBytes(input), filename);
+        return { ...res, detectedFormat: res.report.sourceFormat };
     }
     return importCadPcbSync(input, filename);
 }
-/** Universal component/pattern library importer (.gostlib, DipTrace .eli/.lib, KiCad .kicad_sym/.kicad_mod, Eagle .lbr, DXF footprint). */
+/** Universal component/pattern library importer (.gostlib, DipTrace binary/ASCII .eli/.lib, KiCad .kicad_sym/.kicad_mod, Eagle .lbr, EasyEDA JSON, DXF, ZIP). */
 export async function importCadLibrary(input: string | Uint8Array, filename = 'library'): Promise<ImportedLibraryResult> {
-    const text = input instanceof Uint8Array ? utf8Decode(input) : input;
-    const trimmed = text.trim();
     const ext = filename.toLowerCase();
-    // 1. Native .gostlib JSON
-    if (trimmed.startsWith('{')) {
-        try {
-            const obj = JSON.parse(trimmed) as {
-                components?: ComponentDef[];
-                patterns?: PatternDef[];
-            };
-            if (Array.isArray(obj.components) || Array.isArray(obj.patterns)) {
-                return {
-                    components: obj.components ?? [],
-                    patterns: obj.patterns ?? [],
-                    report: emptyReport('Библиотека ГОСТ-Трейс (.gostlib)'),
-                    detectedFormat: 'Библиотека ГОСТ-Трейс (.gostlib)'
-                };
-            }
-        }
-        catch {
-            // fall through
-        }
-    }
-    // 2. DipTrace ASCII library (.eli / .lib)
-    if (ext.endsWith('.eli') || ext.endsWith('.lib') || trimmed.includes('(Library') || trimmed.includes('(Pattern ')) {
-        const res = parseDipTraceAsciiLibrary(trimmed);
-        return { ...res, detectedFormat: 'DipTrace Library (.eli/.lib)' };
-    }
-    // 3. DXF -> Pattern footprint
+    // 1. DXF -> Pattern footprint
     if (ext.endsWith('.dxf')) {
-        const dxfPcb = parseDxfToPcb(trimmed, stripExt(filename));
+        const text = input instanceof Uint8Array ? utf8Decode(input) : input;
+        const dxfPcb = parseDxfToPcb(text.trim(), stripExt(filename));
         const pat: PatternDef = {
             id: `PAT_DXF_${Date.now().toString(36)}`,
             name: `${stripExt(filename)} (DXF)`,
@@ -369,7 +373,19 @@ export async function importCadLibrary(input: string | Uint8Array, filename = 'l
         };
         return { components: [], patterns: [pat], report: dxfPcb.report, detectedFormat: 'Autodesk DXF' };
     }
-    // 4. KiCad (.kicad_sym / .kicad_mod) or Eagle (.lbr)
-    const res = parseForeignLibrary(trimmed, filename);
-    return { ...res, detectedFormat: res.report.sourceFormat };
+    // 2. Binary-string DipTrace library fallback
+    let normalizedInput: string | Uint8Array = input;
+    if (typeof input === 'string') {
+        const binId = detectDipTraceBinaryFormat(binaryStringToBytes(input.slice(0, 32)));
+        if (binId?.family === 'component' || binId?.family === 'pattern') {
+            normalizedInput = binaryStringToBytes(input);
+        }
+    }
+    const res = await importExternalCadLibrary(normalizedInput, filename, { adaptToGost: true });
+    return {
+        components: res.components,
+        patterns: res.patterns,
+        report: res.report,
+        detectedFormat: res.detectedFormat
+    };
 }

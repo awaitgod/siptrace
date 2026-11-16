@@ -42,10 +42,6 @@ export interface SchematicToolbarProps {
 }
 /** Main DipTrace-style horizontal schematic toolbar. */
 export const SchematicToolbar: React.FC<SchematicToolbarProps> = (p) => (<div className="dt-toolbar-row">
-    <button className="dt-tb-btn" title="Узел соединения (J)" onClick={() => p.setTool('junction')}>●</button>
-    <button className="dt-tb-btn" title="Отвод шины (Q)" onClick={() => p.setTool('busTap')}>╱</button>
-    <button className="dt-tb-btn" title="Окружность (O)" onClick={() => p.setTool('shapeCircle')}>○</button>
-    <button className="dt-tb-btn" title="Не подключать (N)" onClick={() => p.setTool('noConnect')}>×</button>
     <button className="dt-tb-btn" title="Новая схема" onClick={p.handleNewProject}><DipIcon name="new"/></button>
     <button className="dt-tb-btn" title="Открыть схему (.gostsch / .dch)" onClick={p.handleOpenFile}><DipIcon name="open"/></button>
     <button className="dt-tb-btn" title={`Сохранить схему (${p.hotkeys.save})`} onClick={p.handleSaveFile}><DipIcon name="save"/></button>
@@ -82,12 +78,16 @@ export const SchematicToolbar: React.FC<SchematicToolbarProps> = (p) => (<div cl
     <button className="dt-tb-btn" title={`Найти элемент / цепь (${p.hotkeys.find})`} onClick={() => p.setShowFindDialog(true)}><DipIcon name="find"/></button>
     <div className="dt-tb-sep"/>
     <button className={`dt-tb-btn ${p.tool === 'wire' ? 'active' : ''}`} title={`Проложить провод (${p.hotkeys.placeWire})`} onClick={() => { p.setWireDraftPts([]); p.setTool('wire'); }}><DipIcon name="wire"/></button>
+    <button className={`dt-tb-btn ${p.tool === 'junction' ? 'active' : ''}`} title={`Узел соединения (${p.hotkeys.placeJunction})`} onClick={() => p.setTool('junction')}><DipIcon name="junction"/></button>
     <button className={`dt-tb-btn ${p.tool === 'bus' ? 'active' : ''}`} title={`Проложить шину (${p.hotkeys.placeBus})`} onClick={() => { p.setWireDraftPts([]); p.setTool('bus'); }}><DipIcon name="bus"/></button>
+    <button className={`dt-tb-btn ${p.tool === 'busTap' ? 'active' : ''}`} title={`Отвод шины (${p.hotkeys.placeBusTap})`} onClick={() => p.setTool('busTap')}><DipIcon name="busTap"/></button>
     <button className={`dt-tb-btn ${p.tool === 'netPort' ? 'active' : ''}`} title={`Порт цепи / Земля / Питание (${p.hotkeys.placePort})`} onClick={() => p.setTool('netPort')}><DipIcon name="netPort"/></button>
+    <button className={`dt-tb-btn ${p.tool === 'noConnect' ? 'active' : ''}`} title={`Не подключать (${p.hotkeys.noConnect})`} onClick={() => p.setTool('noConnect')}><DipIcon name="noConnect"/></button>
     <button className={`dt-tb-btn ${p.tool === 'placeComp' ? 'active' : ''}`} title="Разместить выбранный компонент" onClick={() => p.setTool('placeComp')}><DipIcon name="placeComp"/></button>
     <div className="dt-tb-sep"/>
     <button className={`dt-tb-btn ${p.tool === 'shapeLine' ? 'active' : ''}`} title="Нарисовать линию" onClick={() => { p.setShapeStartPt(null); p.setTool('shapeLine'); }}><DipIcon name="shapeLine"/></button>
     <button className={`dt-tb-btn ${p.tool === 'shapeRect' ? 'active' : ''}`} title="Нарисовать прямоугольник" onClick={() => { p.setShapeStartPt(null); p.setTool('shapeRect'); }}><DipIcon name="shapeRect"/></button>
+    <button className={`dt-tb-btn ${p.tool === 'shapeCircle' ? 'active' : ''}`} title={`Нарисовать окружность (${p.hotkeys.placeCircle})`} onClick={() => { p.setShapeStartPt(null); p.setTool('shapeCircle'); }}><DipIcon name="shapeCircle"/></button>
     <button className={`dt-tb-btn ${p.tool === 'shapeText' ? 'active' : ''}`} title="Вставить текстовую надпись" onClick={() => p.setTool('shapeText')}><DipIcon name="shapeText"/></button>
     <button className={`dt-tb-btn ${p.tool === 'table' ? 'active' : ''}`} title="Вставить таблицу" onClick={() => p.setTool('table')}><DipIcon name="table"/></button>
     <button className={`dt-tb-btn ${p.tool === 'hierarchy' ? 'active' : ''}`} title="Иерархический блок" onClick={() => p.setTool('hierarchy')}><DipIcon name="hierarchy"/></button>

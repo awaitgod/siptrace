@@ -6,7 +6,11 @@ import { insetPolygonByEdgeNormals } from './polygonInset';
 import { mergePourGridToIslands } from './spanMerger';
 
 /** Computes obstacle-subtracted copper pour islands with thermal relief spoke cutouts and island pruning. */
-export function updateCopperPour(pour: PcbCopperPour, pcb: PcbProject): PcbCopperPour {
+export function updateCopperPour(
+  pour: PcbCopperPour,
+  pcb: PcbProject,
+  higherPriorityPours?: PcbCopperPour[]
+): PcbCopperPour {
   let effectiveOutline = pour.outline;
   if (pour.dependOnBoardOutline && pcb.boardOutline.length >= 3) {
     effectiveOutline = insetPolygonByEdgeNormals(pcb.boardOutline, pour.boardClearance);
@@ -32,11 +36,23 @@ export function updateCopperPour(pour: PcbCopperPour, pcb: PcbProject): PcbCoppe
     };
   }
 
+  const priorPours =
+    higherPriorityPours ??
+    pcb.copperPours.filter(
+      (other) =>
+        other.id !== pour.id &&
+        other.poured &&
+        other.layer === pour.layer &&
+        other.netName !== pour.netName &&
+        other.priority <= pour.priority
+    );
+
   const { grid, cols, rows, dx, dy, thermalPads } = buildPourOccupancyGrid(
     pour,
     pcb,
     effectiveOutline,
-    bounds
+    bounds,
+    priorPours
   );
 
   if (pour.removeIslands) {
@@ -57,10 +73,13 @@ export function updateCopperPour(pour: PcbCopperPour, pcb: PcbProject): PcbCoppe
   };
 }
 
-/** Rebuilds all PCB copper pours sorted by priority. */
+/** Rebuilds all PCB copper pours sorted by priority, subtracting higher-priority pours first. */
 export function updateAllCopperPours(pcb: PcbProject): PcbProject {
   const sorted = [...pcb.copperPours].sort((a, b) => a.priority - b.priority);
-  const updated = sorted.map((p) => updateCopperPour(p, pcb));
+  const updated: PcbCopperPour[] = [];
+  for (const p of sorted) {
+    updated.push(updateCopperPour(p, pcb, updated));
+  }
   return { ...pcb, copperPours: updated };
 }
 

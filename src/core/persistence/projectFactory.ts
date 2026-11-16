@@ -13,16 +13,16 @@ import {
   createDemoRs485Pcb
 } from '../../gost/demoProjects';
 import {
-  importCadLibrary,
   importCadPcb,
-  importCadSchematic
+  importCadSchematic,
+  importExternalCadLibrary
 } from '../../engines/importers';
 import { convertSchematicToPcb, createDefaultPcbLayers } from '../../engines/netlist';
 import { buildBoardOutlinePolygon } from '../../ui/modules/pcb/services/pcbActionsService';
 import { clearSavedFileHandle, PickedCadFile } from '../utils/fileIo';
 import { utf8Decode } from '../utils/zipArchive';
 import { broadcastEdaEvent } from './eventBus';
-import { loadUserComponents, loadUserPatterns, saveUserComponents, saveUserPatterns } from './libraryStore';
+import { registerImportedLibraryBundle } from './libraryStore';
 import { loadActivePcb, loadActiveSchematic, saveActivePcb, saveActiveSchematic } from './projectStore';
 import { loadSettings, recordRecentProject } from './settingsStore';
 import { STORAGE_KEYS } from './storageKeys';
@@ -349,44 +349,59 @@ export function consumePendingConversionReport(): import('../../engines/importer
 export async function openPickedProjectFile(picked: PickedCadFile): Promise<OpenedProjectFileResult> {
   const lower = picked.name.toLowerCase();
 
-  // 1. Library files (.gostlib, .eli, .lib, .kicad_sym, .kicad_mod, .lbr)
-  if (/\.(gostlib|eli|lib|kicad_sym|kicad_mod|lbr)$/i.test(lower)) {
-    const res = await importCadLibrary(picked.bytes, picked.name);
-    if (res.components.length > 0) {
-      const next = [...loadUserComponents()];
-      for (const c of res.components) {
-        const item = { ...c, library: 'lib_user' };
-        const idx = next.findIndex((x) => x.id === item.id || x.name === item.name);
-        if (idx >= 0) next[idx] = item;
-        else next.push(item);
+  let looksLikeLibJson = false;
+  if (lower.endsWith('.json')) {
+    try {
+      const parsed = JSON.parse(utf8Decode(picked.bytes)) as {
+        boardOutline?: unknown;
+        sheets?: unknown;
+        components?: unknown;
+        patterns?: unknown;
+        shape?: unknown;
+        packageDetail?: unknown;
+        head?: { c_para?: unknown };
+      };
+      if (!Array.isArray(parsed.sheets) && !Array.isArray(parsed.boardOutline)) {
+        looksLikeLibJson =
+          Array.isArray(parsed.components) ||
+          Array.isArray(parsed.patterns) ||
+          Array.isArray(parsed.shape) ||
+          Boolean(parsed.packageDetail || parsed.head?.c_para);
       }
-      saveUserComponents(next);
-      broadcastEdaEvent('libraries:updated', { kind: 'components' });
+    } catch {
+      looksLikeLibJson = false;
+    }
+  }
+
+  // 1. Library files (.gostlib, .eli, .lib, .kicad_sym, .kicad_mod, .lbr, EasyEDA JSON)
+  if (/\.(gostlib|eli|lib|kicad_sym|kicad_mod|lbr)$/i.test(lower) || looksLikeLibJson) {
+    const res = await importExternalCadLibrary(picked.bytes, picked.name, { adaptToGost: true });
+    if (res.components.length === 0 && res.patterns.length === 0) {
+      throw new Error(`В файле библиотеки ${picked.name} не найдено компонентов или корпусов.`);
+    }
+    registerImportedLibraryBundle({
+      name: res.libraryName,
+      sourceFormat: res.detectedFormat,
+      sourceFile: picked.name,
+      category: res.categories[0] || 'Импорт CAD',
+      gostAdapted: true,
+      components: res.components,
+      patterns: res.patterns
+    });
+    if (res.components.length > 0) {
       return {
         targetModule: 'componentEditor',
         detectedFormat: res.detectedFormat,
         report: res.report,
-        statusMessage: `Импортировано компонентов: ${res.components.length}`
+        statusMessage: `Импортировано компонентов: ${res.components.length}${res.patterns.length > 0 ? `, корпусов: ${res.patterns.length}` : ''}`
       };
     }
-    if (res.patterns.length > 0) {
-      const next = [...loadUserPatterns()];
-      for (const p of res.patterns) {
-        const pat = { ...p, library: 'patlib_user' };
-        const idx = next.findIndex((x) => x.id === pat.id || x.name === pat.name);
-        if (idx >= 0) next[idx] = pat;
-        else next.push(pat);
-      }
-      saveUserPatterns(next);
-      broadcastEdaEvent('libraries:updated', { kind: 'patterns' });
-      return {
-        targetModule: 'patternEditor',
-        detectedFormat: res.detectedFormat,
-        report: res.report,
-        statusMessage: `Импортировано корпусов: ${res.patterns.length}`
-      };
-    }
-    throw new Error(`В файле библиотеки ${picked.name} не найдено компонентов или корпусов.`);
+    return {
+      targetModule: 'patternEditor',
+      detectedFormat: res.detectedFormat,
+      report: res.report,
+      statusMessage: `Импортировано корпусов: ${res.patterns.length}`
+    };
   }
 
   // 2. Clearly PCB formats

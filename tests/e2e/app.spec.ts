@@ -16,7 +16,7 @@ async function openGostModule(page: Page, moduleId: string): Promise<string[]> {
   });
 
   if (moduleId === 'launcher') {
-    await page.setViewportSize({ width: 414, height: 648 });
+    await page.setViewportSize({ width: 364, height: 268 });
   } else {
     await page.setViewportSize({ width: 1280, height: 800 });
   }
@@ -27,21 +27,20 @@ async function openGostModule(page: Page, moduleId: string): Promise<string[]> {
 }
 
 test.describe('SIPTrace — Vite Web Suite & Visual Verification', () => {
-  test('1. Launcher module renders SIPTrace logo, all CAD tools & no lab shortcuts', async ({ page }) => {
+  test('1. Launcher module renders compact 5-button DipTrace launcher only', async ({ page }) => {
     const errors = await openGostModule(page, 'launcher');
     await expect(page).toHaveTitle('SIPTrace');
-    const logo = page.locator('.dt-launcher-logo');
-    await expect(logo).toBeVisible();
-    const logoLoaded = await logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0);
-    expect(logoLoaded).toBe(true);
-    await expect(page.locator('.dt-launcher-brand-title')).toHaveText('SIPTrace');
     await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /logo\.svg$/);
-    await expect(page.getByText('Быстрый запуск лабораторных работ')).toHaveCount(0);
+    await expect(page.locator('.dt-launcher-module-btn')).toHaveCount(5);
+    await expect(page.getByText('+ Создать проект...')).toHaveCount(0);
+    await expect(page.getByText('Параметры по умолчанию')).toHaveCount(0);
+    await expect(page.getByText('Библиотеки CAD...')).toHaveCount(0);
 
     await expect(page.getByText('Схемотехника (Schematic Capture)')).toBeVisible();
     await expect(page.getByText('Плата (PCB Layout & Autorouter)')).toBeVisible();
     await expect(page.getByText('Редактор компонентов (Component Editor)')).toBeVisible();
     await expect(page.getByText('Редактор корпусов (Pattern Editor)')).toBeVisible();
+    await expect(page.getByText('3D-просмотр платы (3D Preview)')).toBeVisible();
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '01_launcher.png') });
     expect(errors).toEqual([]);
   });
@@ -175,8 +174,8 @@ test.describe('SIPTrace — Vite Web Suite & Visual Verification', () => {
   });
 
   test('9. Project creation flow creates unified Schematic + PCB and PCB-only boards', async ({ page }) => {
-    const errors = await openGostModule(page, 'launcher');
-    await page.getByRole('button', { name: '+ Создать проект...' }).click();
+    const errors = await openGostModule(page, 'schematic');
+    await page.getByTitle('Новая схема').click();
     await expect(page.locator('.dt-modal')).toContainText('Новый проект — SIPTrace');
 
     const nameInput = page.locator('.dt-modal input').nth(0);
@@ -187,8 +186,6 @@ test.describe('SIPTrace — Vite Web Suite & Visual Verification', () => {
     await page.waitForTimeout(300);
 
     await expect(page).toHaveURL(/\?module=schematic/);
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await page.waitForTimeout(150);
     await expect(page).toHaveTitle(/БП_24В/);
     await expect(page.locator('.dt-right-sidebar input').first()).toHaveValue('БП_24В');
     await expect(page.locator('.dt-right-sidebar')).toContainText('СИПТ.436210.001 Э3');

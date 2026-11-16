@@ -197,11 +197,19 @@ export const icPatterns: PatternDef[] = [
       { id: 'p_ep', number: '33', type: 'SMD', shape: 'Rect', x: 0, y: 0, width: 3.1, height: 3.1, layer: 'Top' }
     ],
     graphics: [
-      { type: 'rect', layer: 'TopSilk', x: -2.5, y: -2.5, w: 5.0, h: 5.0, width: 0.15 },
-      { type: 'circle', layer: 'TopSilk', cx: -2.9, cy: -2.2, r: 0.2, width: 0.2 },
-      { type: 'rect', layer: 'Courtyard', x: -3.2, y: -3.2, w: 6.4, h: 6.4, width: 0.1 }
+      { type: 'rect', layer: 'TopAssembly', x: -2.5, y: -2.5, w: 5.0, h: 5.0, width: 0.1 },
+      { type: 'line', layer: 'TopSilk', x1: -2.9, y1: -2.9, x2: -2.2, y2: -2.9, width: 0.15 },
+      { type: 'line', layer: 'TopSilk', x1: -2.9, y1: -2.9, x2: -2.9, y2: -2.2, width: 0.15 },
+      { type: 'line', layer: 'TopSilk', x1: 2.9, y1: -2.9, x2: 2.2, y2: -2.9, width: 0.15 },
+      { type: 'line', layer: 'TopSilk', x1: 2.9, y1: -2.9, x2: 2.9, y2: -2.2, width: 0.15 },
+      { type: 'line', layer: 'TopSilk', x1: 2.9, y1: 2.9, x2: 2.2, y2: 2.9, width: 0.15 },
+      { type: 'line', layer: 'TopSilk', x1: 2.9, y1: 2.9, x2: 2.9, y2: 2.2, width: 0.15 },
+      { type: 'line', layer: 'TopSilk', x1: -2.9, y1: 2.9, x2: -2.2, y2: 2.9, width: 0.15 },
+      { type: 'line', layer: 'TopSilk', x1: -2.9, y1: 2.9, x2: -2.9, y2: 2.2, width: 0.15 },
+      { type: 'circle', layer: 'TopSilk', cx: -3.2, cy: -1.75, r: 0.22, width: 0.2, fill: true },
+      { type: 'rect', layer: 'Courtyard', x: -3.6, y: -3.6, w: 7.2, h: 7.2, width: 0.1 }
     ],
-    courtyard: { width: 6.4, height: 6.4 },
+    courtyard: { width: 7.2, height: 7.2 },
     model3d: { shape: 'QFN', bodyWidth: 5.0, bodyLength: 5.0, bodyHeight: 0.9, color: '#22262b' }
   },
   {
@@ -217,10 +225,10 @@ export const icPatterns: PatternDef[] = [
       { id: 'p4', number: '4', type: 'THT', shape: 'Round', x: 2.54, y: -2.54, width: 1.8, height: 1.8, holeDiameter: 0.9, layer: 'All' }
     ],
     graphics: [
-      { type: 'circle', layer: 'TopSilk', cx: 0, cy: 0, r: 4.3, width: 0.18 },
-      { type: 'rect', layer: 'Courtyard', x: -4.8, y: -4.8, w: 9.6, h: 9.6, width: 0.1 }
+      { type: 'circle', layer: 'TopSilk', cx: 0, cy: 0, r: 5.1, width: 0.18 },
+      { type: 'rect', layer: 'Courtyard', x: -5.6, y: -5.6, w: 11.2, h: 11.2, width: 0.1 }
     ],
-    courtyard: { width: 9.6, height: 9.6 },
+    courtyard: { width: 11.2, height: 11.2 },
     model3d: { shape: 'Box', bodyWidth: 8.2, bodyLength: 8.2, bodyHeight: 4.5, color: '#24272d' }
   }
 ];

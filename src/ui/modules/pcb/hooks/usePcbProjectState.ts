@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { HotkeyMap, PatternDef, PcbProject } from '../../../../core/types';
 import {
   AppSettings,
@@ -40,20 +40,33 @@ export function usePcbProjectState(
   const [hotkeys, setHotkeys] = useState<HotkeyMap>(() => loadHotkeys());
   const [userPatterns, setUserPatterns] = useState<PatternDef[]>(() => loadUserPatterns());
 
+  const pcbRef = useRef<PcbProject>(pcb);
+  const historyRef = useRef<PcbProject[]>(history);
+  const redoRef = useRef<PcbProject[]>(redoStack);
+  pcbRef.current = pcb;
+  historyRef.current = history;
+  redoRef.current = redoStack;
+
   const commitPcb = useCallback((updater: (prev: PcbProject) => PcbProject, pushUndo = true) => {
-    setPcb((prev) => {
-      if (pushUndo) {
-        setHistory((h) => [...h.slice(-29), prev]);
-        setRedoStack([]);
-        setIsDirty(true);
-      }
-      const next = updater(prev);
-      saveActivePcb(next);
-      return next;
-    });
+    const prev = pcbRef.current;
+    const next = updater(prev);
+    if (pushUndo) {
+      const nextHist = [...historyRef.current.slice(-29), prev];
+      historyRef.current = nextHist;
+      redoRef.current = [];
+      setHistory(nextHist);
+      setRedoStack([]);
+      setIsDirty(true);
+    }
+    pcbRef.current = next;
+    setPcb(next);
+    saveActivePcb(next);
   }, []);
 
   const replacePcb = useCallback((next: PcbProject) => {
+    historyRef.current = [];
+    redoRef.current = [];
+    pcbRef.current = next;
     setHistory([]);
     setRedoStack([]);
     setIsDirty(false);
@@ -62,7 +75,10 @@ export function usePcbProjectState(
   }, []);
 
   const pushUndoSnapshot = useCallback((snapshot: PcbProject) => {
-    setHistory((h) => [...h.slice(-29), snapshot]);
+    const nextHist = [...historyRef.current.slice(-29), snapshot];
+    historyRef.current = nextHist;
+    redoRef.current = [];
+    setHistory(nextHist);
     setRedoStack([]);
     setIsDirty(true);
   }, []);
@@ -91,22 +107,32 @@ export function usePcbProjectState(
   }, [replacePcb, onExternalUpdateStatus, onCrossprobeRefDes]);
 
   const handleUndo = useCallback(() => {
-    if (history.length === 0) return;
-    const prev = history[history.length - 1];
-    setHistory((h) => h.slice(0, -1));
-    setRedoStack((r) => [...r, pcb]);
+    if (historyRef.current.length === 0) return;
+    const prev = historyRef.current[historyRef.current.length - 1];
+    const nextHist = historyRef.current.slice(0, -1);
+    const nextRedo = [...redoRef.current, pcbRef.current];
+    historyRef.current = nextHist;
+    redoRef.current = nextRedo;
+    pcbRef.current = prev;
+    setHistory(nextHist);
+    setRedoStack(nextRedo);
     setPcb(prev);
     saveActivePcb(prev);
-  }, [history, pcb]);
+  }, []);
 
   const handleRedo = useCallback(() => {
-    if (redoStack.length === 0) return;
-    const next = redoStack[redoStack.length - 1];
-    setRedoStack((r) => r.slice(0, -1));
-    setHistory((h) => [...h, pcb]);
+    if (redoRef.current.length === 0) return;
+    const next = redoRef.current[redoRef.current.length - 1];
+    const nextRedo = redoRef.current.slice(0, -1);
+    const nextHist = [...historyRef.current, pcbRef.current];
+    historyRef.current = nextHist;
+    redoRef.current = nextRedo;
+    pcbRef.current = next;
+    setRedoStack(nextRedo);
+    setHistory(nextHist);
     setPcb(next);
     saveActivePcb(next);
-  }, [redoStack, pcb]);
+  }, []);
 
   return {
     pcb,

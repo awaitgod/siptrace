@@ -2,12 +2,21 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PcbPlacedComponent, PcbProject } from '../../../core/types';
-import { polygonBounds, transformPoint } from '../../../core/geometry';
+import { dist as dist2d, pointInPolygon, polygonBounds, transformPoint } from '../../../core/geometry';
 import { loadActivePcb, openAppModule, subscribeEdaEvents } from '../../../core/store';
 import { exportPcbObj3D, exportPcbStep, exportPcbStlAscii, exportPcbWrl } from '../../../engines/camExport';
 import { saveTextFile } from '../../../core/utils/fileIo';
 import { MenuBar, TopMenuSpec } from '../../components/MenuBar';
 import { DipIcon } from '../../theme/DipTraceIcons';
+
+function getMaskedTraceColor(maskColor: string, finishGold: boolean): string {
+  const c = maskColor.toLowerCase();
+  if (c === '#dcdcdc') return finishGold ? '#d0cfc4' : '#c2cbd4';
+  if (c === '#124185') return finishGold ? '#2e6bbf' : '#255bb0';
+  if (c === '#8b1a1a') return finishGold ? '#ba3630' : '#a82828';
+  if (c === '#1c1c1e') return finishGold ? '#36393d' : '#2c3036';
+  return finishGold ? '#2ca05a' : '#2a8f50';
+}
 
 const MASK_PALETTES: { id: string; label: string; color: string; substrate: string }[] = [
   { id: '#1b6b33', label: 'Зелёная (ГОСТ)', color: '#1b6b33', substrate: '#8b9d58' },
@@ -55,15 +64,28 @@ export const Pcb3dModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ o
       const cam = cameraRef.current;
       const ctr = controlsRef.current;
       if (!cam || !ctr) return;
-      const dist = Math.max(boardCenter.w, boardCenter.h, 50) * 1.15;
+      const d = Math.max(boardCenter.w, boardCenter.h, 50) * 1.15;
+      const prevDamp = ctr.enableDamping;
+      // Flush damping inertia so preset snaps immediately without residual velocity
+      ctr.enableDamping = false;
       ctr.target.set(0, 0, 0);
-      if (preset === 'top') cam.position.set(0, dist * 1.1, 0.01);
-      else if (preset === 'bottom') cam.position.set(0, -dist * 1.1, 0.01);
-      else if (preset === 'side') cam.position.set(dist * 1.1, 6, 0);
-      else cam.position.set(dist * 0.55, dist * 0.68, dist * 0.72);
+      if (preset === 'top') {
+        cam.up.set(0, 1, 0);
+        cam.position.set(0, d * 1.1, 0.01);
+      } else if (preset === 'bottom') {
+        cam.up.set(0, 1, 0);
+        cam.position.set(0, -d * 1.1, 0.01);
+      } else if (preset === 'side') {
+        cam.up.set(0, 1, 0);
+        cam.position.set(0, Math.max(2.5, (pcb.boardThickness || 1.6) * 2.0), d * 1.05);
+      } else {
+        cam.up.set(0, 1, 0);
+        cam.position.set(d * 0.55, d * 0.68, d * 0.72);
+      }
       ctr.update();
+      ctr.enableDamping = prevDamp;
     },
-    [boardCenter]
+    [boardCenter, pcb.boardThickness]
   );
 
   useEffect(() => {
@@ -183,7 +205,7 @@ export const Pcb3dModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ o
     const cx = boardCenter.cx;
     const cy = boardCenter.cy;
     const thick = pcb.boardThickness || 1.6;
-    const ex = explodeFactor * 6.0;
+    const ex = explodeFactor * 5.0;
     const isWhiteMask = maskColor.toLowerCase() === '#dcdcdc';
     const silkTextColor = isWhiteMask ? '#1e293b' : '#ffffff';
 
@@ -193,10 +215,16 @@ export const Pcb3dModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ o
       metalness: 0.78,
       roughness: 0.25
     });
+    const barrelMat = new THREE.MeshStandardMaterial({
+      color: finishGold ? '#c9a22e' : '#b8c4cc',
+      metalness: 0.75,
+      roughness: 0.3,
+      side: THREE.DoubleSide
+    });
     const traceCopperMat = new THREE.MeshStandardMaterial({
-      color: finishGold ? '#2ca05a' : '#2a8f50',
-      metalness: 0.4,
-      roughness: 0.45
+      color: getMaskedTraceColor(maskColor, finishGold),
+      metalness: isWhiteMask ? 0.22 : 0.4,
+      roughness: isWhiteMask ? 0.5 : 0.45
     });
     const innerCopperMat = new THREE.MeshStandardMaterial({
       color: '#c87533',
@@ -212,8 +240,30 @@ export const Pcb3dModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ o
       color: '#9aa462',
       roughness: 0.75
     });
+    const silkLineMat = new THREE.MeshBasicMaterial({ color: silkTextColor });
 
-    // 1. FR-4 Extruded Board with Cutouts
+    // Collect non-overlapping drilled THT / Via holes so the FR-4 board has genuine see-through holes
+    const drilledHoles: { x: number; y: number; r: number }[] = [];
+    const tryAddDrillHole = (hx: number, hy: number, hd: number) => {
+      const r = hd * 0.5;
+      if (r < 0.15 || pcb.boardOutline.length < 3) return;
+      if (!pointInPolygon({ x: hx, y: hy }, pcb.boardOutline)) return;
+      if (pcb.cutouts.some((cut) => cut.points.length >= 3 && pointInPolygon({ x: hx, y: hy }, cut.points))) return;
+      if (drilledHoles.some((dh) => dist2d(dh, { x: hx, y: hy }) < dh.r + r + 0.05)) return;
+      drilledHoles.push({ x: hx, y: hy, r });
+    };
+    for (const v of pcb.vias) tryAddDrillHole(v.x, v.y, v.holeDiameter);
+    for (const comp of pcb.components) {
+      const mirror = comp.side === 'Bottom';
+      for (const pad of comp.pads) {
+        if (pad.holeDiameter && pad.holeDiameter > 0) {
+          const pt = transformPoint(pad.x, pad.y, comp.x, comp.y, comp.angle, mirror, false);
+          tryAddDrillHole(pt.x, pt.y, pad.holeDiameter);
+        }
+      }
+    }
+
+    // 1. FR-4 Extruded Board with Cutouts & Drilled Through-Holes
     if (pcb.boardOutline.length >= 3) {
       const shape = new THREE.Shape();
       pcb.boardOutline.forEach((pt, idx) => {
@@ -237,6 +287,12 @@ export const Pcb3dModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ o
         shape.holes.push(hole);
       }
 
+      for (const dh of drilledHoles) {
+        const hole = new THREE.Path();
+        hole.absarc(dh.x - cx, -(dh.y - cy), dh.r, 0, Math.PI * 2, true);
+        shape.holes.push(hole);
+      }
+
       const geom = new THREE.ExtrudeGeometry(shape, { depth: thick, bevelEnabled: false });
       geom.rotateX(-Math.PI / 2);
       geom.translate(0, -thick / 2, 0);
@@ -256,18 +312,21 @@ export const Pcb3dModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ o
       pcbGroup.add(box);
     };
 
+    const topCopperY = thick / 2 + 0.03 + ex * 0.55;
+    const botCopperY = -thick / 2 - 0.03 - ex * 0.55;
+
     for (const tr of pcb.traces) {
       const isOuter = tr.layer === 'TopCopper' || tr.layer === 'BottomCopper';
       const isInner = tr.layer === 'Inner1' || tr.layer === 'Inner2';
       if (!isOuter && (!isInner || ex <= 0.1)) continue;
       const yPos =
         tr.layer === 'TopCopper'
-          ? thick / 2 + 0.03 + ex * 0.35
+          ? topCopperY
           : tr.layer === 'BottomCopper'
-            ? -thick / 2 - 0.03 - ex * 0.35
+            ? botCopperY
             : tr.layer === 'Inner1'
-              ? thick * 0.18 + ex * 0.16
-              : -thick * 0.18 - ex * 0.16;
+              ? thick * 0.18 + ex * 0.25
+              : -thick * 0.18 - ex * 0.25;
       const mat = isInner ? innerCopperMat : traceCopperMat;
       for (let i = 1; i < tr.points.length; i++) {
         addTraceSegmentMesh(tr.points[i - 1].x, tr.points[i - 1].y, tr.points[i].x, tr.points[i].y, tr.width, yPos, mat);
@@ -281,12 +340,12 @@ export const Pcb3dModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ o
       if (!isOuter && ex <= 0.1) continue;
       const yPos =
         pour.layer === 'TopCopper'
-          ? thick / 2 + 0.01 + ex * 0.35
+          ? thick / 2 + 0.015 + ex * 0.55
           : pour.layer === 'BottomCopper'
-            ? -thick / 2 - 0.045 - ex * 0.35
+            ? -thick / 2 - 0.045 - ex * 0.55
             : pour.layer === 'Inner1'
-              ? thick * 0.18 + ex * 0.16
-              : -thick * 0.18 - ex * 0.16;
+              ? thick * 0.18 + ex * 0.25
+              : -thick * 0.18 - ex * 0.25;
       const mat = isOuter ? traceCopperMat : innerCopperMat;
       for (const isl of pour.computedIslands) {
         if (isl.outer.length < 3) continue;
@@ -317,62 +376,173 @@ export const Pcb3dModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ o
       }
     }
 
-    // 4. Vias
-    const viaDrillMat = new THREE.MeshBasicMaterial({ color: '#050505' });
-    for (const v of pcb.vias) {
-      const ring = new THREE.Mesh(
-        new THREE.CylinderGeometry(v.outerDiameter / 2, v.outerDiameter / 2, thick + 0.08, 16),
-        metalPadMat
-      );
-      ring.position.set(v.x - cx, 0, v.y - cy);
-      pcbGroup.add(ring);
+    // Helper to build a hollow annular copper pad (extruded with circular drill hole) + plated through-hole barrel
+    const addHollowThroughHole = (
+      wx: number,
+      wy: number,
+      outerW: number,
+      outerH: number,
+      holeD: number,
+      shapeKind: 'Round' | 'Oval' | 'Rect' | 'RoundedRect' | 'Polygon',
+      rotDeg: number,
+      yTop: number,
+      yBot: number
+    ) => {
+      const rHole = Math.max(0.1, holeD * 0.5);
+      const makePadRing = (yPos: number) => {
+        const s = new THREE.Shape();
+        if (shapeKind === 'Round') {
+          const r = Math.max(rHole + 0.08, outerW * 0.5);
+          s.absarc(0, 0, r, 0, Math.PI * 2, false);
+        } else if (shapeKind === 'Oval') {
+          const rx = Math.max(rHole + 0.08, outerW * 0.5);
+          const ry = Math.max(rHole + 0.08, outerH * 0.5);
+          s.absellipse(0, 0, rx, ry, 0, Math.PI * 2, false, 0);
+        } else {
+          const hw = Math.max(rHole + 0.08, outerW * 0.5);
+          const hh = Math.max(rHole + 0.08, outerH * 0.5);
+          s.moveTo(-hw, -hh);
+          s.lineTo(hw, -hh);
+          s.lineTo(hw, hh);
+          s.lineTo(-hw, hh);
+          s.closePath();
+        }
+        const hole = new THREE.Path();
+        hole.absarc(0, 0, rHole, 0, Math.PI * 2, true);
+        s.holes.push(hole);
+        const g = new THREE.ExtrudeGeometry(s, { depth: 0.05, bevelEnabled: false });
+        g.rotateX(-Math.PI / 2);
+        const m = new THREE.Mesh(g, metalPadMat);
+        m.position.set(wx - cx, yPos, wy - cy);
+        m.rotation.y = -(rotDeg * Math.PI) / 180;
+        pcbGroup.add(m);
+      };
+      makePadRing(yTop);
+      makePadRing(yBot - 0.05);
 
-      const hole = new THREE.Mesh(
-        new THREE.CylinderGeometry(v.holeDiameter / 2, v.holeDiameter / 2, thick + 0.12, 12),
-        viaDrillMat
+      const spanH = Math.max(0.1, yTop - yBot);
+      const barrel = new THREE.Mesh(
+        new THREE.CylinderGeometry(rHole, rHole, spanH, 16, 1, true),
+        barrelMat
       );
-      hole.position.set(v.x - cx, 0, v.y - cy);
-      pcbGroup.add(hole);
+      barrel.position.set(wx - cx, (yTop + yBot) * 0.5, wy - cy);
+      pcbGroup.add(barrel);
+    };
+
+    // 4. Vias (hollow annular rings + open plated barrel)
+    const thtTopY = thick / 2 + 0.05 + ex * 0.58;
+    const thtBotY = -thick / 2 - 0.05 - ex * 0.58;
+    for (const v of pcb.vias) {
+      addHollowThroughHole(v.x, v.y, v.outerDiameter, v.outerDiameter, v.holeDiameter, 'Round', 0, thtTopY, thtBotY);
+    }
+
+    // 4b. Board Silkscreen Shapes
+    if (showSilk) {
+      for (const sh of pcb.shapes) {
+        if (sh.layer !== 'TopSilk' && sh.layer !== 'BottomSilk') continue;
+        const yS = sh.layer === 'TopSilk' ? thtTopY + 0.02 : thtBotY - 0.02;
+        if (sh.type === 'line' && sh.x2 !== undefined && sh.y2 !== undefined) {
+          addTraceSegmentMesh(sh.x1, sh.y1, sh.x2, sh.y2, Math.max(0.15, sh.width), yS, silkLineMat);
+        } else if (sh.type === 'rect' && sh.w !== undefined && sh.h !== undefined) {
+          addTraceSegmentMesh(sh.x1, sh.y1, sh.x1 + sh.w, sh.y1, Math.max(0.15, sh.width), yS, silkLineMat);
+          addTraceSegmentMesh(sh.x1 + sh.w, sh.y1, sh.x1 + sh.w, sh.y1 + sh.h, Math.max(0.15, sh.width), yS, silkLineMat);
+          addTraceSegmentMesh(sh.x1 + sh.w, sh.y1 + sh.h, sh.x1, sh.y1 + sh.h, Math.max(0.15, sh.width), yS, silkLineMat);
+          addTraceSegmentMesh(sh.x1, sh.y1 + sh.h, sh.x1, sh.y1, Math.max(0.15, sh.width), yS, silkLineMat);
+        } else if (sh.type === 'text' && sh.text) {
+          const cvs = document.createElement('canvas');
+          cvs.width = 256;
+          cvs.height = 64;
+          const sctx = cvs.getContext('2d');
+          if (sctx) {
+            sctx.fillStyle = silkTextColor;
+            sctx.font = 'bold 34px "Segoe UI", Arial';
+            sctx.textBaseline = 'middle';
+            sctx.fillText(sh.text, 8, 32);
+            const tex = new THREE.CanvasTexture(cvs);
+            const sz = sh.size ?? 2.0;
+            const m = new THREE.Mesh(
+              new THREE.PlaneGeometry(sz * 4, sz),
+              new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide })
+            );
+            m.rotation.x = sh.layer === 'BottomSilk' ? Math.PI / 2 : -Math.PI / 2;
+            m.position.set(sh.x1 + sz * 1.8 - cx, yS, sh.y1 - cy);
+            pcbGroup.add(m);
+          }
+        }
+      }
     }
 
     // 5. Pads, Silkscreen RefDes & Procedural 3D Electronic Components
     const buildComponent3D = (c: PcbPlacedComponent) => {
       const mirror = c.side === 'Bottom';
       const dirY = c.side === 'Top' ? 1 : -1;
-      const padBaseY = c.side === 'Top' ? thick / 2 + 0.04 + ex * 0.45 : -thick / 2 - 0.04 - ex * 0.45;
-      const bodyBaseY = c.side === 'Top' ? thick / 2 + ex : -thick / 2 - ex;
+      const padBaseY = c.side === 'Top' ? thtTopY : thtBotY;
+      const bodyBaseY = c.side === 'Top' ? thick / 2 + ex * 1.15 : -thick / 2 - ex * 1.15;
       const effAngle = mirror ? -c.angle : c.angle;
 
       // Pads
       for (const pad of c.pads) {
         const pt = transformPoint(pad.x, pad.y, c.x, c.y, c.angle, mirror, false);
         const isTht = pad.type === 'THT' || pad.type === 'MountingHole';
-        const padH = isTht ? thick + 0.1 : 0.08;
-        const py = isTht ? 0 : padBaseY;
-
-        let padMesh: THREE.Mesh;
-        if (pad.shape === 'Round' || pad.shape === 'Oval') {
-          padMesh = new THREE.Mesh(
-            new THREE.CylinderGeometry(pad.width / 2, pad.width / 2, padH, 16),
-            metalPadMat
-          );
-          if (pad.shape === 'Oval' && pad.width > 0.01) {
-            padMesh.scale.z = pad.height / pad.width;
-          }
-        } else {
-          padMesh = new THREE.Mesh(new THREE.BoxGeometry(pad.width, padH, pad.height), metalPadMat);
-        }
-        padMesh.position.set(pt.x - cx, py, pt.y - cy);
-        padMesh.rotation.y = -((effAngle + (pad.angle ?? 0)) * Math.PI) / 180;
-        pcbGroup.add(padMesh);
-
         if (pad.holeDiameter && pad.holeDiameter > 0) {
-          const hole = new THREE.Mesh(
-            new THREE.CylinderGeometry(pad.holeDiameter / 2, pad.holeDiameter / 2, thick + 0.16, 12),
-            viaDrillMat
+          addHollowThroughHole(
+            pt.x,
+            pt.y,
+            pad.width,
+            pad.height,
+            pad.holeDiameter,
+            pad.shape,
+            effAngle + (pad.angle ?? 0),
+            thtTopY,
+            thtBotY
           );
-          hole.position.set(pt.x - cx, 0, pt.y - cy);
-          pcbGroup.add(hole);
+        } else {
+          const padH = isTht ? thick + 0.1 + ex * 1.16 : 0.06;
+          const py = isTht ? 0 : padBaseY;
+          let padMesh: THREE.Mesh;
+          if (pad.shape === 'Round' || pad.shape === 'Oval') {
+            padMesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(pad.width / 2, pad.width / 2, padH, 16),
+              metalPadMat
+            );
+            if (pad.shape === 'Oval' && pad.width > 0.01) {
+              padMesh.scale.z = pad.height / pad.width;
+            }
+          } else {
+            padMesh = new THREE.Mesh(new THREE.BoxGeometry(pad.width, padH, pad.height), metalPadMat);
+          }
+          padMesh.position.set(pt.x - cx, py, pt.y - cy);
+          padMesh.rotation.y = -((effAngle + (pad.angle ?? 0)) * Math.PI) / 180;
+          pcbGroup.add(padMesh);
+        }
+      }
+
+      // Component Silkscreen outlines on board surface
+      if (showSilk && !c.pads.every((p) => p.type === 'MountingHole')) {
+        const ySilk = mirror ? thtBotY - 0.015 : thtTopY + 0.015;
+        for (const g of c.graphics) {
+          if (g.layer !== 'TopSilk') continue;
+          const w = Math.max(0.14, 'width' in g ? g.width : 0.15);
+          if (g.type === 'line') {
+            const a = transformPoint(g.x1, g.y1, c.x, c.y, c.angle, mirror, false);
+            const b = transformPoint(g.x2, g.y2, c.x, c.y, c.angle, mirror, false);
+            addTraceSegmentMesh(a.x, a.y, b.x, b.y, w, ySilk, silkLineMat);
+          } else if (g.type === 'rect') {
+            const p1 = transformPoint(g.x, g.y, c.x, c.y, c.angle, mirror, false);
+            const p2 = transformPoint(g.x + g.w, g.y, c.x, c.y, c.angle, mirror, false);
+            const p3 = transformPoint(g.x + g.w, g.y + g.h, c.x, c.y, c.angle, mirror, false);
+            const p4 = transformPoint(g.x, g.y + g.h, c.x, c.y, c.angle, mirror, false);
+            addTraceSegmentMesh(p1.x, p1.y, p2.x, p2.y, w, ySilk, silkLineMat);
+            addTraceSegmentMesh(p2.x, p2.y, p3.x, p3.y, w, ySilk, silkLineMat);
+            addTraceSegmentMesh(p3.x, p3.y, p4.x, p4.y, w, ySilk, silkLineMat);
+            addTraceSegmentMesh(p4.x, p4.y, p1.x, p1.y, w, ySilk, silkLineMat);
+          } else if (g.type === 'polyline' && g.points.length >= 2) {
+            for (let k = 1; k < g.points.length; k++) {
+              const a = transformPoint(g.points[k - 1].x, g.points[k - 1].y, c.x, c.y, c.angle, mirror, false);
+              const b = transformPoint(g.points[k].x, g.points[k].y, c.x, c.y, c.angle, mirror, false);
+              addTraceSegmentMesh(a.x, a.y, b.x, b.y, w, ySilk, silkLineMat);
+            }
+          }
         }
       }
 
@@ -394,7 +564,7 @@ export const Pcb3dModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ o
             new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide })
           );
           lbl.rotation.x = mirror ? Math.PI / 2 : -Math.PI / 2;
-          lbl.position.set(c.x + c.refDesOffset.x - cx, dirY * (thick / 2 + 0.065 + ex * 0.25), c.y + c.refDesOffset.y - cy);
+          lbl.position.set(c.x + c.refDesOffset.x - cx, dirY * (thick / 2 + 0.065 + ex * 0.58), c.y + c.refDesOffset.y - cy);
           pcbGroup.add(lbl);
         }
       }
@@ -586,6 +756,10 @@ export const Pcb3dModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ o
         <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <input type="checkbox" checked={showComponents} onChange={(e) => setShowComponents(e.target.checked)} />
           3D корпуса
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <input type="checkbox" checked={showSilk} onChange={(e) => setShowSilk(e.target.checked)} />
+          Шелкография
         </label>
         <div className="dt-tb-sep" />
         <label style={{ display: 'flex', alignItems: 'center', gap: 5 }}>

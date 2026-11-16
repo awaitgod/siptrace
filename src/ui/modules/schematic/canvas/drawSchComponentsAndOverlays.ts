@@ -88,7 +88,7 @@ export function drawSchComponentsAndOverlays(p: DrawSchComponentsParams): void {
         const last = p.wireDraftPts[p.wireDraftPts.length - 1];
         const cur = p.snapWorldSmart(p.cursorMm);
         const mid = p.elbowFlip ? { x: last.x, y: cur.y } : { x: cur.x, y: last.y };
-        ctx.strokeStyle = p.tool === 'bus' ? palette.busColor : '#FFFF66';
+        ctx.strokeStyle = p.tool === 'bus' ? palette.busColor : (palette.scheme === 'dark' ? '#FFFF66' : palette.wireColor);
         ctx.lineWidth = Math.max(1.5 / viewport.pxPerMm, p.tool === 'bus' ? 0.85 : 0.35);
         ctx.beginPath();
         ctx.moveTo(p.wireDraftPts[0].x, p.wireDraftPts[0].y);
@@ -101,7 +101,7 @@ export function drawSchComponentsAndOverlays(p: DrawSchComponentsParams): void {
     // Shape / ZoomBox draft preview
     if (p.shapeStartPt && (p.tool === 'shapeLine' || p.tool === 'shapeRect' || p.tool === 'shapeCircle' || p.tool === 'zoomBox')) {
         const cur = snapPoint(p.cursorMm, p.gridSize);
-        ctx.strokeStyle = p.tool === 'zoomBox' ? '#00AAFF' : '#FFFF66';
+        ctx.strokeStyle = p.tool === 'zoomBox' ? '#00AAFF' : (palette.scheme === 'dark' ? '#FFFF66' : palette.compColor);
         ctx.lineWidth = 1.2 / viewport.pxPerMm;
         ctx.setLineDash([2, 2]);
         if (p.tool === 'shapeLine') {
@@ -120,17 +120,22 @@ export function drawSchComponentsAndOverlays(p: DrawSchComponentsParams): void {
         }
         ctx.setLineDash([]);
     }
-    // Marquee Selection
+    // Marquee Selection (solid blue for L->R Window, dashed green for R->L Crossing)
     if (p.marqueeBox) {
-        ctx.strokeStyle = '#3399FF';
-        ctx.fillStyle = 'rgba(0, 120, 215, 0.16)';
+        const isCrossing = p.marqueeBox.x2 < p.marqueeBox.x1;
+        ctx.save();
+        ctx.strokeStyle = isCrossing ? '#10B981' : '#3399FF';
+        ctx.fillStyle = isCrossing ? 'rgba(16, 185, 129, 0.14)' : 'rgba(0, 120, 215, 0.16)';
         ctx.lineWidth = 1 / viewport.pxPerMm;
+        if (isCrossing)
+            ctx.setLineDash([4 / viewport.pxPerMm, 3 / viewport.pxPerMm]);
         const mx = Math.min(p.marqueeBox.x1, p.marqueeBox.x2);
         const my = Math.min(p.marqueeBox.y1, p.marqueeBox.y2);
         const mw = Math.abs(p.marqueeBox.x2 - p.marqueeBox.x1);
         const mh = Math.abs(p.marqueeBox.y2 - p.marqueeBox.y1);
         ctx.fillRect(mx, my, mw, mh);
         ctx.strokeRect(mx, my, mw, mh);
+        ctx.restore();
     }
     // ERC Error Markers
     for (const err of p.ercErrors) {

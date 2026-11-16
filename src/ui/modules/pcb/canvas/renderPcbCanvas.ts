@@ -1,6 +1,6 @@
 import { DrcError, PcbLayerId, PcbProject, Point2D } from '../../../../core/types';
 import { RatlineSegment } from '../../../../engines/drc';
-import { CopperLayerId, MeasureRulerState, PcbToolId, PcbViewport } from '../types';
+import { CopperLayerId, MeasureRulerState, PcbExtraSelection, PcbToolId, PcbViewport } from '../types';
 import {
   drawBoardAndKeepouts,
   drawCopperPours,
@@ -21,6 +21,8 @@ export interface RenderPcbCanvasParams {
   ratlines: RatlineSegment[];
   selectedCompId: string | null;
   selectedTraceId: string | null;
+  selectedViaId?: string | null;
+  selectedExtraObj?: PcbExtraSelection | null;
   highlightedNet: string | null;
   tool: PcbToolId;
   activeLayer: CopperLayerId;
@@ -70,6 +72,8 @@ export function renderPcbCanvas(params: RenderPcbCanvasParams): void {
     showRatlines: params.showRatlines,
     ratlines: params.ratlines,
     highlightedNet: params.highlightedNet,
+    selectedViaId: params.selectedViaId,
+    selectedExtraObj: params.selectedExtraObj,
     tool: params.tool,
     activeLayer: params.activeLayer,
     routeDraftPts: params.routeDraftPts,

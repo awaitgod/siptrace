@@ -177,16 +177,16 @@ export function createSchematicTopMenus(p: CreateSchematicTopMenusParams): TopMe
                     disabled: !p.canPaste,
                     onClick: p.onPaste
                 },
-                { label: 'Вырезать', shortcut: p.hotkeys.cut, onClick: p.onCut },
-                { label: 'Дублировать', shortcut: p.hotkeys.duplicate, onClick: p.onDuplicate },
-                { label: 'Свойства выделения...', shortcut: p.hotkeys.properties, onClick: p.onProperties },
-                { label: 'Удалить выделенное', shortcut: 'Del', onClick: p.deleteSelection },
+                { label: 'Вырезать', shortcut: p.hotkeys.cut, disabled: p.selectedIds.length === 0, onClick: p.onCut },
+                { label: 'Дублировать', shortcut: p.hotkeys.duplicate, disabled: p.selectedIds.length === 0, onClick: p.onDuplicate },
+                { label: 'Свойства выделения...', shortcut: p.hotkeys.properties, disabled: p.selectedIds.length === 0, onClick: p.onProperties },
+                { label: 'Удалить выделенное', shortcut: 'Del', disabled: p.selectedIds.length === 0, onClick: p.deleteSelection },
                 { separator: true },
-                { label: 'Повернуть на 90°', shortcut: p.hotkeys.rotate, onClick: p.rotateSelection },
-                { label: 'Отразить по горизонтали', shortcut: p.hotkeys.flipX, onClick: () => p.flipSelection('X') },
-                { label: 'Отразить по вертикали', shortcut: p.hotkeys.flipY, onClick: () => p.flipSelection('Y') },
-                { label: 'Выровнять выделенные по вертикальной оси (X)', onClick: () => p.handleAlignSelection('x') },
-                { label: 'Выровнять выделенные по горизонтальной оси (Y)', onClick: () => p.handleAlignSelection('y') },
+                { label: 'Повернуть на 90°', shortcut: p.hotkeys.rotate, disabled: p.selectedIds.length === 0, onClick: p.rotateSelection },
+                { label: 'Отразить по горизонтали', shortcut: p.hotkeys.flipX, disabled: p.selectedIds.length === 0, onClick: () => p.flipSelection('X') },
+                { label: 'Отразить по вертикали', shortcut: p.hotkeys.flipY, disabled: p.selectedIds.length === 0, onClick: () => p.flipSelection('Y') },
+                { label: 'Выровнять выделенные по вертикальной оси (X)', disabled: p.selectedIds.length < 2, onClick: () => p.handleAlignSelection('x') },
+                { label: 'Выровнять выделенные по горизонтальной оси (Y)', disabled: p.selectedIds.length < 2, onClick: () => p.handleAlignSelection('y') },
                 { separator: true },
                 { label: 'Найти компонент / цепь...', shortcut: p.hotkeys.find, onClick: () => p.setShowFindDialog(true) },
                 { label: 'Свойства классов цепей...', onClick: () => p.setShowNetClassesDialog(true) }
@@ -221,6 +221,18 @@ export function createSchematicTopMenus(p: CreateSchematicTopMenusParams): TopMe
                         p.commitProject((prev) => ({ ...prev, units: 'mil' }), false);
                         p.setSettings((s) => {
                             const next = { ...s, units: 'mil' as Units };
+                            saveSettings(next);
+                            return next;
+                        });
+                    }
+                },
+                {
+                    label: 'Единицы измерения: дюймы (in)',
+                    checked: p.project.units === 'in',
+                    onClick: () => {
+                        p.commitProject((prev) => ({ ...prev, units: 'in' }), false);
+                        p.setSettings((s) => {
+                            const next = { ...s, units: 'in' as Units };
                             saveSettings(next);
                             return next;
                         });
@@ -268,6 +280,8 @@ export function createSchematicTopMenus(p: CreateSchematicTopMenusParams): TopMe
             id: 'library',
             label: 'Библиотека',
             items: [
+                { label: 'Импорт и управление библиотеками CAD (DipTrace / KiCad / Eagle / EasyEDA)...', onClick: () => window.dispatchEvent(new CustomEvent('siptrace:open-cadlib')) },
+                { separator: true },
                 { label: 'Открыть Редактор компонентов (УГО ГОСТ)...', onClick: () => openAppModule('componentEditor', (m) => p.onSwitchModule?.(m)) },
                 { label: 'Открыть Редактор корпусов...', onClick: () => openAppModule('patternEditor', (m) => p.onSwitchModule?.(m)) }
             ]

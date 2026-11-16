@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ComponentDef, ComponentLibrary, PatternDef, SchNetPort } from '../../../../core/types';
+import { CadLibraryManagerDialog } from '../../../components/CadLibraryManagerDialog';
 import { PatternPreviewCanvas, SymbolPreviewCanvas } from '../../../components/CadPreviewCanvas';
 import { SchToolId } from '../types';
 
@@ -33,7 +34,15 @@ export interface SchematicLeftSidebarProps {
 }
 
 /** Left DipTrace black-accordion GOST component library browser & dual symbol/footprint preview. */
-export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => (
+export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => {
+  const [showCadLibManager, setShowCadLibManager] = useState(false);
+  React.useEffect(() => {
+    const onOpen = () => setShowCadLibManager(true);
+    window.addEventListener('siptrace:open-cadlib', onOpen);
+    return () => window.removeEventListener('siptrace:open-cadlib', onOpen);
+  }, []);
+
+  return (
   <div className="dt-left-sidebar">
     <div className="dt-black-bar" onClick={() => p.setPlaceExpanded((v) => !v)}>
       <span>Установить компонент</span>
@@ -62,6 +71,17 @@ export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => 
             </div>
           ))}
         </div>
+        <div style={{ padding: '2px 4px', background: '#e8e8e8', borderBottom: '1px solid #bdbdbd' }}>
+          <button
+            type="button"
+            className="dt-btn"
+            style={{ width: '100%', fontSize: 11, height: 22 }}
+            data-testid="schematic-cadlib-btn"
+            onClick={() => setShowCadLibManager(true)}
+          >
+            + Импорт / Библиотеки CAD...
+          </button>
+        </div>
       </>
     )}
 
@@ -88,6 +108,8 @@ export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => 
             <option value="Power">Питание (+5V / +3V3)</option>
             <option value="PortLeft">Входной порт цепей</option>
             <option value="PortRight">Выходной порт цепей</option>
+            <option value="OffPageIn">Межлистовой вход</option>
+            <option value="OffPageOut">Межлистовой выход</option>
           </select>
         </label>
         <input
@@ -173,5 +195,21 @@ export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => 
       </div>
       <PatternPreviewCanvas pattern={p.previewPatternDef} />
     </div>
+
+    {showCadLibManager && (
+      <CadLibraryManagerDialog
+        initialTab="components"
+        onClose={() => setShowCadLibManager(false)}
+        onSelectComponent={(c) => {
+          const lib = p.allLibraries.find((l) => l.components.some((x) => x.id === c.id));
+          if (lib) p.setSelectedLibId(lib.id);
+          p.setSelectedLibCompId(c.id);
+          p.setSelectedPartIndex(1);
+          p.setTool('placeComp');
+          p.setStatusMessage(`Выбран компонент «${c.name}» — кликните на схему для установки.`);
+        }}
+      />
+    )}
   </div>
-);
+  );
+};

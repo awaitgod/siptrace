@@ -131,7 +131,8 @@ export const passivePatterns: PatternDef[] = [
       bodyWidth: 5.0,
       bodyLength: 2.5,
       bodyHeight: 5.0,
-      densityLevel: 'B'
+      densityLevel: 'B',
+      polarized: false
     }),
     '#d4ac0d'
   ),
@@ -153,7 +154,8 @@ export const passivePatterns: PatternDef[] = [
       bodyWidth: 6.3,
       bodyLength: 6.3,
       bodyHeight: 11.0,
-      densityLevel: 'B'
+      densityLevel: 'B',
+      polarized: true
     }),
     '#1b4f72'
   ),
@@ -176,7 +178,7 @@ export const passivePatterns: PatternDef[] = [
       ],
       graphics: [
         { type: 'rect', layer: 'TopSilk', x: -4.8, y: -4.8, w: 9.6, h: 9.6, width: 0.18 },
-        { type: 'circle', layer: 'TopSilk', cx: 0, cy: 0, r: 2.2, width: 0.15 }
+        { type: 'circle', layer: 'TopSilk', cx: 0, cy: 0, r: 1.3, width: 0.15 }
       ],
       courtyard: { width: 10.6, height: 10.6 },
       model3d: { shape: 'Box', bodyWidth: 9.5, bodyLength: 9.5, bodyHeight: 5.0, color: '#2e86c1' }

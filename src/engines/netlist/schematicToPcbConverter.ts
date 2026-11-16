@@ -1,4 +1,4 @@
-import { extractSchematicNets } from '../erc';
+import { extractSchematicNets, resolveComponentDef } from '../erc';
 import { PcbPlacedComponent, PcbProject, SchematicProject } from '../../core/types';
 import { uid } from '../../core/geometry';
 import { createGostDesignRules } from '../../gost/gostRules';
@@ -37,7 +37,11 @@ export function convertSchematicToPcb(sch: SchematicProject, existingPcb?: PcbPr
     const userPats = loadUserPatterns();
     const mergedCustomPats = { ...Object.fromEntries(userPats.map((p) => [p.id, p])), ...(sch.customPatternDefs ?? {}) };
     for (const [refDes, schComp] of schPartsByRef) {
-        const pattern = findPatternById(schComp.patternId, mergedCustomPats);
+        const compDef = resolveComponentDef(schComp.componentDefId, sch.customComponentDefs);
+        const patLookupId = schComp.patternId || compDef?.patternId || '';
+        const pattern =
+            findPatternById(patLookupId, mergedCustomPats) ??
+            userPats.find((p) => p.name.toUpperCase() === patLookupId.toUpperCase());
         if (!pattern)
             continue;
         const prev = existingByRef.get(refDes);
@@ -122,7 +126,12 @@ export function convertSchematicToPcb(sch: SchematicProject, existingPcb?: PcbPr
         netClasses: sch.netClasses,
         netClassAssignments: { ...sch.netClassAssignments, ...Object.fromEntries(netlist.flatMap(net => { const classes = new Set(sch.sheets.flatMap(s => s.wires.filter(w => w.netClassId && graph.some(n => n.netName === net.netName && n.wireIds.includes(w.id))).map(w => w.netClassId!))); if (classes.size > 1)
                 throw new Error(`Конфликт классов цепи ${net.netName}`); return classes.size ? [[net.netName, [...classes][0]]] : []; })) },
-        diffPairs: existingPcb?.diffPairs?.length ? existingPcb.diffPairs : diffPairs,
+        diffPairs: (() => {
+            const existing = existingPcb?.diffPairs ?? [];
+            const seen = new Set(existing.flatMap(dp => [dp.name, `${dp.posNet}::${dp.negNet}`]));
+            const added = diffPairs.filter(dp => !seen.has(dp.name) && !seen.has(`${dp.posNet}::${dp.negNet}`));
+            return [...existing, ...added];
+        })(),
         designRules: existingPcb?.designRules ?? createGostDesignRules(loadSettings().defaultAccuracyClass),
         teardropsEnabled: existingPcb?.teardropsEnabled ?? false
     };

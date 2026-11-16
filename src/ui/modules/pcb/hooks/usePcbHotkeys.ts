@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { HotkeyMap, PcbProject, Point2D } from '../../../../core/types';
 import { matchesHotkey } from '../../../../core/store';
-import { CopperLayerId, MeasureRulerState, PcbToolId } from '../types';
+import { CopperLayerId, MeasureRulerState, PcbExtraSelection, PcbToolId } from '../types';
+import { updateAllCopperPours } from '../../../../engines/copperPour';
 
 export interface UsePcbHotkeysParams {
   hotkeys: HotkeyMap;
@@ -11,6 +12,7 @@ export interface UsePcbHotkeysParams {
   selectedCompId: string | null;
   selectedTraceId: string | null;
   selectedViaId?: string | null;
+  selectedExtraObj?: PcbExtraSelection | null;
   routeDraftPtsLength: number;
   zoomPercent: number;
   setZoomPercent: (pct: number) => void;
@@ -27,12 +29,14 @@ export interface UsePcbHotkeysParams {
   setSelectedTraceId: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedCompId: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedViaId?: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedExtraObj?: React.Dispatch<React.SetStateAction<PcbExtraSelection | null>>;
   commitPcb: (updater: (prev: PcbProject) => PcbProject, pushUndo?: boolean) => void;
   handleNewProject: () => void;
   handleOpenPcbFile: () => void;
   handleSavePcbFile: () => void;
   handleRunDrc: () => void;
   zoomToFit: () => void;
+  onFind?: () => void;
 }
 
 /** Registers global keyboard shortcuts for PCB editing, routing layer switches, and DRC. */
@@ -75,9 +79,12 @@ export function usePcbHotkeys(p: UsePcbHotkeysParams): void {
         p.switchCopperLayer('Inner1');
       } else if (e.key === '4' && !e.ctrlKey && !e.altKey && p.layerCount >= 4) {
         p.switchCopperLayer('Inner2');
+      } else if (matchesHotkey(e, p.hotkeys.find)) {
+        e.preventDefault();
+        p.onFind?.();
       } else if (matchesHotkey(e, p.hotkeys.placeVia) && p.tool === 'routeManual') {
         p.switchCopperLayer(p.activeLayer === 'TopCopper' ? 'BottomCopper' : 'TopCopper');
-      } else if (matchesHotkey(e, p.hotkeys.routeManual) && !p.selectedCompId) {
+      } else if (matchesHotkey(e, p.hotkeys.routeManual)) {
         p.setRouteDraftPts([]);
         p.setTool('routeManual');
       } else if (matchesHotkey(e, p.hotkeys.rotate) && p.selectedCompId) {
@@ -128,6 +135,21 @@ export function usePcbHotkeys(p: UsePcbHotkeysParams): void {
             components: prev.components.filter((c) => !(c.id === target && !c.locked))
           }));
           p.setSelectedCompId(null);
+        } else if (p.selectedExtraObj) {
+          const obj = p.selectedExtraObj;
+          p.commitPcb((prev) => {
+            if (obj.kind === 'shape') {
+              return { ...prev, shapes: prev.shapes.filter((s) => s.id !== obj.id) };
+            }
+            if (obj.kind === 'cutout') {
+              return updateAllCopperPours({ ...prev, cutouts: prev.cutouts.filter((c) => c.id !== obj.id) });
+            }
+            if (obj.kind === 'keepout') {
+              return updateAllCopperPours({ ...prev, keepouts: prev.keepouts.filter((k) => k.id !== obj.id) });
+            }
+            return { ...prev, copperPours: prev.copperPours.filter((cp) => cp.id !== obj.id) };
+          });
+          p.setSelectedExtraObj?.(null);
         }
       } else if (matchesHotkey(e, p.hotkeys.runCheck)) {
         e.preventDefault();

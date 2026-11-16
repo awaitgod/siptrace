@@ -40,17 +40,17 @@ export function useSchematicHotkeys(p: Params) {
         const handle = (e: KeyboardEvent) => {
             if (document.querySelector('.dt-modal-backdrop'))
                 return;
-            const target = e.target as HTMLElement;
-            const input = target?.matches('input, textarea, select, [contenteditable="true"]');
+            const target = e.target;
+            const input = target instanceof Element && target.matches('input, textarea, select, [contenteditable="true"]');
             if (input) {
                 if (matchesHotkey(e, p.hotkeys.save)) {
                     e.preventDefault();
-                    target.blur();
+                    (target as HTMLElement).blur();
                     p.handleSaveFile();
                 }
                 else if (matchesHotkey(e, p.hotkeys.saveAs)) {
                     e.preventDefault();
-                    target.blur();
+                    (target as HTMLElement).blur();
                     p.handleSaveAs();
                 }
                 return;
@@ -72,7 +72,7 @@ export function useSchematicHotkeys(p: Params) {
                 p.setWireDraftPts(v => v.slice(0, -1));
                 return;
             }
-            if ((e.key === ' ' || e.key === 'Enter') && target?.closest('button,a,[role="button"],[role^="menuitem"]'))
+            if ((e.key === ' ' || e.key === 'Enter') && target instanceof Element && target.closest('button,a,[role="button"],[role^="menuitem"]'))
                 return;
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 e.preventDefault();

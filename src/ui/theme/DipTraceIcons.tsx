@@ -22,6 +22,8 @@ export type DipIconName =
   | 'wire'
   | 'bus'
   | 'busTap'
+  | 'junction'
+  | 'noConnect'
   | 'netPort'
   | 'pin'
   | 'shapeLine'
@@ -235,6 +237,21 @@ export const DipIcon: React.FC<{ name: DipIconName; size?: number }> = ({ name, 
         <svg width={s} height={s} viewBox="0 0 16 16">
           <line x1="2" y1="3" x2="14" y2="3" stroke="#0066cc" strokeWidth="2.6" />
           <polyline points="5,3 8,8 8,14" fill="none" stroke="#1e8449" strokeWidth="1.5" />
+        </svg>
+      );
+    case 'junction':
+      return (
+        <svg width={s} height={s} viewBox="0 0 16 16">
+          <line x1="2" y1="8" x2="14" y2="8" stroke="#1e8449" strokeWidth="1.6" />
+          <line x1="8" y1="2" x2="8" y2="14" stroke="#1e8449" strokeWidth="1.6" />
+          <circle cx="8" cy="8" r="2.5" fill="#1e8449" />
+        </svg>
+      );
+    case 'noConnect':
+      return (
+        <svg width={s} height={s} viewBox="0 0 16 16">
+          <line x1="4" y1="4" x2="12" y2="12" stroke="#c0392b" strokeWidth="2" strokeLinecap="round" />
+          <line x1="12" y1="4" x2="4" y2="12" stroke="#c0392b" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     case 'netPort':

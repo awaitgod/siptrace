@@ -227,12 +227,23 @@ export function runAutorouter(
       }
     }
   }
+  // Precompute per-net width & clearance overrides from NetClasses
+  const getNetParams = (netName: string) => {
+    const clsId = next.netClassAssignments[netName];
+    const cls = clsId ? next.netClasses.find((nc) => nc.id === clsId) : undefined;
+    return {
+      width: Math.max(rules.minTraceWidth, cls?.traceWidth ?? traceW),
+      clearance: Math.max(clearance, cls?.clearance ?? 0)
+    };
+  };
+
   for (const tr of next.traces) {
     const li = layers.indexOf(tr.layer);
     if (li === -1) continue;
     const nid = getNetId(tr.netName);
+    const { clearance: netClr } = getNetParams(tr.netName);
     for (let k = 1; k < tr.points.length; k++) {
-      paintSegment(li, tr.points[k - 1], tr.points[k], (tr.width + traceW) * 0.5 + clearance + gridMargin, nid);
+      paintSegment(li, tr.points[k - 1], tr.points[k], (tr.width + traceW) * 0.5 + netClr + gridMargin, nid);
     }
   }
   for (const via of next.vias) {
@@ -254,7 +265,9 @@ export function runAutorouter(
   const gScore = new Float32Array(totalCells);
   const cameFrom = new Int32Array(totalCells);
   const dirFrom = new Int8Array(totalCells);
-  const closed = new Uint8Array(totalCells);
+  const seenGen = new Uint32Array(totalCells);
+  const closedGen = new Uint32Array(totalCells);
+  let genId = 0;
 
   // 8 planar directions (dc, dr, cost)
   const dirs = [
@@ -269,21 +282,22 @@ export function runAutorouter(
   ];
 
   const routeSingle = (startPt: Point2D, endPt: Point2D, netName: string, allowRipCost: boolean): boolean => {
+    genId++;
     const nid = getNetId(netName);
+    const { width: netW, clearance: netClr } = getNetParams(netName);
     const sc = toGridX(startPt.x);
     const sr = toGridY(startPt.y);
     const tc = toGridX(endPt.x);
     const tr = toGridY(endPt.y);
 
-    gScore.fill(1e9);
-    cameFrom.fill(-1);
-    dirFrom.fill(-1);
-    closed.fill(0);
-
     const open = new MinHeap();
-    // Seed start on allowed layers (check pad layer)
-    const startPad = worldPads.find((p) => dist(p, startPt) < 0.5);
-    const endPad = worldPads.find((p) => dist(p, endPt) < 0.5);
+    // Seed start on allowed layers (prefer net-matched pad to avoid overlapping same-location foreign pads)
+    const startPad =
+      worldPads.find((p) => p.netName === netName && dist(p, startPt) < 0.5) ??
+      worldPads.find((p) => dist(p, startPt) < 0.5);
+    const endPad =
+      worldPads.find((p) => p.netName === netName && dist(p, endPt) < 0.5) ??
+      worldPads.find((p) => dist(p, endPt) < 0.5);
 
     const allowedLayersStart = startPad && startPad.effectiveLayer !== 'All'
       ? [layers.indexOf(startPad.effectiveLayer)].filter((x) => x >= 0)
@@ -294,19 +308,33 @@ export function runAutorouter(
 
     for (const sl of allowedLayersStart) {
       const sIdx = idxOf(sl, sr, sc);
+      seenGen[sIdx] = genId;
       gScore[sIdx] = 0;
+      cameFrom[sIdx] = -1;
+      dirFrom[sIdx] = -1;
       const h = Math.hypot(tc - sc, tr - sr);
       open.push({ g: 0, f: h, idx: sIdx, dir: -1 });
     }
 
+    const foreignPads = worldPads.filter((wp) => wp.netName !== netName);
+    const foreignTraces = next.traces.filter((t) => t.netName !== netName);
+    const foreignVias = next.vias.filter((v) => v.netName !== netName);
+    const routeKeepouts = next.keepouts.filter(
+      (k) => k.kind === 'RouteKeepout' && k.points.length >= 3
+    );
+
     let goalIdx = -1;
     let expansions = 0;
-    const maxExpansions = 45000;
+    const manhattanDist = Math.abs(tc - sc) + Math.abs(tr - sr);
+    const maxExpansions = Math.min(24000, Math.max(5000, manhattanDist * 220));
+    const viaR =
+      Math.max(rules.minViaOuter, rules.minViaHole + rules.minAnnularRing * 2) * 0.5 +
+      Math.max(rules.clearanceViaToAny, netClr);
 
     while (open.size > 0 && expansions < maxExpansions) {
       const cur = open.pop()!;
-      if (closed[cur.idx]) continue;
-      closed[cur.idx] = 1;
+      if (closedGen[cur.idx] === genId) continue;
+      closedGen[cur.idx] = genId;
       expansions++;
 
       const cl = Math.floor(cur.idx / (rows * cols));
@@ -327,7 +355,7 @@ export function runAutorouter(
         const nr = cr + dirs[d][1];
         if (nc < 0 || nc >= cols || nr < 0 || nr >= rows) continue;
         const nIdx = idxOf(cl, nr, nc);
-        if (closed[nIdx]) continue;
+        if (closedGen[nIdx] === genId) continue;
 
         const occ = cellNet[nIdx];
         const isGoalCell = nc === tc && nr === tr;
@@ -344,12 +372,20 @@ export function runAutorouter(
         // Guard exact segment endpoints near start/end pads against foreign pad clearance violations
         const segA = (cc === sc && cr === sr) ? startPt : { x: toWorldX(cc), y: toWorldY(cr) };
         const segB = isGoalCell ? endPt : { x: toWorldX(nc), y: toWorldY(nr) };
+        const segMinX = Math.min(segA.x, segB.x);
+        const segMaxX = Math.max(segA.x, segB.x);
+        const segMinY = Math.min(segA.y, segB.y);
+        const segMaxY = Math.max(segA.y, segB.y);
+        const halfWClr = netW * 0.5 + netClr + 0.02;
         let clippedPad = false;
-        for (let pi = 0; pi < worldPads.length; pi++) {
-          const wp = worldPads[pi];
-          if (wp.netName === netName) continue;
+        for (let pi = 0; pi < foreignPads.length; pi++) {
+          const wp = foreignPads[pi];
           if (wp.effectiveLayer !== 'All' && wp.effectiveLayer !== layers[cl]) continue;
-          if (pointToSegmentDist(wp, segA, segB) < wp.radius + traceW * 0.5 + clearance + 0.02) {
+          const req = wp.radius + halfWClr;
+          if (wp.x + req < segMinX || wp.x - req > segMaxX || wp.y + req < segMinY || wp.y - req > segMaxY) {
+            continue;
+          }
+          if (pointToSegmentDist(wp, segA, segB) < req) {
             clippedPad = true;
             break;
           }
@@ -364,7 +400,9 @@ export function runAutorouter(
         if (cur.dir !== -1 && cur.dir !== d && cur.dir < 8) stepCost += effBendCost * 0.3;
 
         const ng = cur.g + stepCost;
-        if (ng < gScore[nIdx]) {
+        const prevG = seenGen[nIdx] === genId ? gScore[nIdx] : 1e9;
+        if (ng < prevG) {
+          seenGen[nIdx] = genId;
           gScore[nIdx] = ng;
           cameFrom[nIdx] = cur.idx;
           dirFrom[nIdx] = d;
@@ -373,37 +411,42 @@ export function runAutorouter(
         }
       }
 
-      // Layer change (Via) — also check full via annular radius against foreign copper and ViaKeepout
+      // Layer change (Via) — check RouteKeepout, foreign traces, foreign pads, and foreign vias
       if (L > 1) {
         const curOcc = cellNet[cur.idx];
         const nearStart = Math.hypot(cc - sc, cr - sr) < 2;
         const nearEnd = Math.hypot(cc - tc, cr - tr) < 2;
-        const vwx = toWorldX(cc);
-        const vwy = toWorldY(cr);
-        const viaKeepoutHit = next.keepouts.some(
-          (k) => k.kind === 'RouteKeepout' && k.points.length >= 3 && pointInPolygon({ x: vwx, y: vwy }, k.points)
-        );
-        const viaR = Math.max(rules.minViaOuter, rules.minViaHole + rules.minAnnularRing * 2) * 0.5 + rules.clearanceViaToAny;
-        const viaClear = !viaKeepoutHit && !next.traces.some(
-          (trOther) =>
-            trOther.netName !== netName &&
-            trOther.points.some((pt, k) => k > 0 && pointToSegmentDist({ x: vwx, y: vwy }, trOther.points[k - 1], pt) < viaR + trOther.width * 0.5)
-        );
-        if (!nearStart && !nearEnd && viaClear && (curOcc === 0 || curOcc === nid)) {
-          for (let nl = 0; nl < L; nl++) {
-            if (nl === cl) continue;
-            const nIdx = idxOf(nl, cr, cc);
-            if (closed[nIdx]) continue;
-            const occ = cellNet[nIdx];
-            if (occ !== 0 && occ !== nid) continue;
-            const effViaCost = allowRipCost ? Math.max(2, settings.viaCost * 0.4) : settings.viaCost;
-            const ng = cur.g + effViaCost;
-            if (ng < gScore[nIdx]) {
-              gScore[nIdx] = ng;
-              cameFrom[nIdx] = cur.idx;
-              dirFrom[nIdx] = 8;
-              const h = Math.hypot(tc - cc, tr - cr) * 1.05;
-              open.push({ g: ng, f: ng + h, idx: nIdx, dir: 8 });
+        if (!nearStart && !nearEnd && (curOcc === 0 || curOcc === nid)) {
+          const vwx = toWorldX(cc);
+          const vwy = toWorldY(cr);
+          const vPt = { x: vwx, y: vwy };
+          const viaClear =
+            !routeKeepouts.some((k) => pointInPolygon(vPt, k.points)) &&
+            !foreignPads.some((wp) => dist(vPt, wp) < viaR + wp.radius) &&
+            !foreignVias.some((v) => dist(vPt, v) < viaR + v.outerDiameter * 0.5) &&
+            !foreignTraces.some((trOther) =>
+              trOther.points.some(
+                (pt, k) => k > 0 && pointToSegmentDist(vPt, trOther.points[k - 1], pt) < viaR + trOther.width * 0.5
+              )
+            );
+          if (viaClear) {
+            for (let nl = 0; nl < L; nl++) {
+              if (nl === cl) continue;
+              const nIdx = idxOf(nl, cr, cc);
+              if (closedGen[nIdx] === genId) continue;
+              const occ = cellNet[nIdx];
+              if (occ !== 0 && occ !== nid) continue;
+              const effViaCost = allowRipCost ? Math.max(2, settings.viaCost * 0.4) : settings.viaCost;
+              const ng = cur.g + effViaCost;
+              const prevG = seenGen[nIdx] === genId ? gScore[nIdx] : 1e9;
+              if (ng < prevG) {
+                seenGen[nIdx] = genId;
+                gScore[nIdx] = ng;
+                cameFrom[nIdx] = cur.idx;
+                dirFrom[nIdx] = 8;
+                const h = Math.hypot(tc - cc, tr - cr) * 1.05;
+                open.push({ g: ng, f: ng + h, idx: nIdx, dir: 8 });
+              }
             }
           }
         }
@@ -432,20 +475,17 @@ export function runAutorouter(
     const flushSegment = (pts: Point2D[], layerIdx: number) => {
       if (pts.length < 2) return;
       const simplified = settings.simplify45Deg ? simplifyCollinear(pts) : pts;
-      const netClsId = next.netClassAssignments[netName];
-      const netCls = next.netClasses.find((nc) => nc.id === netClsId);
-      const w = netCls?.traceWidth ?? traceW;
       const trace: PcbTrace = {
         id: uid('tr'),
         layer: layers[layerIdx],
         netName,
         points: simplified,
-        width: w
+        width: netW
       };
       next.traces.push(trace);
       addedTraces++;
       for (let k = 1; k < simplified.length; k++) {
-        paintSegment(layerIdx, simplified[k - 1], simplified[k], (w + traceW) * 0.5 + clearance + gridMargin, nid);
+        paintSegment(layerIdx, simplified[k - 1], simplified[k], (netW + traceW) * 0.5 + netClr + gridMargin, nid);
       }
     };
 
@@ -595,55 +635,112 @@ function simplifyCollinear(pts: Point2D[]): Point2D[] {
   return out;
 }
 
+function segmentClearOfObstacles(
+  a: Point2D,
+  b: Point2D,
+  trace: PcbTrace,
+  pcb: PcbProject,
+  worldPads: ReturnType<typeof getWorldPads>
+): boolean {
+  const minClr = Math.max(pcb.designRules.clearanceTraceToTrace, pcb.designRules.clearanceTraceToPad);
+  const halfW = trace.width * 0.5;
+  const distBetweenSegs = (p1: Point2D, p2: Point2D, q1: Point2D, q2: Point2D) =>
+    Math.min(
+      pointToSegmentDist(p1, q1, q2),
+      pointToSegmentDist(p2, q1, q2),
+      pointToSegmentDist(q1, p1, p2),
+      pointToSegmentDist(q2, p1, p2)
+    );
+
+  for (const wp of worldPads) {
+    if (wp.netName === trace.netName) continue;
+    if (wp.effectiveLayer !== 'All' && wp.effectiveLayer !== trace.layer) continue;
+    if (pointToSegmentDist(wp, a, b) < wp.radius + halfW + minClr + 0.02) return false;
+  }
+  for (const v of pcb.vias) {
+    if (v.netName === trace.netName) continue;
+    if (pointToSegmentDist(v, a, b) < v.outerDiameter * 0.5 + halfW + minClr + 0.02) return false;
+  }
+  for (const trOther of pcb.traces) {
+    if (trOther.id === trace.id || trOther.netName === trace.netName || trOther.layer !== trace.layer) continue;
+    for (let k = 1; k < trOther.points.length; k++) {
+      if (distBetweenSegs(a, b, trOther.points[k - 1], trOther.points[k]) < (trOther.width + trace.width) * 0.5 + minClr + 0.02) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 // Meander generator (Змейка / выравнивание длины дорожки)
 export function applyMeanderToTrace(
   trace: PcbTrace,
   targetAdditionalLengthMm: number,
   amplitudeMm = 1.5,
-  pitchMm = 1.0
+  pitchMm = 1.0,
+  pcb?: PcbProject
 ): PcbTrace {
   if (trace.points.length < 2 || targetAdditionalLengthMm <= 0.1) return trace;
-  // Find longest straight horizontal or vertical segment
-  let bestIdx = 0;
-  let bestLen = 0;
-  for (let i = 0; i < trace.points.length - 1; i++) {
-    const len = dist(trace.points[i], trace.points[i + 1]);
-    if (len > bestLen) {
-      bestLen = len;
-      bestIdx = i;
+  const segments = trace.points
+    .slice(0, -1)
+    .map((pt, i) => ({ idx: i, len: dist(pt, trace.points[i + 1]) }))
+    .filter((s) => s.len >= pitchMm * 2)
+    .sort((a, b) => b.len - a.len);
+  if (segments.length === 0) return trace;
+
+  const worldPads = pcb ? getWorldPads(pcb) : [];
+
+  for (const seg of segments) {
+    const p0 = trace.points[seg.idx];
+    const p1 = trace.points[seg.idx + 1];
+    const ux = (p1.x - p0.x) / seg.len;
+    const uy = (p1.y - p0.y) / seg.len;
+    const nx = -uy;
+    const ny = ux;
+
+    const numBumps = Math.max(
+      1,
+      Math.min(Math.floor((seg.len * 0.7) / pitchMm), Math.ceil(targetAdditionalLengthMm / (2 * amplitudeMm)))
+    );
+    const baseAmp = Math.min(amplitudeMm, Math.max(0.4, targetAdditionalLengthMm / (2 * numBumps)));
+    const startOffset = (seg.len - numBumps * pitchMm) * 0.5;
+    const ampFactors = pcb ? [1.0, 0.7, 0.45] : [1.0];
+    const sidePatterns: (number | 'alt')[] = pcb ? ['alt', 1, -1] : ['alt'];
+
+    for (const ampFactor of ampFactors) {
+      const bumpAmp = baseAmp * ampFactor;
+      for (const pattern of sidePatterns) {
+        const meanderPts: Point2D[] = [];
+        for (let i = 0; i < numBumps; i++) {
+          const sA = startOffset + i * pitchMm;
+          const sB = sA + pitchMm * 0.5;
+          const sign = pattern === 'alt' ? (i % 2 === 0 ? 1 : -1) : pattern;
+          meanderPts.push({ x: p0.x + ux * sA, y: p0.y + uy * sA });
+          meanderPts.push({ x: p0.x + ux * sA + nx * bumpAmp * sign, y: p0.y + uy * sA + ny * bumpAmp * sign });
+          meanderPts.push({ x: p0.x + ux * sB + nx * bumpAmp * sign, y: p0.y + uy * sB + ny * bumpAmp * sign });
+          meanderPts.push({ x: p0.x + ux * sB, y: p0.y + uy * sB });
+        }
+        let ok = true;
+        if (pcb) {
+          for (let k = 1; k < meanderPts.length; k++) {
+            if (!segmentClearOfObstacles(meanderPts[k - 1], meanderPts[k], trace, pcb, worldPads)) {
+              ok = false;
+              break;
+            }
+          }
+        }
+        if (ok) {
+          return {
+            ...trace,
+            points: [
+              ...trace.points.slice(0, seg.idx + 1),
+              ...meanderPts,
+              ...trace.points.slice(seg.idx + 1)
+            ]
+          };
+        }
+      }
     }
   }
-  if (bestLen < pitchMm * 2) return trace;
-
-  const p0 = trace.points[bestIdx];
-  const p1 = trace.points[bestIdx + 1];
-  const ux = (p1.x - p0.x) / bestLen;
-  const uy = (p1.y - p0.y) / bestLen;
-  const nx = -uy;
-  const ny = ux;
-
-  // Each U-bump adds roughly 2 * amplitudeMm
-  const numBumps = Math.max(1, Math.min(Math.floor((bestLen * 0.7) / pitchMm), Math.ceil(targetAdditionalLengthMm / (2 * amplitudeMm))));
-  const bumpAmp = Math.min(amplitudeMm, Math.max(0.4, targetAdditionalLengthMm / (2 * numBumps)));
-  const startOffset = (bestLen - numBumps * pitchMm) * 0.5;
-
-  const meanderPts: Point2D[] = [];
-  for (let i = 0; i < numBumps; i++) {
-    const sA = startOffset + i * pitchMm;
-    const sB = sA + pitchMm * 0.5;
-    const sign = i % 2 === 0 ? 1 : -1;
-    meanderPts.push({ x: p0.x + ux * sA, y: p0.y + uy * sA });
-    meanderPts.push({ x: p0.x + ux * sA + nx * bumpAmp * sign, y: p0.y + uy * sA + ny * bumpAmp * sign });
-    meanderPts.push({ x: p0.x + ux * sB + nx * bumpAmp * sign, y: p0.y + uy * sB + ny * bumpAmp * sign });
-    meanderPts.push({ x: p0.x + ux * sB, y: p0.y + uy * sB });
-  }
-
-  return {
-    ...trace,
-    points: [
-      ...trace.points.slice(0, bestIdx + 1),
-      ...meanderPts,
-      ...trace.points.slice(bestIdx + 1)
-    ]
-  };
+  return trace;
 }

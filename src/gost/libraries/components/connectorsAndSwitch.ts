@@ -20,7 +20,7 @@ export const libConnectorsAndSwitch: ComponentLibrary = {
           partIndex: 1,
           name: 'Part 1',
           primitives: [
-            { type: 'rect', x: -6.5, y: -12.5, w: 10, h: 25, width: 0.4 },
+            { type: 'rect', x: -10, y: -12.5, w: 13.5, h: 25, width: 0.4 },
             // ГОСТ 2.755 штыревые контакты (короткие толстые штрихи у правой стенки, свободны от подписей)
             { type: 'line', x1: 2.0, y1: -10, x2: 3.5, y2: -10, width: 0.5 },
             { type: 'line', x1: 2.0, y1: -5, x2: 3.5, y2: -5, width: 0.5 },
@@ -132,16 +132,17 @@ export const libConnectorsAndSwitch: ComponentLibrary = {
           name: 'Обмотка и контакты',
           primitives: [
             { type: 'rect', x: -7.5, y: -2.5, w: 6, h: 5, width: 0.35 },
-            { type: 'line', x1: -1.5, y1: 0, x2: 2.5, y2: 0, width: 0.25, dashed: true },
-            { type: 'line', x1: 2.5, y1: 0, x2: 6.5, y2: -2.5, width: 0.35 },
-            { type: 'circle', cx: 6.5, cy: -2.5, r: 0.5, width: 0.25 }
+            { type: 'line', x1: -1.5, y1: 0, x2: 1.5, y2: 0, width: 0.25, dashed: true },
+            { type: 'line', x1: 1.5, y1: 0, x2: 6.0, y2: -2.5, width: 0.35 },
+            { type: 'circle', cx: 6.2, cy: -2.5, r: 0.45, width: 0.25 },
+            { type: 'circle', cx: 6.2, cy: 2.5, r: 0.45, width: 0.25 }
           ],
           pins: [
             { id: 'p1', number: '1', name: 'А1', x: -12.5, y: -2.5, length: 5, orientation: 0, electricalType: 'Passive', style: 'Line', showName: false, showNumber: true, padMapping: '1' },
             { id: 'p2', number: '2', name: 'А2', x: -12.5, y: 2.5, length: 5, orientation: 0, electricalType: 'Passive', style: 'Line', showName: false, showNumber: true, padMapping: '2' },
-            { id: 'p3', number: '3', name: 'П', x: 10, y: 0, length: 5, orientation: 180, electricalType: 'Passive', style: 'Line', showName: false, showNumber: true, padMapping: '3' },
-            { id: 'p4', number: '4', name: 'НЗ', x: 10, y: -2.5, length: 3.5, orientation: 180, electricalType: 'Passive', style: 'Line', showName: false, showNumber: true, padMapping: '4' },
-            { id: 'p5', number: '5', name: 'НР', x: 10, y: 2.5, length: 3.5, orientation: 180, electricalType: 'Passive', style: 'Line', showName: false, showNumber: true, padMapping: '5' }
+            { id: 'p3', number: '3', name: 'П', x: 10, y: 0, length: 8.5, orientation: 180, electricalType: 'Passive', style: 'Line', showName: false, showNumber: true, padMapping: '3' },
+            { id: 'p4', number: '4', name: 'НЗ', x: 10, y: -2.5, length: 3.3, orientation: 180, electricalType: 'Passive', style: 'Line', showName: false, showNumber: true, padMapping: '4' },
+            { id: 'p5', number: '5', name: 'НР', x: 10, y: 2.5, length: 3.3, orientation: 180, electricalType: 'Passive', style: 'Line', showName: false, showNumber: true, padMapping: '5' }
           ]
         }
       ]
@@ -193,7 +194,7 @@ export const libConnectorsAndSwitch: ComponentLibrary = {
             { id: 'p2', number: '2', name: 'D+', x: 10, y: -5, length: 5, orientation: 180, electricalType: 'Bidirectional', style: 'Line', showName: true, showNumber: true, padMapping: '6' },
             { id: 'p3', number: '3', name: 'D-', x: 10, y: 0, length: 5, orientation: 180, electricalType: 'Bidirectional', style: 'Line', showName: true, showNumber: true, padMapping: '5' },
             { id: 'p4', number: '4', name: 'CC1', x: 10, y: 5, length: 5, orientation: 180, electricalType: 'Passive', style: 'Line', showName: true, showNumber: true, padMapping: '4' },
-            { id: 'p5', number: '5', name: 'CC2', x: 10, y: 10, length: 5, orientation: 180, electricalType: 'Passive', style: 'Line', showName: true, showNumber: true, padMapping: '9' },
+            { id: 'p5', number: '5', name: 'CC2', x: 10, y: 10, length: 5, orientation: 180, electricalType: 'Passive', style: 'Line', showName: true, showNumber: true, padMapping: '10' },
             { id: 'p6', number: '6', name: 'GND', x: -5, y: 20, length: 5, orientation: 270, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '1' },
             { id: 'p7', number: 'S1', name: 'SHLD', x: 2.5, y: 20, length: 5, orientation: 270, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: 'S1' }
           ]

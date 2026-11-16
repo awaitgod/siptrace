@@ -124,13 +124,13 @@ export async function saveBinaryFile(
   return triggerBlobDownload(defaultName, blob);
 }
 
-/** Opens a CAD file (text or binary ZIP/.pdsprj/.zip) via browser file picker. */
-export async function pickCadFile(accept: string, _filters: CadFileFilter[] = []): Promise<PickedCadFile | null> {
+async function openFilePickerInternal(accept: string, multiple: boolean): Promise<PickedCadFile[]> {
   return new Promise((resolve) => {
     let settled = false;
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = accept;
+    input.multiple = multiple;
     input.style.display = 'none';
     document.body.appendChild(input);
 
@@ -139,7 +139,7 @@ export async function pickCadFile(accept: string, _filters: CadFileFilter[] = []
       input.remove();
     };
 
-    const finish = (res: PickedCadFile | null) => {
+    const finish = (res: PickedCadFile[]) => {
       if (settled) return;
       settled = true;
       cleanup();
@@ -149,27 +149,42 @@ export async function pickCadFile(accept: string, _filters: CadFileFilter[] = []
     const onWindowFocus = () => {
       setTimeout(() => {
         if (!settled && (!input.files || input.files.length === 0)) {
-          finish(null);
+          finish([]);
         }
       }, 350);
     };
 
-    input.addEventListener('cancel', () => finish(null));
+    input.addEventListener('cancel', () => finish([]));
     input.onchange = async () => {
-      const f = input.files?.[0];
-      if (!f) {
-        finish(null);
+      const files = Array.from(input.files ?? []);
+      if (files.length === 0) {
+        finish([]);
         return;
       }
       try {
-        const buf = new Uint8Array(await f.arrayBuffer());
-        finish({ name: f.name, filePath: f.name, bytes: buf });
+        const picked: PickedCadFile[] = [];
+        for (const f of files) {
+          const buf = new Uint8Array(await f.arrayBuffer());
+          picked.push({ name: f.name, filePath: f.name, bytes: buf });
+        }
+        finish(picked);
       } catch {
-        finish(null);
+        finish([]);
       }
     };
 
     window.addEventListener('focus', onWindowFocus, { once: true });
     input.click();
   });
+}
+
+/** Opens one or more CAD files (text or binary) via browser file picker. */
+export async function pickCadFiles(accept: string, _filters: CadFileFilter[] = []): Promise<PickedCadFile[]> {
+  return openFilePickerInternal(accept, true);
+}
+
+/** Opens a CAD file (text or binary ZIP/.pdsprj/.zip) via browser file picker. */
+export async function pickCadFile(accept: string, _filters: CadFileFilter[] = []): Promise<PickedCadFile | null> {
+  const files = await openFilePickerInternal(accept, false);
+  return files[0] ?? null;
 }

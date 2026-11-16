@@ -58,7 +58,7 @@ export const PcbToolbar: React.FC<PcbToolbarProps> = (p) => (
     </select>
     <select
       className="dt-tb-select"
-      style={{ width: 112 }}
+      style={{ width: 155 }}
       value={p.activeLayer}
       onChange={(e) => p.switchCopperLayer(e.target.value as CopperLayerId)}
     >

@@ -21,7 +21,7 @@ export const libTransistors: ComponentLibrary = {
           partIndex: 1,
           name: 'Part 1',
           primitives: [
-            { type: 'circle', cx: 0.5, cy: 0, r: 5.2, width: 0.3 },
+            { type: 'circle', cx: 1.5, cy: 0, r: 4.9, width: 0.3 },
             // Base bar
             { type: 'line', x1: -2, y1: -3.2, x2: -2, y2: 3.2, width: 0.55 },
             // Collector
@@ -54,7 +54,7 @@ export const libTransistors: ComponentLibrary = {
           partIndex: 1,
           name: 'Part 1',
           primitives: [
-            { type: 'circle', cx: 0.5, cy: 0, r: 5.2, width: 0.3 },
+            { type: 'circle', cx: 1.5, cy: 0, r: 4.9, width: 0.3 },
             { type: 'line', x1: -2, y1: -3.2, x2: -2, y2: 3.2, width: 0.55 },
             // Emitter top with inward arrow (p-n-p)
             { type: 'line', x1: -2, y1: -1.5, x2: 2.5, y2: -3.8, width: 0.35 },
@@ -88,7 +88,7 @@ export const libTransistors: ComponentLibrary = {
           name: 'Part 1',
           primitives: [
             // Outer GOST circle
-            { type: 'circle', cx: 0.5, cy: 0, r: 5.6, width: 0.3 },
+            { type: 'circle', cx: 1.6, cy: 0, r: 5.1, width: 0.3 },
             // Insulated Gate (vertical line + lead)
             { type: 'line', x1: -2.4, y1: -3.2, x2: -2.4, y2: 3.2, width: 0.45 },
             // Segmented channel (enhancement mode)
@@ -133,7 +133,7 @@ export const libTransistors: ComponentLibrary = {
           partIndex: 1,
           name: 'Part 1',
           primitives: [
-            { type: 'circle', cx: 0.5, cy: 0, r: 5.2, width: 0.3 },
+            { type: 'circle', cx: 1.5, cy: 0, r: 4.9, width: 0.3 },
             { type: 'line', x1: -2, y1: -3.2, x2: -2, y2: 3.2, width: 0.55 },
             { type: 'line', x1: -2, y1: -1.5, x2: 2.5, y2: -3.8, width: 0.35 },
             { type: 'line', x1: 2.5, y1: -3.8, x2: 2.5, y2: -5, width: 0.35 },
@@ -163,7 +163,7 @@ export const libTransistors: ComponentLibrary = {
           partIndex: 1,
           name: 'Part 1',
           primitives: [
-            { type: 'circle', cx: 0.5, cy: 0, r: 4.5, width: 0.35 },
+            { type: 'circle', cx: 1.5, cy: 0, r: 4.5, width: 0.35 },
             { type: 'line', x1: -2, y1: -2.5, x2: -2, y2: 2.5, width: 0.55 },
             { type: 'line', x1: -2, y1: -1.5, x2: 2.5, y2: -3.8, width: 0.35 },
             { type: 'line', x1: 2.5, y1: -3.8, x2: 2.5, y2: -5, width: 0.35 },
@@ -193,7 +193,7 @@ export const libTransistors: ComponentLibrary = {
           partIndex: 1,
           name: 'Part 1',
           primitives: [
-            { type: 'circle', cx: 0.5, cy: 0, r: 4.5, width: 0.35 },
+            { type: 'circle', cx: 1.5, cy: 0, r: 4.5, width: 0.35 },
             { type: 'line', x1: -2, y1: -2.5, x2: -2, y2: 2.5, width: 0.55 },
             { type: 'line', x1: -2, y1: -1.5, x2: 2.5, y2: -3.8, width: 0.35 },
             { type: 'line', x1: 2.5, y1: -3.8, x2: 2.5, y2: -5, width: 0.35 },

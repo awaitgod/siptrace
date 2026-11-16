@@ -43,7 +43,8 @@ export const semiPatterns: PatternDef[] = [
       bodyWidth: 5.0,
       bodyLength: 5.0,
       bodyHeight: 8.5,
-      densityLevel: 'B'
+      densityLevel: 'B',
+      polarized: true
     }),
     '#e74c3c'
   ),
@@ -76,12 +77,12 @@ export const semiPatterns: PatternDef[] = [
     gostName: 'КТ-26 (ГОСТ 18472-88)',
     description: 'Транзистор малой мощности в корпусе КТ-26 (КП501А, КТ3102, КТ3107)',
     pads: [
-      { id: 'p1', number: '1', type: 'THT', shape: 'Rect', x: -1.27, y: 0, width: 1.35, height: 1.6, holeDiameter: 0.75, layer: 'All' },
-      { id: 'p2', number: '2', type: 'THT', shape: 'Round', x: 0, y: -1.27, width: 1.35, height: 1.6, holeDiameter: 0.75, layer: 'All' },
-      { id: 'p3', number: '3', type: 'THT', shape: 'Round', x: 1.27, y: 0, width: 1.35, height: 1.6, holeDiameter: 0.75, layer: 'All' }
+      { id: 'p1', number: '1', type: 'THT', shape: 'Rect', x: -1.27, y: 0, width: 1.15, height: 1.15, holeDiameter: 0.7, layer: 'All' },
+      { id: 'p2', number: '2', type: 'THT', shape: 'Round', x: 0, y: -1.27, width: 1.15, height: 1.15, holeDiameter: 0.7, layer: 'All' },
+      { id: 'p3', number: '3', type: 'THT', shape: 'Round', x: 1.27, y: 0, width: 1.15, height: 1.15, holeDiameter: 0.7, layer: 'All' }
     ],
     graphics: [
-      { type: 'arc', layer: 'TopSilk', cx: 0, cy: 0, r: 2.4, startAngle: Math.PI, endAngle: 2 * Math.PI, width: 0.18 },
+      { type: 'arc', layer: 'TopSilk', cx: 0, cy: 0, r: 2.4, startAngle: 180, endAngle: 360, width: 0.18 },
       { type: 'line', layer: 'TopSilk', x1: -2.4, y1: 0, x2: 2.4, y2: 0, width: 0.18 }
     ],
     courtyard: { width: 5.5, height: 5.0 },

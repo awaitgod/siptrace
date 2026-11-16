@@ -14,13 +14,22 @@ export const libDigitalIC: ComponentLibrary = {
       refDesPrefix: 'DD',
       defaultValue: 'К155ЛА3',
       gostStandard: 'ГОСТ 2.743-91',
-      description: 'Четыре логических элемента 2И-НЕ (4 секции, корпус DIP-14)',
+      description: 'Четыре логических элемента 2И-НЕ (4 секции + питание, корпус DIP-14)',
       patternId: 'PAT_DIP14',
       parts: [
         makeGostLogicGatePart(1, '&', '1', '2', '3', true),
         makeGostLogicGatePart(2, '&', '4', '5', '6', true),
         makeGostLogicGatePart(3, '&', '9', '10', '8', true),
-        makeGostLogicGatePart(4, '&', '12', '13', '11', true)
+        makeGostLogicGatePart(4, '&', '12', '13', '11', true),
+        {
+          partIndex: 5,
+          name: 'Питание (VCC/GND)',
+          primitives: [{ type: 'rect', x: -5, y: -5, w: 10, h: 10, width: 0.35 }],
+          pins: [
+            { id: 'p_5_vcc', number: '14', name: 'VCC', x: 0, y: -10, length: 5, orientation: 90, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '14' },
+            { id: 'p_5_gnd', number: '7', name: 'GND', x: 0, y: 10, length: 5, orientation: 270, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '7' }
+          ]
+        }
       ]
     },
     {
@@ -30,13 +39,22 @@ export const libDigitalIC: ComponentLibrary = {
       refDesPrefix: 'DD',
       defaultValue: 'К555ЛЕ1',
       gostStandard: 'ГОСТ 2.743-91',
-      description: 'Четыре логических элемента 2ИЛИ-НЕ (4 секции, корпус DIP-14)',
+      description: 'Четыре логических элемента 2ИЛИ-НЕ (4 секции + питание, корпус DIP-14)',
       patternId: 'PAT_DIP14',
       parts: [
         makeGostLogicGatePart(1, '1', '2', '3', '1', true),
         makeGostLogicGatePart(2, '1', '5', '6', '4', true),
         makeGostLogicGatePart(3, '1', '8', '9', '10', true),
-        makeGostLogicGatePart(4, '1', '11', '12', '13', true)
+        makeGostLogicGatePart(4, '1', '11', '12', '13', true),
+        {
+          partIndex: 5,
+          name: 'Питание (VCC/GND)',
+          primitives: [{ type: 'rect', x: -5, y: -5, w: 10, h: 10, width: 0.35 }],
+          pins: [
+            { id: 'p_5_vcc', number: '14', name: 'VCC', x: 0, y: -10, length: 5, orientation: 90, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '14' },
+            { id: 'p_5_gnd', number: '7', name: 'GND', x: 0, y: 10, length: 5, orientation: 270, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '7' }
+          ]
+        }
       ]
     },
     {
@@ -84,6 +102,15 @@ export const libDigitalIC: ComponentLibrary = {
             { id: 'p2_q', number: '9', name: '', x: 15, y: -5, length: 5, orientation: 180, electricalType: 'Output', style: 'Line', showName: false, showNumber: true, padMapping: '9' },
             { id: 'p2_nq', number: '8', name: '', x: 15, y: 5, length: 5, orientation: 180, electricalType: 'Output', style: 'Inverted', showName: false, showNumber: true, padMapping: '8' }
           ]
+        },
+        {
+          partIndex: 3,
+          name: 'Питание (VCC/GND)',
+          primitives: [{ type: 'rect', x: -5, y: -5, w: 10, h: 10, width: 0.35 }],
+          pins: [
+            { id: 'p_3_vcc', number: '14', name: 'VCC', x: 0, y: -10, length: 5, orientation: 90, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '14' },
+            { id: 'p_3_gnd', number: '7', name: 'GND', x: 0, y: 10, length: 5, orientation: 270, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '7' }
+          ]
         }
       ]
     },
@@ -112,7 +139,16 @@ export const libDigitalIC: ComponentLibrary = {
               { id: `p_${idx}_out`, number: outP, name: '', x: 10, y: 0, length: 5, orientation: 180 as const, electricalType: 'Output' as const, style: 'Inverted' as const, showName: false, showNumber: true, padMapping: outP }
             ]
           };
-        })
+        }),
+        {
+          partIndex: 7,
+          name: 'Питание (VDD/VSS)',
+          primitives: [{ type: 'rect', x: -5, y: -5, w: 10, h: 10, width: 0.35 }],
+          pins: [
+            { id: 'p_7_vdd', number: '14', name: 'VDD', x: 0, y: -10, length: 5, orientation: 90, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '14' },
+            { id: 'p_7_vss', number: '7', name: 'VSS', x: 0, y: 10, length: 5, orientation: 270, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '7' }
+          ]
+        }
       ]
     }
   ]

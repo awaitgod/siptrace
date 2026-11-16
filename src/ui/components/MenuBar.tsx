@@ -124,6 +124,22 @@ export const MenuBar: React.FC<{ menus: TopMenuSpec[]; onBrandClick?: () => void
         barRef.current?.querySelector<HTMLElement>('.dt-menu-item.open')?.focus();
         e.preventDefault();
         e.stopPropagation();
+      } else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && openMenuId !== null) {
+        const activeEl = document.activeElement as HTMLElement | null;
+        if (activeEl && activeEl.getAttribute('aria-haspopup') === 'true' && e.key === 'ArrowRight') return;
+        const idx = menus.findIndex((m) => m.id === openMenuId);
+        if (idx >= 0) {
+          const nextIdx = (idx + (e.key === 'ArrowRight' ? 1 : -1) + menus.length) % menus.length;
+          const nextId = menus[nextIdx].id;
+          e.preventDefault();
+          e.stopPropagation();
+          setOpenMenuId(nextId);
+          requestAnimationFrame(() => {
+            const trigger = barRef.current?.querySelectorAll<HTMLElement>('.dt-menu-item')[nextIdx];
+            const firstItem = trigger?.parentElement?.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"]), [role="menuitemcheckbox"]:not([aria-disabled="true"])');
+            (firstItem ?? trigger)?.focus();
+          });
+        }
       }
     };
     window.addEventListener('mousedown', onDocDown);
@@ -132,7 +148,7 @@ export const MenuBar: React.FC<{ menus: TopMenuSpec[]; onBrandClick?: () => void
       window.removeEventListener('mousedown', onDocDown);
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [openMenuId]);
+  }, [openMenuId, menus]);
 
   const activeMenu = menus.find((m) => m.id === openMenuId);
   const logoSrc = `${import.meta.env?.BASE_URL ?? './'}logo.svg`;
@@ -163,6 +179,11 @@ export const MenuBar: React.FC<{ menus: TopMenuSpec[]; onBrandClick?: () => void
                   setOpenMenuId(m.id);
                   const menu = e.currentTarget.parentElement;
                   requestAnimationFrame(() => menu?.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"]), [role="menuitemcheckbox"]:not([aria-disabled="true"])')?.focus());
+                } else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && openMenuId === null) {
+                  e.preventDefault();
+                  const triggers = Array.from(barRef.current?.querySelectorAll<HTMLElement>('.dt-menu-item') ?? []);
+                  const curIdx = triggers.indexOf(e.currentTarget);
+                  if (curIdx >= 0) triggers[(curIdx + (e.key === 'ArrowRight' ? 1 : -1) + triggers.length) % triggers.length]?.focus();
                 }
               }}
               onClick={() => setOpenMenuId(isOpen ? null : m.id)}

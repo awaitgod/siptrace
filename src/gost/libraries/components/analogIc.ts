@@ -55,8 +55,8 @@ export const libAnalogIC: ComponentLibrary = {
           name: 'Part 1',
           primitives: [
             { type: 'rect', x: -7.5, y: -7.5, w: 15, h: 15, width: 0.4 },
-            // ГОСТ triangle symbol inside box (clear of top +U pin label)
-            { type: 'text', x: 0, y: 0.2, text: '▷', size: 3.4, align: 'center' },
+            // ГОСТ triangle symbol inside box (vector polyline so rotation/mirror works)
+            { type: 'polyline', points: [{ x: -1.4, y: -2.0 }, { x: 2.0, y: 0 }, { x: -1.4, y: 2.0 }], closed: true, width: 0.3 },
             { type: 'text', x: -5.5, y: -2.5, text: '+', size: 2.6 },
             { type: 'text', x: -5.5, y: 2.5, text: '–', size: 2.6 }
           ],
@@ -86,6 +86,31 @@ export const libAnalogIC: ComponentLibrary = {
           primitives: [
             { type: 'rect', x: -7.5, y: -5, w: 15, h: 10, width: 0.4 },
             { type: 'text', x: 0, y: -2.7, text: 'U=+5В', size: 2.1, bold: true, align: 'center' }
+          ],
+          pins: [
+            { id: 'p1', number: '1', name: 'ВХ', x: -12.5, y: 0, length: 5, orientation: 0, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '1' },
+            { id: 'p2', number: '2', name: 'ОБЩ', x: 0, y: 10, length: 5, orientation: 270, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '2' },
+            { id: 'p3', number: '3', name: 'ВЫХ', x: 12.5, y: 0, length: 5, orientation: 180, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '3' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'COMP_DA_L78M33',
+      name: 'L78M33 / КР142ЕН33 (стабилизатор +3,3В)',
+      library: 'Аналоговые ИМС (ГОСТ 2.759)',
+      refDesPrefix: 'DA',
+      defaultValue: 'L78M33 (+3,3В)',
+      gostStandard: 'ГОСТ 2.759-82 / TO-220',
+      description: 'Интегральный линейный стабилизатор напряжения +3,3 В (1=ВХ, 2=ОБЩ, 3=ВЫХ)',
+      patternId: 'PAT_KT28_TO220',
+      parts: [
+        {
+          partIndex: 1,
+          name: 'Part 1',
+          primitives: [
+            { type: 'rect', x: -7.5, y: -5, w: 15, h: 10, width: 0.4 },
+            { type: 'text', x: 0, y: -2.7, text: 'U=+3,3В', size: 2.0, bold: true, align: 'center' }
           ],
           pins: [
             { id: 'p1', number: '1', name: 'ВХ', x: -12.5, y: 0, length: 5, orientation: 0, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '1' },
@@ -134,19 +159,26 @@ export const libAnalogIC: ComponentLibrary = {
           partIndex: 1,
           name: 'Part 1',
           primitives: [
-            { type: 'rect', x: -12.5, y: -15, w: 25, h: 30, width: 0.4 },
-            { type: 'text', x: 0, y: -5.5, text: 'ШИМ', size: 2.4, bold: true, align: 'center' }
+            { type: 'rect', x: -12.5, y: -25, w: 25, h: 50, width: 0.4 },
+            { type: 'text', x: 0, y: -21.5, text: 'ШИМ', size: 2.4, bold: true, align: 'center' }
           ],
           pins: [
-            { id: 'p1', number: '1', name: 'ИНВ', x: -17.5, y: -7.5, length: 5, orientation: 0, electricalType: 'Input', style: 'Line', showName: true, showNumber: true, padMapping: '1' },
-            { id: 'p2', number: '2', name: 'НЕИНВ', x: -17.5, y: -2.5, length: 5, orientation: 0, electricalType: 'Input', style: 'Line', showName: true, showNumber: true, padMapping: '2' },
-            { id: 'p3', number: '3', name: 'ОС', x: -17.5, y: 2.5, length: 5, orientation: 0, electricalType: 'Output', style: 'Line', showName: true, showNumber: true, padMapping: '3' },
-            { id: 'p4', number: '4', name: 'СИНХ', x: -17.5, y: 7.5, length: 5, orientation: 0, electricalType: 'Input', style: 'Line', showName: true, showNumber: true, padMapping: '4' },
-            { id: 'p5', number: '11', name: 'ВЫХ_А', x: 17.5, y: -5, length: 5, orientation: 180, electricalType: 'Output', style: 'Line', showName: true, showNumber: true, padMapping: '11' },
-            { id: 'p6', number: '14', name: 'ВЫХ_B', x: 17.5, y: 0, length: 5, orientation: 180, electricalType: 'Output', style: 'Line', showName: true, showNumber: true, padMapping: '14' },
-            { id: 'p7', number: '16', name: 'VREF', x: 17.5, y: 7.5, length: 5, orientation: 180, electricalType: 'Output', style: 'Line', showName: true, showNumber: true, padMapping: '16' },
-            { id: 'p8', number: '15', name: '+U', x: 0, y: -20, length: 5, orientation: 90, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '15' },
-            { id: 'p9', number: '10', name: 'GND', x: 0, y: 20, length: 5, orientation: 270, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '10' }
+            { id: 'p1', number: '1', name: 'ИНВ', x: -17.5, y: -17.5, length: 5, orientation: 0, electricalType: 'Input', style: 'Line', showName: true, showNumber: true, padMapping: '1' },
+            { id: 'p2', number: '2', name: 'НЕИНВ', x: -17.5, y: -12.5, length: 5, orientation: 0, electricalType: 'Input', style: 'Line', showName: true, showNumber: true, padMapping: '2' },
+            { id: 'p3', number: '3', name: 'ОС', x: -17.5, y: -7.5, length: 5, orientation: 0, electricalType: 'Output', style: 'Line', showName: true, showNumber: true, padMapping: '3' },
+            { id: 'p4', number: '4', name: 'СИНХ', x: -17.5, y: -2.5, length: 5, orientation: 0, electricalType: 'Input', style: 'Line', showName: true, showNumber: true, padMapping: '4' },
+            { id: 'p5', number: '5', name: 'RT', x: -17.5, y: 2.5, length: 5, orientation: 0, electricalType: 'Passive', style: 'Line', showName: true, showNumber: true, padMapping: '5' },
+            { id: 'p6', number: '6', name: 'CT', x: -17.5, y: 7.5, length: 5, orientation: 0, electricalType: 'Passive', style: 'Line', showName: true, showNumber: true, padMapping: '6' },
+            { id: 'p7', number: '7', name: 'RAMP', x: -17.5, y: 12.5, length: 5, orientation: 0, electricalType: 'Input', style: 'Line', showName: true, showNumber: true, padMapping: '7' },
+            { id: 'p8', number: '8', name: 'SS', x: -17.5, y: 17.5, length: 5, orientation: 0, electricalType: 'Passive', style: 'Line', showName: true, showNumber: true, padMapping: '8' },
+            { id: 'p9', number: '15', name: '+U', x: 17.5, y: -17.5, length: 5, orientation: 180, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '15' },
+            { id: 'p10', number: '13', name: 'VC', x: 17.5, y: -12.5, length: 5, orientation: 180, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '13' },
+            { id: 'p11', number: '16', name: 'VREF', x: 17.5, y: -7.5, length: 5, orientation: 180, electricalType: 'Output', style: 'Line', showName: true, showNumber: true, padMapping: '16' },
+            { id: 'p12', number: '11', name: 'ВЫХ_А', x: 17.5, y: -2.5, length: 5, orientation: 180, electricalType: 'Output', style: 'Line', showName: true, showNumber: true, padMapping: '11' },
+            { id: 'p13', number: '14', name: 'ВЫХ_B', x: 17.5, y: 2.5, length: 5, orientation: 180, electricalType: 'Output', style: 'Line', showName: true, showNumber: true, padMapping: '14' },
+            { id: 'p14', number: '9', name: 'ILIM', x: 17.5, y: 7.5, length: 5, orientation: 180, electricalType: 'Input', style: 'Line', showName: true, showNumber: true, padMapping: '9' },
+            { id: 'p15', number: '12', name: 'PGND', x: 17.5, y: 12.5, length: 5, orientation: 180, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '12' },
+            { id: 'p16', number: '10', name: 'GND', x: 17.5, y: 17.5, length: 5, orientation: 180, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '10' }
           ]
         }
       ]

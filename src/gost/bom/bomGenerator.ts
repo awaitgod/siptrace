@@ -10,10 +10,14 @@ import {
 /** Формирует Перечень элементов строго по ГОСТ 2.701-2008 / ГОСТ 2.106-96. */
 export function generateGostBom(project: SchematicProject): BomEntry[] {
   const allComponents: PlacedComponent[] = [];
+  const seenRefDes = new Set<string>();
   for (const sheet of project.sheets) {
     for (const c of sheet.components) {
       // Исключаем служебные символы цепей (Земля, Питание), если у них нет позиционного обозначения
       if (!c.refDes || c.refDes.startsWith('#')) continue;
+      // Многосекционные ИМС (DD1.1..DD1.4) учитываются в ПЭ3 как один физический корпус
+      if (seenRefDes.has(c.refDes)) continue;
+      seenRefDes.add(c.refDes);
       allComponents.push(c);
     }
   }

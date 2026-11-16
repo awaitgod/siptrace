@@ -158,8 +158,7 @@ export const libDiodes: ComponentLibrary = {
           primitives: [
             { type: 'polyline', points: [{ x: -2.5, y: -2.5 }, { x: 2.5, y: 0 }, { x: -2.5, y: 2.5 }], closed: true, width: 0.35 },
             { type: 'line', x1: -2.5, y1: 0, x2: 2.5, y2: 0, width: 0.25 },
-            { type: 'line', x1: 2.5, y1: -3, x2: 2.5, y2: 3, width: 0.4 },
-            { type: 'line', x1: 2.5, y1: 3, x2: 4.2, y2: 1.5, width: 0.4 }
+            { type: 'polyline', points: [{ x: 1.3, y: -3.2 }, { x: 2.5, y: -3.2 }, { x: 2.5, y: 3.2 }, { x: 3.7, y: 3.2 }], width: 0.4 }
           ],
           pins: [
             { id: 'p1', number: '1', name: 'А', x: -7.5, y: 0, length: 5, orientation: 0, electricalType: 'Passive', style: 'Line', showName: false, showNumber: true, padMapping: '1' },

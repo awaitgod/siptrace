@@ -2,7 +2,7 @@ import { PcbProject } from '../../core/types';
 import { polygonBounds } from '../../core/geometry';
 import { snapToGrid } from '../../core/units';
 import { buildNetAdjacency } from './netAdjacency';
-import { relaxPlacementForces } from './forceLayout';
+import { relaxPlacementForces, resolvePlacementOverlaps } from './forceLayout';
 
 /** Force-directed + overlap-resolving Autoplacer constrained inside the board outline. */
 export function runAutoplacer(pcb: PcbProject): PcbProject {
@@ -39,15 +39,16 @@ export function runAutoplacer(pcb: PcbProject): PcbProject {
     comp.y = bounds.yMin + (r + 0.5) * cellH;
   });
 
-  relaxPlacementForces(next.components, netToComps, bounds, 60);
+  relaxPlacementForces(next.components, netToComps, bounds, 60, next.keepouts);
 
-  // Final grid snap
+  // Final grid snap, then re-enforce overlap separation in case snapping merged nearby components
   const grid = Math.max(0.5, next.gridSize || 1.25);
   for (const comp of next.components) {
     if (comp.locked) continue;
     comp.x = snapToGrid(comp.x, grid);
     comp.y = snapToGrid(comp.y, grid);
   }
+  resolvePlacementOverlaps(next.components, bounds, next.keepouts, 1.5, 24);
 
   return next;
 }

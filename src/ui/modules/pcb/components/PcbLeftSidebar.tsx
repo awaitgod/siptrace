@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PatternDef, PatternLibrary, PcbProject } from '../../../../core/types';
+import { CadLibraryManagerDialog } from '../../../components/CadLibraryManagerDialog';
 import { PatternPreviewCanvas } from '../../../components/CadPreviewCanvas';
 import { PcbToolId } from '../types';
 
@@ -19,7 +20,15 @@ export interface PcbLeftSidebarProps {
 }
 
 /** Left pattern browser, quick accuracy/trace-width settings, and live 2D footprint preview. */
-export const PcbLeftSidebar: React.FC<PcbLeftSidebarProps> = (p) => (
+export const PcbLeftSidebar: React.FC<PcbLeftSidebarProps> = (p) => {
+  const [showCadLibManager, setShowCadLibManager] = useState(false);
+  React.useEffect(() => {
+    const onOpen = () => setShowCadLibManager(true);
+    window.addEventListener('siptrace:open-cadlib', onOpen);
+    return () => window.removeEventListener('siptrace:open-cadlib', onOpen);
+  }, []);
+
+  return (
   <div className="dt-left-sidebar">
     <div className="dt-black-bar"><span>Установить корпус (ГОСТ)</span><span>▼</span></div>
     <div className="dt-lib-list" style={{ height: 120 }}>
@@ -35,6 +44,17 @@ export const PcbLeftSidebar: React.FC<PcbLeftSidebarProps> = (p) => (
           {lib.name}
         </div>
       ))}
+    </div>
+    <div style={{ padding: '2px 4px', background: '#e8e8e8', borderBottom: '1px solid #bdbdbd' }}>
+      <button
+        type="button"
+        className="dt-btn"
+        style={{ width: '100%', fontSize: 11, height: 22 }}
+        data-testid="pcb-cadlib-btn"
+        onClick={() => setShowCadLibManager(true)}
+      >
+        + Импорт / Библиотеки CAD...
+      </button>
     </div>
     <div className="dt-black-bar"><span>Корпуса ({p.activeLib?.patterns.length ?? 0})</span></div>
     <div className="dt-comp-list">
@@ -82,5 +102,20 @@ export const PcbLeftSidebar: React.FC<PcbLeftSidebarProps> = (p) => (
       <div className="dt-preview-label">{p.previewPatternDef?.name ?? 'Корпус'}</div>
       <PatternPreviewCanvas pattern={p.previewPatternDef} />
     </div>
+
+    {showCadLibManager && (
+      <CadLibraryManagerDialog
+        initialTab="patterns"
+        onClose={() => setShowCadLibManager(false)}
+        onSelectPattern={(pat) => {
+          const lib = p.allPatternLibs.find((l) => l.patterns.some((x) => x.id === pat.id));
+          if (lib) p.setSelectedPatLibId(lib.id);
+          p.setSelectedLibPatId(pat.id);
+          p.setTool('placePattern');
+          p.setStatusMessage(`Выбран корпус «${pat.name}» — кликните на плату для установки.`);
+        }}
+      />
+    )}
   </div>
-);
+  );
+};

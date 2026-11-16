@@ -2,11 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Model3DShapeType, PadDef, PadShape, PadType, PatternDef, Point2D } from '../../../core/types';
 import { dist, uid } from '../../../core/geometry';
 import { snapPoint } from '../../../core/units';
-import { broadcastEdaEvent, loadUserPatterns, openAppModule, saveUserPatterns, subscribeEdaEvents } from '../../../core/store';
+import { broadcastEdaEvent, loadUserPatterns, openAppModule, registerImportedLibraryBundle, saveUserPatterns, subscribeEdaEvents } from '../../../core/store';
 import { GOST_PATTERN_LIBRARIES } from '../../../gost/libraries/gostPatterns';
 import { PatternGeneratorFamily, generateParametricPattern } from '../../../engines/patternGenerator';
-import { GostConversionReport, importCadLibrary } from '../../../engines/importers';
-import { pickCadFile, saveTextFile } from '../../../core/utils/fileIo';
+import { GostConversionReport, importCadLibrary, importExternalCadLibrary } from '../../../engines/importers';
+import { pickCadFiles, saveTextFile } from '../../../core/utils/fileIo';
+import { CadLibraryManagerDialog } from '../../components/CadLibraryManagerDialog';
 import { GostConversionDialog } from '../../components/GostConversionDialog';
 import { MenuBar, TopMenuSpec } from '../../components/MenuBar';
 import { StatusBar } from '../../components/StatusBar';
@@ -49,30 +50,57 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
   // Parametric Generator Modal state
   const [showGenDialog, setShowGenDialog] = useState(false);
   const [conversionReport, setConversionReport] = useState<GostConversionReport | null>(null);
+  const [showCadLibDialog, setShowCadLibDialog] = useState(false);
 
   const handleImportPatternLibrary = async () => {
-    const picked = await pickCadFile('.lib,.kicad_mod,.lbr,.dxf,.gostlib,.json', [
-      { name: 'Библиотеки корпусов (DipTrace .lib / KiCad .kicad_mod / Eagle .lbr / DXF / .gostlib)', extensions: ['lib', 'kicad_mod', 'lbr', 'dxf', 'gostlib', 'json'] }
-    ]);
-    if (!picked) return;
+    const pickedList = await pickCadFiles('.lib,.eli,.kicad_mod,.lbr,.dxf,.gostlib,.json,.zip');
+    if (pickedList.length === 0) return;
     try {
-      const res = await importCadLibrary(picked.bytes, picked.name);
-      if (res.patterns.length > 0) {
-        const next = [...userPatterns];
-        for (const p of res.patterns) {
-          const pat = { ...p, library: 'patlib_user' };
-          const idx = next.findIndex((x) => x.id === pat.id || x.name === pat.name);
-          if (idx >= 0) next[idx] = pat;
-          else next.push(pat);
+      const importedPats: PatternDef[] = [];
+      let lastReport: GostConversionReport | null = null;
+      let lastFormat = 'CAD';
+      for (const picked of pickedList) {
+        if (picked.name.toLowerCase().endsWith('.dxf')) {
+          const res = await importCadLibrary(picked.bytes, picked.name);
+          importedPats.push(...res.patterns);
+          lastReport = res.report;
+          lastFormat = res.detectedFormat;
+          if (res.patterns.length > 0) {
+            registerImportedLibraryBundle({
+              name: picked.name.replace(/\.[^.]+$/, ''),
+              sourceFormat: res.detectedFormat,
+              sourceFile: picked.name,
+              category: 'Импорт DXF',
+              gostAdapted: true,
+              components: [],
+              patterns: res.patterns
+            });
+          }
+        } else {
+          const res = await importExternalCadLibrary(picked.bytes, picked.name, { adaptToGost: true });
+          importedPats.push(...res.patterns);
+          lastReport = res.report;
+          lastFormat = res.detectedFormat;
+          if (res.components.length > 0 || res.patterns.length > 0) {
+            registerImportedLibraryBundle({
+              name: res.libraryName,
+              sourceFormat: res.detectedFormat,
+              sourceFile: picked.name,
+              category: res.categories[0] || 'Импорт CAD',
+              gostAdapted: true,
+              components: res.components,
+              patterns: res.patterns
+            });
+          }
         }
-        setUserPatterns(next);
-        saveUserPatterns(next);
-        setPattern(structuredClone(res.patterns[0]));
-        broadcastEdaEvent('libraries:updated', { kind: 'patterns' });
-        setStatusText(`Импортировано корпусов (${res.detectedFormat}): ${res.patterns.length}.`);
-        setConversionReport(res.report);
+      }
+      setUserPatterns(loadUserPatterns());
+      if (importedPats.length > 0) {
+        setPattern(structuredClone(importedPats[0]));
+        setStatusText(`Импортировано корпусов (${lastFormat}): ${importedPats.length}.`);
+        if (lastReport) setConversionReport(lastReport);
       } else {
-        setStatusText(`В файле ${picked.name} не найдено корпусов.`);
+        setStatusText('В выбранных файлах не найдено корпусов.');
       }
     } catch (err) {
       setStatusText(`Ошибка импорта корпусов: ${(err as Error).message}`);
@@ -93,6 +121,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const panRef = useRef<{ startX: number; startY: number; ox: number; oy: number } | null>(null);
 
   useEffect(() => {
     document.title = `Редактор корпусов - [${pattern.name}] — SIPTrace`;
@@ -111,6 +140,10 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
       } else if (e.key === 'Escape') {
         setShowGenDialog(false);
         setDraftStart(null);
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedPadId && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement)) {
+        e.preventDefault();
+        setPattern((p) => ({ ...p, pads: p.pads.filter((x) => x.id !== selectedPadId) }));
+        setSelectedPadId(null);
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -256,7 +289,8 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
       }
       if (pad.number) {
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = `0.55px "Segoe UI", Arial`;
+        const fontMm = Math.min(0.85, Math.max(0.18, Math.min(pad.width, pad.height) * 0.45));
+        ctx.font = `${fontMm}px "Segoe UI", Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(pad.number, 0, 0);
@@ -294,7 +328,32 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
     };
   };
 
+  const zoomToFit = () => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const w = wrap.clientWidth || 700;
+    const h = wrap.clientHeight || 500;
+    const xs = pattern.pads.flatMap(p => [p.x - p.width / 2, p.x + p.width / 2]);
+    const ys = pattern.pads.flatMap(p => [p.y - p.height / 2, p.y + p.height / 2]);
+    const minX = xs.length ? Math.min(...xs) - 2 : -10;
+    const maxX = xs.length ? Math.max(...xs) + 2 : 10;
+    const minY = ys.length ? Math.min(...ys) - 2 : -10;
+    const maxY = ys.length ? Math.max(...ys) + 2 : 10;
+    const scale = Math.max(4, Math.min(70, Math.min(w / Math.max(4, maxX - minX), h / Math.max(4, maxY - minY)) * 0.72));
+    setViewport({ pxPerMm: scale, ox: w / 2 - ((minX + maxX) / 2) * scale, oy: h / 2 - ((minY + maxY) / 2) * scale });
+  };
+
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (e.button === 1 || e.button === 2) {
+      e.preventDefault();
+      if (e.button === 2 && (tool !== 'select' || draftStart)) {
+        setDraftStart(null);
+        setTool('select');
+        return;
+      }
+      panRef.current = { startX: e.clientX, startY: e.clientY, ox: viewport.ox, oy: viewport.oy };
+      return;
+    }
     if (e.button !== 0) return;
     const wp = screenToWorld(e.clientX, e.clientY);
     const pt = snapPoint(wp, gridMm);
@@ -443,6 +502,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
         <button className={`dt-tb-btn ${tool === 'silkLine' ? 'active' : ''}`} title="Линия шелкографии" onClick={() => { setDraftStart(null); setTool('silkLine'); }}><DipIcon name="shapeLine" /></button>
         <button className={`dt-tb-btn ${tool === 'silkRect' ? 'active' : ''}`} title="Прямоугольник шелкографии" onClick={() => { setDraftStart(null); setTool('silkRect'); }}><DipIcon name="shapeRect" /></button>
         <div className="dt-tb-sep" />
+        <button className="dt-tb-btn" title="Показать весь корпус" onClick={zoomToFit}><DipIcon name="zoomAll" /></button>
         <select className="dt-tb-select" style={{ width: 72 }} value={gridMm} onChange={(e) => setGridMm(parseFloat(e.target.value))}>
           <option value={0.25}>0,25 мм</option>
           <option value={0.5}>0,5 мм</option>
@@ -450,6 +510,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
           <option value={2.5}>2,5 мм</option>
         </select>
         <button className="dt-btn" onClick={handleImportPatternLibrary}>Импорт САПР/DXF...</button>
+        <button className="dt-btn" data-testid="pated-cadlib-btn" onClick={() => setShowCadLibDialog(true)}>Библиотеки CAD...</button>
         <button className="dt-btn" onClick={() => setShowGenDialog(true)}>Генератор корпусов (IPC-7351)...</button>
         <button className="dt-btn primary" onClick={handleSavePattern}>Сохранить в библиотеку</button>
       </div>
@@ -511,7 +572,16 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
               ref={canvasRef}
               style={{ display: 'block', width: '100%', height: '100%', cursor: tool === 'select' ? 'default' : 'crosshair' }}
               onMouseDown={handleCanvasMouseDown}
-              onMouseMove={(e) => setCursorMm(snapPoint(screenToWorld(e.clientX, e.clientY), gridMm))}
+              onMouseMove={(e) => {
+                if (panRef.current) {
+                  setViewport((v) => ({ ...v, ox: panRef.current!.ox + (e.clientX - panRef.current!.startX), oy: panRef.current!.oy + (e.clientY - panRef.current!.startY) }));
+                  return;
+                }
+                setCursorMm(snapPoint(screenToWorld(e.clientX, e.clientY), gridMm));
+              }}
+              onMouseUp={() => { panRef.current = null; }}
+              onMouseLeave={() => { panRef.current = null; }}
+              onContextMenu={(e) => e.preventDefault()}
               onWheel={(e) => {
                 const f = e.deltaY < 0 ? 1.15 : 1 / 1.15;
                 setViewport((v) => ({ ...v, pxPerMm: Math.max(4, Math.min(70, v.pxPerMm * f)) }));
@@ -596,8 +666,15 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
                           onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === pad.id ? { ...x, y: parseFloat(e.target.value) || 0 } : x) }))}
                         />
                       </td>
-                      <td>{pad.width}×{pad.height}</td>
-                      <td>{pad.holeDiameter ?? 0}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 2 }}>
+                          <input className="dt-prop-input" style={{ width: 32 }} type="number" step="0.1" value={pad.width} onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === pad.id ? { ...x, width: Math.max(0.1, parseFloat(e.target.value) || 0.2) } : x) }))} />
+                          <input className="dt-prop-input" style={{ width: 32 }} type="number" step="0.1" value={pad.height} onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === pad.id ? { ...x, height: Math.max(0.1, parseFloat(e.target.value) || 0.2) } : x) }))} />
+                        </div>
+                      </td>
+                      <td>
+                        <input className="dt-prop-input" style={{ width: 34 }} type="number" step="0.05" value={pad.holeDiameter ?? 0} onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === pad.id ? { ...x, holeDiameter: Math.max(0, parseFloat(e.target.value) || 0) } : x) }))} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -694,6 +771,17 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
 
       {conversionReport && (
         <GostConversionDialog report={conversionReport} onClose={() => setConversionReport(null)} />
+      )}
+
+      {showCadLibDialog && (
+        <CadLibraryManagerDialog
+          initialTab="patterns"
+          onClose={() => setShowCadLibDialog(false)}
+          onSelectPattern={(pat) => {
+            setPattern(structuredClone(pat));
+            setStatusText(`Загружен корпус «${pat.name}» из библиотеки «${pat.library}».`);
+          }}
+        />
       )}
     </div>
   );

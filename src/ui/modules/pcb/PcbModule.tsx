@@ -6,6 +6,7 @@ import {
   broadcastEdaEvent,
   consumePendingConversionReport,
   createProjectFromOptions,
+  getUserPatternLibraries,
   NewProjectOptions,
   openAppModule,
   recordRecentProject,
@@ -15,6 +16,7 @@ import {
 } from '../../../core/store';
 import { GOST_PATTERN_LIBRARIES, findPatternById } from '../../../gost/libraries/gostPatterns';
 import { computeUnroutedRatlines, getWorldPads, runPcbDrc } from '../../../engines/drc';
+import { createDefaultPcbLayers } from '../../../engines/netlist';
 import { updateAllCopperPours } from '../../../engines/copperPour';
 import { AutorouterReport, DEFAULT_AUTOROUTER_SETTINGS, runAutorouter } from '../../../engines/autorouter';
 import { runAutoplacer } from '../../../engines/autoplacer';
@@ -42,7 +44,7 @@ import { usePcbProjectState } from './hooks/usePcbProjectState';
 import { usePcbCanvasInteraction } from './interactions/usePcbCanvasInteraction';
 import { createPcbTopMenus } from './menus/pcbMenuSpec';
 import { buildBoardOutlinePolygon, buildViaStitchingVias } from './services/pcbActionsService';
-import { CopperLayerId, MeasureRulerState, PcbToolId } from './types';
+import { CopperLayerId, MeasureRulerState, PcbExtraSelection, PcbToolId } from './types';
 
 /** Thin Enterprise composition root for the PCB Layout & Autorouter Editor. */
 export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onSwitchModule }) => {
@@ -71,17 +73,7 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
 
   // Library sidebar state
   const allPatternLibs = useMemo(() => {
-    const libs = [...GOST_PATTERN_LIBRARIES];
-    if (userPatterns.length > 0) {
-      libs.push({
-        id: 'patlib_user',
-        name: 'Пользовательские корпуса',
-        description: 'Сохранённые корпуса пользователя',
-        isUserLibrary: true,
-        patterns: userPatterns
-      });
-    }
-    return libs;
+    return [...GOST_PATTERN_LIBRARIES, ...getUserPatternLibraries()];
   }, [userPatterns]);
 
   const [selectedPatLibId, setSelectedPatLibId] = useState(allPatternLibs[0]?.id ?? 'patlib_gost_passives');
@@ -121,6 +113,9 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
   const [showHotkeysDialog, setShowHotkeysDialog] = useState(false);
   const [showBoardWizard, setShowBoardWizard] = useState(false);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
+  const [showFindDialog, setShowFindDialog] = useState(false);
+  const [findQuery, setFindQuery] = useState('');
+  const [selectedExtraObj, setSelectedExtraObj] = useState<PcbExtraSelection | null>(null);
   const [conversionReport, setConversionReport] = useState<GostConversionReport | null>(() => consumePendingConversionReport());
   const [wizardW, setWizardW] = useState(100);
   const [wizardH, setWizardH] = useState(70);
@@ -128,6 +123,17 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
   const [wizardCircle, setWizardCircle] = useState(false);
   const [wizardThick, setWizardThick] = useState(1.6);
   const [wizardLayers, setWizardLayers] = useState<2 | 4>(2);
+
+  useEffect(() => {
+    if (!showBoardWizard) return;
+    if (pcb.boardOutline.length >= 3) {
+      const b = polygonBounds(pcb.boardOutline);
+      setWizardW(Math.max(10, Number((b.maxX - b.minX).toFixed(2))));
+      setWizardH(Math.max(10, Number((b.maxY - b.minY).toFixed(2))));
+    }
+    setWizardThick(pcb.boardThickness || 1.6);
+    setWizardLayers(pcb.layerCount === 4 ? 4 : 2);
+  }, [showBoardWizard, pcb.boardOutline, pcb.boardThickness, pcb.layerCount]);
 
   const [newPourNet, setNewPourNet] = useState('GND');
   const [newPourLayer, setNewPourLayer] = useState<CopperLayerId>('BottomCopper');
@@ -206,9 +212,9 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
       if (tool === 'routeManual' && routeDraftPts.length > 0 && targetLayer !== activeLayer) {
         const cur = snapPoint(cursorMmRef.current, pcb.gridSize);
         let segmentPts = routeDraftPts;
-        let viaPt = routeDraftPts[routeDraftPts.length - 1];
-        if (routeDraftPts.length === 1 && dist(cur, routeDraftPts[0]) > 0.5) {
-          const last = routeDraftPts[0];
+        const last = routeDraftPts[routeDraftPts.length - 1];
+        let viaPt = last;
+        if (dist(cur, last) > 0.25) {
           const dx = cur.x - last.x;
           const dy = cur.y - last.y;
           const minD = Math.min(Math.abs(dx), Math.abs(dy));
@@ -216,7 +222,7 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
             ? { x: last.x + Math.sign(dx) * minD, y: last.y + Math.sign(dy) * minD }
             : { x: cur.x - Math.sign(dx) * minD, y: cur.y - Math.sign(dy) * minD };
           segmentPts = [
-            last,
+            ...routeDraftPts,
             ...(dist(midPt, last) > 0.05 && dist(midPt, cur) > 0.05 ? [midPt] : []),
             cur
           ];
@@ -280,6 +286,7 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
     setSelectedCompId,
     setSelectedTraceId,
     setSelectedViaId,
+    setSelectedExtraObj,
     routeNetName,
     setRouteNetName,
     routeDraftPts,
@@ -360,6 +367,7 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
     selectedCompId,
     selectedTraceId,
     selectedViaId,
+    selectedExtraObj,
     routeDraftPtsLength: routeDraftPts.length,
     zoomPercent,
     setZoomPercent,
@@ -376,12 +384,14 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
     setSelectedTraceId,
     setSelectedCompId,
     setSelectedViaId,
+    setSelectedExtraObj,
     commitPcb,
     handleNewProject: handleNewPcbProject,
     handleOpenPcbFile: () => handleOpenPcbFile(),
     handleSavePcbFile: () => handleSavePcbFile(false),
     handleRunDrc,
-    zoomToFit
+    zoomToFit,
+    onFind: () => setShowFindDialog(true)
   });
 
   useEffect(() => {
@@ -398,6 +408,8 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
       ratlines,
       selectedCompId,
       selectedTraceId,
+      selectedViaId,
+      selectedExtraObj,
       highlightedNet,
       tool,
       activeLayer,
@@ -416,6 +428,8 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
     ratlines,
     selectedCompId,
     selectedTraceId,
+    selectedViaId,
+    selectedExtraObj,
     highlightedNet,
     tool,
     routeDraftPts,
@@ -636,6 +650,12 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
           handleApplyViaStitching={handleApplyViaStitching}
           selectedCompId={selectedCompId}
           setSelectedCompId={setSelectedCompId}
+          selectedTraceId={selectedTraceId}
+          setSelectedTraceId={setSelectedTraceId}
+          selectedViaId={selectedViaId}
+          setSelectedViaId={setSelectedViaId}
+          selectedExtraObj={selectedExtraObj}
+          setSelectedExtraObj={setSelectedExtraObj}
           highlightedNet={highlightedNet}
           setHighlightedNet={setHighlightedNet}
           netNames={netNames}
@@ -762,7 +782,8 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
                       ...p,
                       boardOutline: outline,
                       boardThickness: wizardThick,
-                      layerCount: wizardLayers
+                      layerCount: wizardLayers,
+                      layers: wizardLayers !== p.layerCount ? createDefaultPcbLayers(wizardLayers) : p.layers
                     });
                   });
                   setShowBoardWizard(false);
@@ -776,6 +797,59 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
           </div>
         </div>
       )}
+      {showFindDialog && (() => {
+        const executeFind = () => {
+          const q = findQuery.trim().toLowerCase();
+          if (!q) return;
+          const comp = pcb.components.find((c) => c.refDes.toLowerCase().includes(q) || c.value.toLowerCase().includes(q));
+          if (comp) {
+            setSelectedCompId(comp.id);
+            setSelectedTraceId(null);
+            setSelectedViaId(null);
+            setSelectedExtraObj(null);
+            centerOnWorldPt(comp.x, comp.y);
+            setStatusMessage(`Найден компонент: ${comp.refDes} (${comp.value})`);
+            setShowFindDialog(false);
+            return;
+          }
+          const net = netNames.find((n) => n.toLowerCase().includes(q));
+          if (net) {
+            setHighlightedNet(net);
+            const pad = worldPads.find((wp) => wp.netName === net);
+            if (pad) centerOnWorldPt(pad.x, pad.y);
+            setStatusMessage(`Найдена цепь: ${net}`);
+            setShowFindDialog(false);
+            return;
+          }
+          setStatusMessage(`Объект «${findQuery}» не найден.`);
+        };
+        return (
+          <div className="dt-modal-backdrop" onClick={() => setShowFindDialog(false)}>
+            <div className="dt-modal" style={{ width: 380 }} onClick={(e) => e.stopPropagation()}>
+              <div className="dt-modal-title">
+                <strong>Поиск компонента или цепи (Ctrl+F)</strong>
+                <button className="dt-btn" style={{ minWidth: 22, height: 18, padding: 0 }} onClick={() => setShowFindDialog(false)}>×</button>
+              </div>
+              <div className="dt-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <input
+                  autoFocus
+                  className="dt-input"
+                  placeholder="Поз. обозначение (R1, U1) или имя цепи (GND, VCC)..."
+                  value={findQuery}
+                  onChange={(e) => setFindQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') executeFind();
+                  }}
+                />
+              </div>
+              <div className="dt-modal-footer">
+                <button className="dt-btn primary" onClick={executeFind}>Найти</button>
+                <button className="dt-btn" onClick={() => setShowFindDialog(false)}>Отмена</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {showNewProjectDialog && (
         <NewProjectDialog

@@ -26,6 +26,9 @@ export function getWorldPads(pcb: PcbProject): WorldPad[] {
             ? 'TopCopper'
             : 'BottomCopper';
       const padAngleDeg = (mirror ? -comp.angle : comp.angle) + (pad.angle ?? 0);
+      const polyMaxR = pad.shape === 'Polygon' && pad.polygonPoints?.length
+        ? Math.max(...pad.polygonPoints.map((pt2) => Math.hypot(pt2.x, pt2.y)))
+        : 0;
       result.push({
         compId: comp.id,
         refDes: comp.refDes,
@@ -35,7 +38,7 @@ export function getWorldPads(pcb: PcbProject): WorldPad[] {
         padAngleDeg,
         netName: comp.padNets[pad.number] ?? '',
         effectiveLayer,
-        radius: Math.max(pad.width, pad.height) * 0.5
+        radius: Math.max(pad.width * 0.5, pad.height * 0.5, polyMaxR)
       });
     }
   }
@@ -44,18 +47,41 @@ export function getWorldPads(pcb: PcbProject): WorldPad[] {
 
 const copperLayerOrder = ['TopCopper', 'Inner1', 'Inner2', 'BottomCopper'] as const;
 
-function viaLayerSpan(via: PcbVia): [number, number] {
+type LayerSpan = [number, number];
+
+function viaLayerSpan(via: PcbVia): LayerSpan {
   const a = copperLayerOrder.indexOf(via.startLayer);
   const b = copperLayerOrder.indexOf(via.endLayer);
   return [Math.min(a, b), Math.max(a, b)];
 }
 
-// Distance from the via centre to the pad's rendered copper outline.
+function layerToSpan(layer: string): LayerSpan {
+  if (layer === 'All' || layer === 'AllCopper') return [0, copperLayerOrder.length - 1];
+  const idx = copperLayerOrder.indexOf(layer as (typeof copperLayerOrder)[number]);
+  return idx >= 0 ? [idx, idx] : [0, copperLayerOrder.length - 1];
+}
+
+function spansOverlap(a: LayerSpan, b: LayerSpan): boolean {
+  return a[0] <= b[1] && b[0] <= a[1];
+}
+
+// Distance from a point to the pad's rendered copper outline.
 function pointToPadDistance(point: Point2D, wp: WorldPad): number {
   const angle = -wp.padAngleDeg * Math.PI / 180;
   const dx = point.x - wp.x, dy = point.y - wp.y;
-  const x = Math.abs(dx * Math.cos(angle) - dy * Math.sin(angle));
-  const y = Math.abs(dx * Math.sin(angle) + dy * Math.cos(angle));
+  const lx = dx * Math.cos(angle) - dy * Math.sin(angle);
+  const ly = dx * Math.sin(angle) + dy * Math.cos(angle);
+  if (wp.pad.shape === 'Polygon' && wp.pad.polygonPoints && wp.pad.polygonPoints.length >= 3) {
+    const pts = wp.pad.polygonPoints;
+    if (pointInPolygon({ x: lx, y: ly }, pts)) return 0;
+    let best = Infinity;
+    for (let i = 0; i < pts.length; i++) {
+      best = Math.min(best, pointToSegmentDist({ x: lx, y: ly }, pts[i], pts[(i + 1) % pts.length]));
+    }
+    return best;
+  }
+  const x = Math.abs(lx);
+  const y = Math.abs(ly);
   const rx = Math.max(0, wp.pad.width / 2), ry = Math.max(0, wp.pad.height / 2);
   if (wp.pad.shape === 'Round') return Math.max(0, Math.hypot(x, y) - rx);
   if (wp.pad.shape === 'Oval' && rx > 0 && ry > 0) {
@@ -71,7 +97,120 @@ function pointToPadDistance(point: Point2D, wp: WorldPad): number {
     }
     return Math.hypot(x - rx * rx * x / (hi + rx * rx), y - ry * ry * y / (hi + ry * ry));
   }
+  if (wp.pad.shape === 'RoundedRect') {
+    const cr = Math.min(rx, ry, Math.max(0, wp.pad.cornerRadius ?? Math.min(rx, ry) * 0.25));
+    const ix = Math.max(0, rx - cr), iy = Math.max(0, ry - cr);
+    return Math.max(0, Math.hypot(Math.max(0, x - ix), Math.max(0, y - iy)) - cr);
+  }
   return Math.hypot(Math.max(0, x - rx), Math.max(0, y - ry));
+}
+
+function padToWorldPolygon(wp: WorldPad, segs = 16): Point2D[] {
+  const rad = (wp.padAngleDeg * Math.PI) / 180;
+  const cos = Math.cos(rad), sin = Math.sin(rad);
+  const toWorld = (lx: number, ly: number): Point2D => ({
+    x: wp.x + lx * cos - ly * sin,
+    y: wp.y + lx * sin + ly * cos
+  });
+  if (wp.pad.shape === 'Polygon' && wp.pad.polygonPoints && wp.pad.polygonPoints.length >= 3) {
+    return wp.pad.polygonPoints.map((p) => toWorld(p.x, p.y));
+  }
+  const rx = Math.max(0, wp.pad.width / 2), ry = Math.max(0, wp.pad.height / 2);
+  if (wp.pad.shape === 'Round' || wp.pad.shape === 'Oval') {
+    const pts: Point2D[] = [];
+    for (let i = 0; i < segs; i++) {
+      const a = (2 * Math.PI * i) / segs;
+      pts.push(toWorld(rx * Math.cos(a), ry * Math.sin(a)));
+    }
+    return pts;
+  }
+  if (wp.pad.shape === 'RoundedRect') {
+    const cr = Math.min(rx, ry, Math.max(0, wp.pad.cornerRadius ?? Math.min(rx, ry) * 0.25));
+    if (cr > 1e-4) {
+      const pts: Point2D[] = [];
+      const arcSteps = 4;
+      const corners = [
+        { cx: rx - cr, cy: ry - cr, start: 0 },
+        { cx: -(rx - cr), cy: ry - cr, start: Math.PI / 2 },
+        { cx: -(rx - cr), cy: -(ry - cr), start: Math.PI },
+        { cx: rx - cr, cy: -(ry - cr), start: (3 * Math.PI) / 2 }
+      ];
+      for (const c of corners) {
+        for (let k = 0; k <= arcSteps; k++) {
+          const a = c.start + (Math.PI / 2) * (k / arcSteps);
+          pts.push(toWorld(c.cx + cr * Math.cos(a), c.cy + cr * Math.sin(a)));
+        }
+      }
+      return pts;
+    }
+  }
+  return [toWorld(-rx, -ry), toWorld(rx, -ry), toWorld(rx, ry), toWorld(-rx, ry)];
+}
+
+function segmentToPadDistance(a: Point2D, b: Point2D, wp: WorldPad): number {
+  if (wp.pad.shape === 'Round') {
+    return Math.max(0, pointToSegmentDist(wp, a, b) - wp.pad.width * 0.5);
+  }
+  if (wp.pad.shape === 'Polygon' && wp.pad.polygonPoints && wp.pad.polygonPoints.length >= 3) {
+    const angle = -wp.padAngleDeg * Math.PI / 180;
+    const cos = Math.cos(angle), sin = Math.sin(angle);
+    const toLocal = (p: Point2D): Point2D => {
+      const dx = p.x - wp.x, dy = p.y - wp.y;
+      return { x: dx * cos - dy * sin, y: dx * sin + dy * cos };
+    };
+    const la = toLocal(a), lb = toLocal(b), pts = wp.pad.polygonPoints;
+    if (pointInPolygon(la, pts) || pointInPolygon(lb, pts)) return 0;
+    let best = Infinity;
+    for (let i = 0; i < pts.length; i++) {
+      const p1 = pts[i], p2 = pts[(i + 1) % pts.length];
+      if (segmentsIntersect(la, lb, p1, p2)) return 0;
+      best = Math.min(best, segmentToSegmentDist(la, lb, p1, p2));
+    }
+    return best;
+  }
+  // Golden-section search on convex distance function along segment [a, b]
+  const evalAt = (t: number) => pointToPadDistance({ x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) }, wp);
+  const d0 = evalAt(0), d1 = evalAt(1);
+  if (d0 === 0 || d1 === 0) return 0;
+  let lo = 0, hi = 1;
+  const phi = (Math.sqrt(5) - 1) / 2;
+  let c = hi - phi * (hi - lo), d = lo + phi * (hi - lo);
+  let fc = evalAt(c), fd = evalAt(d);
+  let best = Math.min(d0, d1, fc, fd);
+  if (best === 0) return 0;
+  for (let i = 0; i < 28; i++) {
+    if (fc < fd) {
+      hi = d; d = c; fd = fc;
+      c = hi - phi * (hi - lo);
+      fc = evalAt(c);
+      if (fc < best) best = fc;
+    } else {
+      lo = c; c = d; fc = fd;
+      d = lo + phi * (hi - lo);
+      fd = evalAt(d);
+      if (fd < best) best = fd;
+    }
+    if (best === 0) return 0;
+  }
+  return best;
+}
+
+function padToPadDistance(a: WorldPad, b: WorldPad): number {
+  if (a.pad.shape === 'Round' && b.pad.shape === 'Round') {
+    return Math.max(0, dist(a, b) - (a.pad.width + b.pad.width) * 0.5);
+  }
+  const polyA = padToWorldPolygon(a), polyB = padToWorldPolygon(b);
+  if (polyA.some((p) => pointInPolygon(p, polyB)) || polyB.some((p) => pointInPolygon(p, polyA))) return 0;
+  let best = Infinity;
+  for (let i = 0; i < polyA.length; i++) {
+    const a1 = polyA[i], a2 = polyA[(i + 1) % polyA.length];
+    for (let j = 0; j < polyB.length; j++) {
+      const b1 = polyB[j], b2 = polyB[(j + 1) % polyB.length];
+      if (segmentsIntersect(a1, a2, b1, b2)) return 0;
+      best = Math.min(best, segmentToSegmentDist(a1, a2, b1, b2));
+    }
+  }
+  return best;
 }
 
 export interface RatlineSegment {
@@ -101,16 +240,18 @@ export function computeUnroutedRatlines(pcb: PcbProject): RatlineSegment[] {
     interface CNode {
       x: number;
       y: number;
-      layer: string;
+      span: LayerSpan;
       label: string;
       isPad: boolean;
+      padIdx?: number;
     }
-    const nodes: CNode[] = netPads.map((p) => ({
+    const nodes: CNode[] = netPads.map((p, i) => ({
       x: p.x,
       y: p.y,
-      layer: p.effectiveLayer,
+      span: layerToSpan(p.effectiveLayer),
       label: `${p.refDes}.${p.pad.number}`,
-      isPad: true
+      isPad: true,
+      padIdx: i
     }));
 
     const netTraces = pcb.traces.filter((t) => t.netName === netName);
@@ -130,47 +271,78 @@ export function computeUnroutedRatlines(pcb: PcbProject): RatlineSegment[] {
       if (ra !== rb) parent[ra] = rb;
     };
 
-    const sameLayer = (a: string, b: string) => a === 'All' || b === 'All' || a === b;
-
     const addNode = (n: CNode): number => {
       nodes.push(n);
       parent.push(nodes.length - 1);
       return nodes.length - 1;
     };
 
+    const viaNodeEntries: { idx: number; via: PcbVia; span: LayerSpan }[] = [];
     for (const v of netVias) {
-      const idx = addNode({ x: v.x, y: v.y, layer: 'All', label: 'Via', isPad: false });
+      const span = viaLayerSpan(v);
+      const idx = addNode({ x: v.x, y: v.y, span, label: 'Via', isPad: false });
+      viaNodeEntries.push({ idx, via: v, span });
       for (let i = 0; i < netPads.length; i++) {
-        if (dist(v, netPads[i]) < Math.max(SNAP, netPads[i].radius + v.outerDiameter * 0.5)) {
+        if (!spansOverlap(span, nodes[i].span)) continue;
+        if (pointToPadDistance(v, netPads[i]) <= Math.max(SNAP, v.outerDiameter * 0.5)) {
           union(idx, i);
         }
       }
     }
 
+    const traceNodeGroups: { tr: (typeof netTraces)[number]; span: LayerSpan; repIdx: number }[] = [];
     for (const tr of netTraces) {
+      const span = layerToSpan(tr.layer);
       const idxs: number[] = [];
       for (const pt of tr.points) {
-        const idx = addNode({ x: pt.x, y: pt.y, layer: tr.layer, label: 'Trace', isPad: false });
+        const idx = addNode({ x: pt.x, y: pt.y, span, label: 'Trace', isPad: false });
         idxs.push(idx);
       }
       for (let k = 1; k < idxs.length; k++) union(idxs[k - 1], idxs[k]);
+      if (idxs.length > 0) traceNodeGroups.push({ tr, span, repIdx: idxs[0] });
 
       for (let k = 1; k < tr.points.length; k++) {
         const a = tr.points[k - 1];
         const b = tr.points[k];
-        for (let i = 0; i < nodes.length; i++) {
-          if (!sameLayer(tr.layer, nodes[i].layer)) continue;
-          const thr = nodes[i].isPad ? Math.max(SNAP, 0.5) : SNAP;
-          if (pointToSegmentDist(nodes[i], a, b) <= thr) {
+        for (let i = 0; i < netPads.length; i++) {
+          if (!spansOverlap(span, nodes[i].span)) continue;
+          if (segmentToPadDistance(a, b, netPads[i]) <= Math.max(SNAP, tr.width * 0.5)) {
             union(idxs[0], i);
           }
         }
+        for (const vn of viaNodeEntries) {
+          if (!spansOverlap(span, vn.span)) continue;
+          if (pointToSegmentDist(vn.via, a, b) <= Math.max(SNAP, vn.via.outerDiameter * 0.5 + tr.width * 0.5)) {
+            union(idxs[0], vn.idx);
+          }
+        }
+      }
+    }
+
+    // Union crossing or touching same-net traces on the same copper layer
+    for (let i = 0; i < traceNodeGroups.length; i++) {
+      const ga = traceNodeGroups[i];
+      for (let j = i + 1; j < traceNodeGroups.length; j++) {
+        const gb = traceNodeGroups[j];
+        if (!spansOverlap(ga.span, gb.span)) continue;
+        if (find(ga.repIdx) === find(gb.repIdx)) continue;
+        const tol = Math.max(SNAP, (ga.tr.width + gb.tr.width) * 0.5);
+        let joined = false;
+        for (let sa = 1; sa < ga.tr.points.length && !joined; sa++) {
+          for (let sb = 1; sb < gb.tr.points.length && !joined; sb++) {
+            if (segmentToSegmentDist(ga.tr.points[sa - 1], ga.tr.points[sa], gb.tr.points[sb - 1], gb.tr.points[sb]) <= tol) {
+              joined = true;
+            }
+          }
+        }
+        if (joined) union(ga.repIdx, gb.repIdx);
       }
     }
 
     // Check copper pours: group adjacent computed islands so isolated copper regions do not falsely short nets
     for (const pour of pcb.copperPours) {
       if (pour.netName === netName && pour.poured && pour.computedIslands && pour.computedIslands.length > 0 && pour.thermalType !== 'None') {
+        const pourSpan = layerToSpan(pour.layer);
         const isls = pour.computedIslands;
         const ib = isls.map((isl) => polygonBounds(isl.outer));
         const islParent = isls.map((_, idx) => idx);
@@ -195,7 +367,7 @@ export function computeUnroutedRatlines(pcb: PcbProject): RatlineSegment[] {
         const byComp = new Map<number, number[]>();
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
-          if (!sameLayer(pour.layer, n.layer)) continue;
+          if (!spansOverlap(pourSpan, n.span)) continue;
           for (let k = 0; k < isls.length; k++) {
             const b = ib[k];
             if (n.x < b.minX - tol || n.x > b.maxX + tol || n.y < b.minY - tol || n.y > b.maxY + tol) continue;
@@ -294,9 +466,18 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
     });
   };
 
-  // 1. Trace widths
+  const netClassMap = new Map((pcb.netClasses ?? []).map((nc) => [nc.id, nc]));
+  const getNetClass = (netName?: string) => {
+    if (!netName) return undefined;
+    const id = pcb.netClassAssignments?.[netName];
+    return id ? netClassMap.get(id) : undefined;
+  };
+
+  // 1. Trace widths & Acid Trap (<45 deg) acute-angle check
   for (const tr of pcb.traces) {
-    if (tr.width + 1e-6 < rules.minTraceWidth) {
+    const nc = getNetClass(tr.netName);
+    const reqWidth = Math.max(rules.minTraceWidth, nc?.traceWidth ?? 0);
+    if (tr.width + 1e-6 < reqWidth) {
       const p = tr.points[0] ?? { x: 0, y: 0 };
       pushErr({
         sigKey: tr.id,
@@ -305,9 +486,37 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
         x: p.x,
         y: p.y,
         code: 'DRC-WIDTH',
-        message: `Ширина проводника цепи «${tr.netName || 'Без имени'}» (${tr.width.toFixed(2)} мм) меньше допустимой (${rules.minTraceWidth.toFixed(2)} мм, класс ${rules.gostAccuracyClass}).`,
+        message: `Ширина проводника цепи «${tr.netName || 'Без имени'}» (${tr.width.toFixed(2)} мм) меньше допустимой (${reqWidth.toFixed(2)} мм${nc ? `, класс «${nc.name}»` : `, класс ${rules.gostAccuracyClass}`}).`,
         objectIds: [tr.id]
       });
+    }
+    for (let k = 1; k < tr.points.length - 1; k++) {
+      const a = tr.points[k - 1];
+      const b = tr.points[k];
+      const c = tr.points[k + 1];
+      const v1x = a.x - b.x;
+      const v1y = a.y - b.y;
+      const v2x = c.x - b.x;
+      const v2y = c.y - b.y;
+      const len1 = Math.hypot(v1x, v1y);
+      const len2 = Math.hypot(v2x, v2y);
+      if (len1 > 0.05 && len2 > 0.05) {
+        const cosAng = (v1x * v2x + v1y * v2y) / (len1 * len2);
+        // Cos > 0.72 corresponds to interior vertex angle < ~44 deg (acute acid trap)
+        if (cosAng > 0.72) {
+          pushErr({
+            sigKey: `acid_${tr.id}_${Math.round(b.x * 10)}_${Math.round(b.y * 10)}`,
+            severity: 'Warning',
+            layer: tr.layer,
+            x: b.x,
+            y: b.y,
+            code: 'DRC-ACID-TRAP',
+            message: `Острый угол (< 45°) проводника «${tr.netName || 'Без имени'}» — риск ловушки травления.`,
+            objectIds: [tr.id]
+          });
+          break;
+        }
+      }
     }
   }
 
@@ -340,7 +549,7 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
     }
   }
 
-  // 3. Pad-to-Pad Clearance
+  // 3. Pad-to-Pad Clearance (exact outline distance after bounding-circle filter)
   const pads = getWorldPads(pcb);
   for (let i = 0; i < pads.length; i++) {
     const a = pads[i];
@@ -350,8 +559,8 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
       const shareLayer = a.effectiveLayer === 'All' || b.effectiveLayer === 'All' || a.effectiveLayer === b.effectiveLayer;
       if (!shareLayer) continue;
       if (a.netName && b.netName && a.netName === b.netName) continue;
-      const centerDist = dist(a, b);
-      const edgeGap = centerDist - (a.radius + b.radius);
+      if (dist(a, b) - (a.radius + b.radius) + 1e-4 >= rules.clearancePadToPad) continue;
+      const edgeGap = padToPadDistance(a, b);
       if (edgeGap + 1e-4 < rules.clearancePadToPad) {
         const pair = [`${a.refDes}.${a.pad.number}`, `${b.refDes}.${b.pad.number}`].sort().join('_');
         pushErr({
@@ -371,16 +580,18 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
   // 4. Trace-to-Trace Clearance
   for (let i = 0; i < pcb.traces.length; i++) {
     const ta = pcb.traces[i];
+    const clrA = getNetClass(ta.netName)?.clearance ?? 0;
     for (let j = i + 1; j < pcb.traces.length; j++) {
       const tb = pcb.traces[j];
       if (ta.layer !== tb.layer) continue;
       if (ta.netName && tb.netName && ta.netName === tb.netName) continue;
+      const reqTrClr = Math.max(rules.clearanceTraceToTrace, clrA, getNetClass(tb.netName)?.clearance ?? 0);
       let violated = false;
       for (let sa = 1; sa < ta.points.length && !violated; sa++) {
         for (let sb = 1; sb < tb.points.length && !violated; sb++) {
           const d = segmentToSegmentDist(ta.points[sa - 1], ta.points[sa], tb.points[sb - 1], tb.points[sb]);
           const gap = d - (ta.width + tb.width) * 0.5;
-          if (gap + 1e-4 < rules.clearanceTraceToTrace) {
+          if (gap + 1e-4 < reqTrClr) {
             const pair = [ta.netName || ta.id, tb.netName || tb.id].sort().join('_');
             pushErr({
               sigKey: `${pair}_${Math.round(ta.points[sa - 1].x)}_${Math.round(ta.points[sa - 1].y)}`,
@@ -389,7 +600,7 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
               x: (ta.points[sa - 1].x + tb.points[sb - 1].x) / 2,
               y: (ta.points[sa - 1].y + tb.points[sb - 1].y) / 2,
               code: 'DRC-TR-TR',
-              message: `Зазор между дорожками «${ta.netName || '?'}» и «${tb.netName || '?'}» (${gap.toFixed(2)} мм) < ${rules.clearanceTraceToTrace.toFixed(2)} мм.`,
+              message: `Зазор между дорожками «${ta.netName || '?'}» и «${tb.netName || '?'}» (${gap.toFixed(2)} мм) < ${reqTrClr.toFixed(2)} мм.`,
               objectIds: [ta.id, tb.id]
             });
             violated = true;
@@ -401,13 +612,16 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
 
   // 5. Trace-to-Pad Clearance
   for (const tr of pcb.traces) {
+    const trNetClr = getNetClass(tr.netName)?.clearance ?? 0;
     for (const wp of pads) {
       if (wp.effectiveLayer !== 'All' && wp.effectiveLayer !== tr.layer) continue;
       if (tr.netName && wp.netName && tr.netName === wp.netName) continue;
+      const reqPadClr = Math.max(rules.clearanceTraceToPad, trNetClr, getNetClass(wp.netName)?.clearance ?? 0);
       for (let k = 1; k < tr.points.length; k++) {
-        const d = pointToSegmentDist(wp, tr.points[k - 1], tr.points[k]);
-        const gap = d - tr.width * 0.5 - wp.radius;
-        if (gap + 1e-4 < rules.clearanceTraceToPad) {
+        const boundGap = pointToSegmentDist(wp, tr.points[k - 1], tr.points[k]) - tr.width * 0.5 - wp.radius;
+        if (boundGap + 1e-4 >= reqPadClr) continue;
+        const gap = segmentToPadDistance(tr.points[k - 1], tr.points[k], wp) - tr.width * 0.5;
+        if (gap + 1e-4 < reqPadClr) {
           pushErr({
             sigKey: `${tr.netName}_${wp.refDes}.${wp.pad.number}`,
             severity: 'Error',
@@ -415,7 +629,7 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
             x: wp.x,
             y: wp.y,
             code: 'DRC-TR-PAD',
-            message: `Нарушение зазора дорожки «${tr.netName}» к КП ${wp.refDes}.${wp.pad.number} (${gap.toFixed(2)} мм < ${rules.clearanceTraceToPad.toFixed(2)} мм).`,
+            message: `Нарушение зазора дорожки «${tr.netName}» к КП ${wp.refDes}.${wp.pad.number} (${gap.toFixed(2)} мм < ${reqPadClr.toFixed(2)} мм).`,
             objectIds: [tr.id, wp.compId]
           });
           break;
@@ -424,10 +638,13 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
     }
   }
 
-  // 6. Via-to-Trace Clearance
+  // 6. Via-to-Trace Clearance (respecting blind/buried layer spans)
   for (const via of pcb.vias) {
+    const [vStart, vEnd] = viaLayerSpan(via);
     for (const tr of pcb.traces) {
       if (via.netName && tr.netName && via.netName === tr.netName) continue;
+      const trLayerIdx = copperLayerOrder.indexOf(tr.layer);
+      if (trLayerIdx < vStart || trLayerIdx > vEnd) continue;
       for (let k = 1; k < tr.points.length; k++) {
         const d = pointToSegmentDist(via, tr.points[k - 1], tr.points[k]);
         const gap = d - via.outerDiameter * 0.5 - tr.width * 0.5;
@@ -478,10 +695,11 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
     }
   }
 
-  // 7. Trace-to-Board Outline Clearance
+  // 7. Copper-to-Board Outline Clearance (Traces, Pads, Vias)
   if (pcb.boardOutline.length >= 3) {
     for (const tr of pcb.traces) {
-      for (let k = 1; k < tr.points.length; k++) {
+      let edgeViol = false;
+      for (let k = 1; k < tr.points.length && !edgeViol; k++) {
         for (let b = 0; b < pcb.boardOutline.length; b++) {
           const bNext = (b + 1) % pcb.boardOutline.length;
           const d = segmentToSegmentDist(tr.points[k - 1], tr.points[k], pcb.boardOutline[b], pcb.boardOutline[bNext]);
@@ -497,8 +715,48 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
               message: `Проводник «${tr.netName}» ближе ${rules.clearanceCopperToBoard.toFixed(2)} мм к краю платы.`,
               objectIds: [tr.id]
             });
+            edgeViol = true;
             break;
           }
+        }
+      }
+    }
+    for (const wp of pads) {
+      if (wp.pad.type === 'MountingHole') continue;
+      for (let b = 0; b < pcb.boardOutline.length; b++) {
+        const bNext = (b + 1) % pcb.boardOutline.length;
+        const d = segmentToPadDistance(pcb.boardOutline[b], pcb.boardOutline[bNext], wp);
+        if (d + 1e-4 < rules.clearanceCopperToBoard) {
+          pushErr({
+            sigKey: `pad_${wp.compId}_${wp.pad.id}_edge`,
+            severity: 'Warning',
+            layer: wp.effectiveLayer === 'All' ? 'TopCopper' : wp.effectiveLayer,
+            x: wp.x,
+            y: wp.y,
+            code: 'DRC-EDGE',
+            message: `КП ${wp.refDes}.${wp.pad.number} ближе ${rules.clearanceCopperToBoard.toFixed(2)} мм к краю платы (${d.toFixed(2)} мм).`,
+            objectIds: [wp.compId]
+          });
+          break;
+        }
+      }
+    }
+    for (const via of pcb.vias) {
+      for (let b = 0; b < pcb.boardOutline.length; b++) {
+        const bNext = (b + 1) % pcb.boardOutline.length;
+        const gap = pointToSegmentDist(via, pcb.boardOutline[b], pcb.boardOutline[bNext]) - via.outerDiameter * 0.5;
+        if (gap + 1e-4 < rules.clearanceCopperToBoard) {
+          pushErr({
+            sigKey: `via_${via.id}_edge`,
+            severity: 'Warning',
+            layer: 'All',
+            x: via.x,
+            y: via.y,
+            code: 'DRC-EDGE',
+            message: `Переходное отверстие (${via.netName || via.id}) ближе ${rules.clearanceCopperToBoard.toFixed(2)} мм к краю платы.`,
+            objectIds: [via.id]
+          });
+          break;
         }
       }
     }
@@ -582,8 +840,20 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
       }
     }
     if (ko.kind === 'RouteKeepout') {
+      const koSpan = layerToSpan(ko.layer);
       for (const v of pcb.vias) {
-        if (pointInPolygon(v, ko.points)) {
+        if (!spansOverlap(viaLayerSpan(v), koSpan)) continue;
+        const r = v.outerDiameter * 0.5;
+        let touches = pointInPolygon(v, ko.points);
+        if (!touches) {
+          for (let j = 0; j < ko.points.length; j++) {
+            if (pointToSegmentDist(v, ko.points[j], ko.points[(j + 1) % ko.points.length]) <= r + 1e-6) {
+              touches = true;
+              break;
+            }
+          }
+        }
+        if (touches) {
           pushErr({
             sigKey: `ko_${ko.id}_${v.id}`,
             severity: 'Error',
@@ -591,7 +861,7 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
             x: v.x,
             y: v.y,
             code: 'DRC-KEEPOUT',
-            message: `Переходное отверстие (${v.netName || v.id}) внутри зоны запрета Keepout.`,
+            message: `Переходное отверстие (${v.netName || v.id}) пересекает зону запрета Keepout.`,
             objectIds: [v.id, ko.id]
           });
         }
@@ -600,7 +870,29 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
     if (ko.kind === 'PlaceKeepout') {
       for (const comp of pcb.components) {
         if (ko.layer !== 'AllCopper' && ((comp.side === 'Top' && ko.layer !== 'TopCopper') || (comp.side === 'Bottom' && ko.layer !== 'BottomCopper'))) continue;
-        if (pointInPolygon(comp, ko.points)) {
+        const rad = (comp.angle * Math.PI) / 180;
+        const cos = Math.cos(rad), sin = Math.sin(rad);
+        const hw = Math.max(0.1, (comp.courtyard?.width ?? 1) * 0.5);
+        const hh = Math.max(0.1, (comp.courtyard?.height ?? 1) * 0.5);
+        const corners: Point2D[] = [
+          { x: comp.x + (-hw * cos - -hh * sin), y: comp.y + (-hw * sin + -hh * cos) },
+          { x: comp.x + (hw * cos - -hh * sin), y: comp.y + (hw * sin + -hh * cos) },
+          { x: comp.x + (hw * cos - hh * sin), y: comp.y + (hw * sin + hh * cos) },
+          { x: comp.x + (-hw * cos - hh * sin), y: comp.y + (-hw * sin + hh * cos) }
+        ];
+        let violates = pointInPolygon(comp, ko.points)
+          || corners.some((c) => pointInPolygon(c, ko.points))
+          || ko.points.some((kp) => pointInPolygon(kp, corners));
+        if (!violates) {
+          for (let ci = 0; ci < 4 && !violates; ci++) {
+            for (let ki = 0; ki < ko.points.length && !violates; ki++) {
+              if (segmentsIntersect(corners[ci], corners[(ci + 1) % 4], ko.points[ki], ko.points[(ki + 1) % ko.points.length])) {
+                violates = true;
+              }
+            }
+          }
+        }
+        if (violates) {
           pushErr({
             sigKey: `ko_${ko.id}_${comp.id}`,
             severity: 'Warning',
@@ -611,6 +903,121 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
             message: `Компонент ${comp.refDes} находится в зоне запрета размещения.`,
             objectIds: [comp.id, ko.id]
           });
+        }
+      }
+    }
+  }
+
+  // 9b. Silkscreen-over-Pad Clearance
+  if (rules.checkSilkOverPads) {
+    const silkPadViolations = new Set<string>();
+    const checkSilkSegment = (a: Point2D, b: Point2D, halfWidth: number, silkLayer: 'TopSilk' | 'BottomSilk', objId: string) => {
+      for (const wp of pads) {
+        if (wp.pad.type === 'MountingHole') continue;
+        const padOnSide = wp.effectiveLayer === 'All'
+          || (silkLayer === 'TopSilk' && wp.effectiveLayer === 'TopCopper')
+          || (silkLayer === 'BottomSilk' && wp.effectiveLayer === 'BottomCopper');
+        if (!padOnSide) continue;
+        const key = `${objId}::${wp.compId}_${wp.pad.id}`;
+        if (silkPadViolations.has(key)) continue;
+        const gap = segmentToPadDistance(a, b, wp) - halfWidth;
+        if (gap + 1e-4 < rules.silkToPadClearance) {
+          silkPadViolations.add(key);
+          pushErr({
+            sigKey: `silk_${objId}_${wp.compId}_${wp.pad.id}`,
+            severity: 'Warning',
+            layer: silkLayer,
+            x: wp.x,
+            y: wp.y,
+            code: 'DRC-SILK-PAD',
+            message: `Шелкография перекрывает КП ${wp.refDes}.${wp.pad.number} (зазор ${gap.toFixed(2)} мм < ${rules.silkToPadClearance.toFixed(2)} мм).`,
+            objectIds: [objId, wp.compId]
+          });
+        }
+      }
+    };
+    for (const sh of pcb.shapes) {
+      if (sh.layer !== 'TopSilk' && sh.layer !== 'BottomSilk') continue;
+      const hw = (sh.width ?? 0.15) * 0.5;
+      if (sh.type === 'line' && sh.x2 !== undefined && sh.y2 !== undefined) {
+        checkSilkSegment({ x: sh.x1, y: sh.y1 }, { x: sh.x2, y: sh.y2 }, hw, sh.layer, sh.id);
+      } else if (sh.type === 'rect' && sh.w !== undefined && sh.h !== undefined) {
+        const p1 = { x: sh.x1, y: sh.y1 }, p2 = { x: sh.x1 + sh.w, y: sh.y1 };
+        const p3 = { x: sh.x1 + sh.w, y: sh.y1 + sh.h }, p4 = { x: sh.x1, y: sh.y1 + sh.h };
+        checkSilkSegment(p1, p2, hw, sh.layer, sh.id);
+        checkSilkSegment(p2, p3, hw, sh.layer, sh.id);
+        checkSilkSegment(p3, p4, hw, sh.layer, sh.id);
+        checkSilkSegment(p4, p1, hw, sh.layer, sh.id);
+      } else if (sh.type === 'circle' && sh.r !== undefined) {
+        for (const wp of pads) {
+          if (wp.pad.type === 'MountingHole') continue;
+          const padOnSide = wp.effectiveLayer === 'All'
+            || (sh.layer === 'TopSilk' && wp.effectiveLayer === 'TopCopper')
+            || (sh.layer === 'BottomSilk' && wp.effectiveLayer === 'BottomCopper');
+          if (!padOnSide) continue;
+          const d = Math.abs(dist({ x: sh.x1, y: sh.y1 }, wp) - sh.r) - hw - wp.radius;
+          if (d + 1e-4 < rules.silkToPadClearance) {
+            pushErr({
+              sigKey: `silk_${sh.id}_${wp.compId}_${wp.pad.id}`,
+              severity: 'Warning',
+              layer: sh.layer,
+              x: wp.x,
+              y: wp.y,
+              code: 'DRC-SILK-PAD',
+              message: `Шелкография перекрывает КП ${wp.refDes}.${wp.pad.number}.`,
+              objectIds: [sh.id, wp.compId]
+            });
+          }
+        }
+      }
+    }
+    for (const comp of pcb.components) {
+      const mirror = comp.side === 'Bottom';
+      for (const g of comp.graphics) {
+        const mappedLayer: string = mirror
+          ? (g.layer === 'TopSilk' ? 'BottomSilk' : g.layer === 'BottomSilk' ? 'TopSilk' : g.layer)
+          : g.layer;
+        if (mappedLayer !== 'TopSilk' && mappedLayer !== 'BottomSilk') continue;
+        const hw = ('width' in g ? g.width : 0.15) * 0.5;
+        if (g.type === 'line') {
+          checkSilkSegment(
+            transformPoint(g.x1, g.y1, comp.x, comp.y, comp.angle, mirror, false),
+            transformPoint(g.x2, g.y2, comp.x, comp.y, comp.angle, mirror, false),
+            hw, mappedLayer, comp.id
+          );
+        } else if (g.type === 'rect') {
+          const pts = [
+            transformPoint(g.x, g.y, comp.x, comp.y, comp.angle, mirror, false),
+            transformPoint(g.x + g.w, g.y, comp.x, comp.y, comp.angle, mirror, false),
+            transformPoint(g.x + g.w, g.y + g.h, comp.x, comp.y, comp.angle, mirror, false),
+            transformPoint(g.x, g.y + g.h, comp.x, comp.y, comp.angle, mirror, false)
+          ];
+          for (let k = 0; k < 4; k++) checkSilkSegment(pts[k], pts[(k + 1) % 4], hw, mappedLayer, comp.id);
+        } else if (g.type === 'polyline' && g.points.length >= 2) {
+          const pts = g.points.map((pt) => transformPoint(pt.x, pt.y, comp.x, comp.y, comp.angle, mirror, false));
+          for (let k = 1; k < pts.length; k++) checkSilkSegment(pts[k - 1], pts[k], hw, mappedLayer, comp.id);
+          if (g.closed && pts.length > 2) checkSilkSegment(pts[pts.length - 1], pts[0], hw, mappedLayer, comp.id);
+        } else if (g.type === 'circle' || g.type === 'arc') {
+          const startDeg = g.type === 'circle' ? 0 : g.startAngle;
+          let endDeg = g.type === 'circle' ? 360 : g.endAngle;
+          if (g.type === 'arc' && endDeg < startDeg) endDeg += 360;
+          const steps = g.type === 'circle' ? 16 : Math.max(6, Math.ceil((endDeg - startDeg) / 22.5));
+          const pts: Point2D[] = [];
+          for (let s = 0; s <= steps; s++) {
+            const rad = ((startDeg + ((endDeg - startDeg) * s) / steps) * Math.PI) / 180;
+            pts.push(
+              transformPoint(
+                g.cx + Math.cos(rad) * g.r,
+                g.cy + Math.sin(rad) * g.r,
+                comp.x,
+                comp.y,
+                comp.angle,
+                mirror,
+                false
+              )
+            );
+          }
+          for (let k = 1; k < pts.length; k++) checkSilkSegment(pts[k - 1], pts[k], hw, mappedLayer, comp.id);
         }
       }
     }

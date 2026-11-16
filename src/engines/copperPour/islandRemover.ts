@@ -15,7 +15,6 @@ export function removeIsolatedPourIslands(
   thermalPads: WorldPad[]
 ): void {
   const visited = new Uint8Array(cols * rows);
-  const minIslandCells = Math.max(4, Math.round(3.5 / (dx * dy)));
   const matchingVias = pcb.vias.filter((v) => v.netName === pour.netName);
   const matchingTraces = pcb.traces.filter((t) => t.layer === pour.layer && t.netName === pour.netName);
 
@@ -56,7 +55,7 @@ export function removeIsolatedPourIslands(
       }
     }
 
-    if (!connectedToNet && comp.length < minIslandCells) {
+    if (!connectedToNet) {
       for (const cell of comp) grid[cell] = 0;
     }
   }

@@ -335,8 +335,9 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
         }
         if (p.tool === 'hierarchy') {
             const id = uid('hierarchy'), childId = uid('sheet');
+            const pos = snapPoint(pt, p.project.gridSize);
             const child: SchematicSheet = { ...structuredClone(p.activeSheet), id: childId, name: `Блок ${p.project.sheets.length}`, components: [], wires: [], buses: [], busTaps: [], junctions: [], netPorts: [], diffPairs: [], hierarchyBlocks: [], shapes: [], isHierarchicalSheet: true };
-            p.commitProject(prev => ({ ...prev, sheets: [...prev.sheets.map(s => s.id === prev.activeSheetId ? { ...s, hierarchyBlocks: [...s.hierarchyBlocks, { id, ...snapped, w: 35, h: 20, name: child.name, targetSheetId: childId, pins: [] }] } : s), child].map((s, i, arr) => ({ ...s, titleBlock: { ...s.titleBlock, sheetNumber: i + 1, totalSheets: arr.length } })) }));
+            p.commitProject(prev => ({ ...prev, sheets: [...prev.sheets.map(s => s.id === prev.activeSheetId ? { ...s, hierarchyBlocks: [...s.hierarchyBlocks, { id, ...pos, w: 35, h: 20, name: child.name, targetSheetId: childId, pins: [] }] } : s), child].map((s, i, arr) => ({ ...s, titleBlock: { ...s.titleBlock, sheetNumber: i + 1, totalSheets: arr.length } })) }));
             p.setSelectedIds([id]);
             p.setTool('select');
             p.openProperties([id]);

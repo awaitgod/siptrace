@@ -165,7 +165,7 @@ export const libGeneral: ComponentLibrary = {
       id: 'COMP_MTG_M3',
       name: 'Отверстие крепёжное М3',
       library: 'Цепи питания и Базовые (ГОСТ 2.721)',
-      refDesPrefix: 'H',
+      refDesPrefix: 'MH',
       defaultValue: 'М3 (Ø3,2)',
       gostStandard: 'ГОСТ 11284-75',
       description: 'Металлизированное крепёжное отверстие Ø3,2 мм с подключением к корпусу/GND',

@@ -2,14 +2,29 @@ import { SchematicProject } from '../../core/types';
 import { extractSchematicNetlist } from '../netlist';
 import { parseMetricValue } from './metricParser';
 
+function parseSpicePowerRail(net: string): number | null {
+  const up = net.trim().toUpperCase();
+  if (up === 'VCC' || up === 'VDD' || up === 'VIN') return 5.0;
+  if (up === 'VCC_3V3' || up === 'VDD_3V3' || up === '+3V3' || up === '3V3') return 3.3;
+  const m = /^([+-]?)(\d+(?:[.,Vv]\d+)?)[Vv]?$/.exec(net.trim());
+  if (!m) return null;
+  const numStr = m[2].replace(',', '.').replace(/[Vv]/, '.');
+  const val = parseFloat(numStr);
+  if (!Number.isFinite(val)) return null;
+  return m[1] === '-' ? -val : val;
+}
+
 /** Generates an industry-standard SPICE netlist (.cir) with DC/Transient/AC analysis directives. */
 export function exportSpiceNetlist(sch: SchematicProject): string {
   const netlist = extractSchematicNetlist(sch);
   const pinToNet = new Map<string, string>();
+  const compPinsMap = new Map<string, Map<string, string>>();
   for (const n of netlist) {
     const cleanNet = n.netName === 'GND' || n.netName === '0' ? '0' : n.netName.replace(/[^A-Za-z0-9_+.-]/g, '_');
     for (const nd of n.nodes) {
       pinToNet.set(`${nd.refDes}:${nd.padNumber}`, cleanNet);
+      if (!compPinsMap.has(nd.refDes)) compPinsMap.set(nd.refDes, new Map());
+      compPinsMap.get(nd.refDes)!.set(String(nd.padNumber), cleanNet);
     }
   }
 
@@ -20,13 +35,10 @@ export function exportSpiceNetlist(sch: SchematicProject): string {
   ];
 
   const powerRails = new Set(
-    Array.from(pinToNet.values()).filter(
-      (n) => n !== '0' && (/^\+?\d/.test(n) || n === 'VCC' || n === 'VDD' || n === 'VIN')
-    )
+    Array.from(pinToNet.values()).filter((n) => n !== '0' && parseSpicePowerRail(n) !== null)
   );
   for (const rail of powerRails) {
-    const vMatch = /([\d.]+)/.exec(rail.replace('3V3', '3.3'));
-    const vVal = vMatch ? parseFloat(vMatch[1]) : 5.0;
+    const vVal = parseSpicePowerRail(rail) ?? 5.0;
     lines.push(`V_${rail.replace(/[^A-Za-z0-9]/g, '')} ${rail} 0 DC ${vVal} AC 1`);
   }
 
@@ -38,6 +50,7 @@ export function exportSpiceNetlist(sch: SchematicProject): string {
       const n1 = pinToNet.get(`${c.refDes}:1`) ?? '0';
       const n2 = pinToNet.get(`${c.refDes}:2`) ?? '0';
       const n3 = pinToNet.get(`${c.refDes}:3`) ?? '0';
+      const hint = `${c.typeName} ${c.value}`.toUpperCase();
       if (c.refDes.startsWith('R')) {
         lines.push(`${c.refDes} ${n1} ${n2} ${parseMetricValue(c.value, 1000)}`);
       } else if (c.refDes.startsWith('C')) {
@@ -47,16 +60,28 @@ export function exportSpiceNetlist(sch: SchematicProject): string {
       } else if (c.refDes.startsWith('VD') || c.refDes.startsWith('HL')) {
         lines.push(`D_${c.refDes} ${n1} ${n2} D_GOST`);
       } else if (c.refDes.startsWith('VT')) {
-        lines.push(`Q_${c.refDes} ${n2} ${n3} ${n1} VT_GOST`);
+        if (/MOS|FET|IRF|FDN|AO34|BS170|2N700|КП50/i.test(hint)) {
+          const mModel = /PMOS|P-CH|FDN340|IRF9|9540/i.test(hint) ? 'PMOS_GOST' : 'NMOS_GOST';
+          lines.push(`M_${c.refDes} ${n3} ${n1} ${n2} ${n2} ${mModel}`);
+        } else {
+          const bjtModel = /PNP|КТ3107|КТ361|КТ814|КТ816|2N3906|BC557/i.test(hint) ? 'VT_GOST_PNP' : 'VT_GOST';
+          lines.push(`Q_${c.refDes} ${n2} ${n3} ${n1} ${bjtModel}`);
+        }
       } else {
         const cleanType = c.typeName.replace(/[^A-Za-z0-9_]/g, '_') || 'SUBCKT';
-        lines.push(`X_${c.refDes} ${n1} ${n2} ${cleanType}`);
+        const pinEntries = Array.from(compPinsMap.get(c.refDes)?.entries() ?? [])
+          .sort((a, b) => (Number(a[0]) || 0) - (Number(b[0]) || 0));
+        const pinNets = pinEntries.length > 0 ? pinEntries.map(([, net]) => net).join(' ') : `${n1} ${n2}`;
+        lines.push(`X_${c.refDes} ${pinNets} ${cleanType}`);
       }
     }
   }
 
   lines.push('.model D_GOST D(Is=2.5e-9 N=1.75)');
   lines.push('.model VT_GOST NPN(Bf=120)');
+  lines.push('.model VT_GOST_PNP PNP(Bf=100)');
+  lines.push('.model NMOS_GOST NMOS(Vto=1.5 Kp=0.5)');
+  lines.push('.model PMOS_GOST PMOS(Vto=-1.5 Kp=0.4)');
   lines.push('.op');
   lines.push('.tran 10u 2m');
   lines.push('.ac dec 10 10 10Meg');

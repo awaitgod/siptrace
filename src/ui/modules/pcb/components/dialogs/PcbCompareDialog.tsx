@@ -44,10 +44,15 @@ export const PcbCompareDialog: React.FC<PcbCompareDialogProps> = ({ pcb, commitP
           <button
             className="dt-btn primary"
             onClick={() => {
-              const activeSch = loadActiveSchematic();
-              commitPcb((p) => convertSchematicToPcb(activeSch, p));
-              onClose();
-              setStatusMessage('Список цепей и компоненты обновлены со схемы.');
+              try {
+                const activeSch = loadActiveSchematic();
+                commitPcb((p) => convertSchematicToPcb(activeSch, p));
+                onClose();
+                setStatusMessage('Список цепей и компоненты обновлены со схемы.');
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                setStatusMessage(`Ошибка обновления со схемы: ${msg}`);
+              }
             }}
           >
             Обновить плату по схеме

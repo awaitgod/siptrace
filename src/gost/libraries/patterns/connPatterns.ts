@@ -159,19 +159,16 @@ export const connPatterns: PatternDef[] = [
   ),
   {
     id: 'PAT_RES49',
-    name: 'РЭС49 (реле 8-выв.)',
+    name: 'РЭС49 (реле 5-выв.)',
     library: 'Корпуса соединителей и реле (ГОСТ)',
     gostName: 'РС4.569.421 / РЭС49',
-    description: 'Реле электромагнитное герметичное малогабаритное РЭС49',
+    description: 'Реле электромагнитное герметичное малогабаритное РЭС49 (2 обмотка + 3 контактных вывода)',
     pads: [
       { id: 'p1', number: '1', type: 'THT', shape: 'Rect', x: -5.0, y: -2.5, width: 1.6, height: 1.6, holeDiameter: 0.8, layer: 'All' },
       { id: 'p2', number: '2', type: 'THT', shape: 'Round', x: -5.0, y: 2.5, width: 1.6, height: 1.6, holeDiameter: 0.8, layer: 'All' },
-      { id: 'p3', number: '3', type: 'THT', shape: 'Round', x: -1.25, y: -2.5, width: 1.6, height: 1.6, holeDiameter: 0.8, layer: 'All' },
-      { id: 'p4', number: '4', type: 'THT', shape: 'Round', x: 1.25, y: -2.5, width: 1.6, height: 1.6, holeDiameter: 0.8, layer: 'All' },
-      { id: 'p5', number: '5', type: 'THT', shape: 'Round', x: 5.0, y: -2.5, width: 1.6, height: 1.6, holeDiameter: 0.8, layer: 'All' },
-      { id: 'p6', number: '6', type: 'THT', shape: 'Round', x: -1.25, y: 2.5, width: 1.6, height: 1.6, holeDiameter: 0.8, layer: 'All' },
-      { id: 'p7', number: '7', type: 'THT', shape: 'Round', x: 1.25, y: 2.5, width: 1.6, height: 1.6, holeDiameter: 0.8, layer: 'All' },
-      { id: 'p8', number: '8', type: 'THT', shape: 'Round', x: 5.0, y: 2.5, width: 1.6, height: 1.6, holeDiameter: 0.8, layer: 'All' }
+      { id: 'p3', number: '3', type: 'THT', shape: 'Round', x: 5.0, y: 0, width: 1.6, height: 1.6, holeDiameter: 0.8, layer: 'All' },
+      { id: 'p4', number: '4', type: 'THT', shape: 'Round', x: 0, y: -2.5, width: 1.6, height: 1.6, holeDiameter: 0.8, layer: 'All' },
+      { id: 'p5', number: '5', type: 'THT', shape: 'Round', x: 0, y: 2.5, width: 1.6, height: 1.6, holeDiameter: 0.8, layer: 'All' }
     ],
     graphics: [{ type: 'rect', layer: 'TopSilk', x: -7.5, y: -3.8, w: 15.0, h: 7.6, width: 0.18 }],
     courtyard: { width: 16.0, height: 8.8 },
@@ -190,7 +187,11 @@ export const connPatterns: PatternDef[] = [
       { id: 'p4', number: '4', type: 'THT', shape: 'Round', x: 3.25, y: 2.25, width: 1.8, height: 1.8, holeDiameter: 1.0, layer: 'All' }
     ],
     graphics: [
-      { type: 'rect', layer: 'TopSilk', x: -3.1, y: -3.1, w: 6.2, h: 6.2, width: 0.18 },
+      { type: 'rect', layer: 'TopAssembly', x: -3.1, y: -3.1, w: 6.2, h: 6.2, width: 0.12 },
+      { type: 'line', layer: 'TopSilk', x1: -2.0, y1: -3.1, x2: 2.0, y2: -3.1, width: 0.18 },
+      { type: 'line', layer: 'TopSilk', x1: -2.0, y1: 3.1, x2: 2.0, y2: 3.1, width: 0.18 },
+      { type: 'line', layer: 'TopSilk', x1: -3.1, y1: -1.0, x2: -3.1, y2: 1.0, width: 0.18 },
+      { type: 'line', layer: 'TopSilk', x1: 3.1, y1: -1.0, x2: 3.1, y2: 1.0, width: 0.18 },
       { type: 'circle', layer: 'TopSilk', cx: 0, cy: 0, r: 1.6, width: 0.15 }
     ],
     courtyard: { width: 8.6, height: 6.8 },
@@ -214,7 +215,9 @@ export const connPatterns: PatternDef[] = [
       bodyWidth: 4.6,
       bodyLength: 11.2,
       bodyHeight: 3.5,
-      densityLevel: 'B'
+      densityLevel: 'B',
+      polarized: false,
+      bodyShape: 'rect'
     }),
     '#bdc3c7'
   ),
@@ -263,13 +266,17 @@ export const connPatterns: PatternDef[] = [
         id: `p_${i + 1}`, number: `${i + 1}`, type: 'SMD' as const, shape: 'RoundedRect' as const,
         x: -2.75 + i * 0.5, y: -3.2, width: 0.3, height: 1.15, layer: 'Top' as const
       })),
-      { id: 's1', number: 'S1', type: 'THT', shape: 'Oval', x: -4.32, y: -2.0, width: 0.9, height: 1.7, holeDiameter: 0.6, layer: 'All' },
-      { id: 's2', number: 'S2', type: 'THT', shape: 'Oval', x: 4.32, y: -2.0, width: 0.9, height: 1.7, holeDiameter: 0.6, layer: 'All' },
-      { id: 's3', number: 'S3', type: 'THT', shape: 'Oval', x: -4.32, y: 1.4, width: 0.9, height: 1.9, holeDiameter: 0.6, layer: 'All' },
-      { id: 's4', number: 'S4', type: 'THT', shape: 'Oval', x: 4.32, y: 1.4, width: 0.9, height: 1.9, holeDiameter: 0.6, layer: 'All' }
+      { id: 's1', number: 'S1', type: 'THT', shape: 'Oval', x: -4.32, y: -2.0, width: 1.15, height: 1.8, holeDiameter: 0.6, layer: 'All' },
+      { id: 's2', number: 'S2', type: 'THT', shape: 'Oval', x: 4.32, y: -2.0, width: 1.15, height: 1.8, holeDiameter: 0.6, layer: 'All' },
+      { id: 's3', number: 'S3', type: 'THT', shape: 'Oval', x: -4.32, y: 1.4, width: 1.15, height: 2.0, holeDiameter: 0.6, layer: 'All' },
+      { id: 's4', number: 'S4', type: 'THT', shape: 'Oval', x: 4.32, y: 1.4, width: 1.15, height: 2.0, holeDiameter: 0.6, layer: 'All' }
     ],
     graphics: [
-      { type: 'rect', layer: 'TopSilk', x: -4.5, y: -3.6, w: 9.0, h: 7.3, width: 0.18 },
+      { type: 'rect', layer: 'TopAssembly', x: -4.5, y: -3.6, w: 9.0, h: 7.3, width: 0.12 },
+      { type: 'line', layer: 'TopSilk', x1: -3.5, y1: 3.7, x2: 3.5, y2: 3.7, width: 0.18 },
+      { type: 'line', layer: 'TopSilk', x1: -4.5, y1: -0.9, x2: -4.5, y2: 0.2, width: 0.18 },
+      { type: 'line', layer: 'TopSilk', x1: 4.5, y1: -0.9, x2: 4.5, y2: 0.2, width: 0.18 },
+      { type: 'circle', layer: 'TopSilk', cx: -3.2, cy: -3.3, r: 0.2, width: 0.15, fill: true },
       { type: 'rect', layer: 'Courtyard', x: -5.1, y: -4.2, w: 10.2, h: 8.4, width: 0.1 }
     ],
     courtyard: { width: 10.2, height: 8.4 },
@@ -284,14 +291,14 @@ export const connPatterns: PatternDef[] = [
     pads: [
       ...Array.from({ length: 5 }, (_, i) => ({
         id: `p_${i + 1}`, number: `${i + 1}`, type: 'THT' as const, shape: (i === 0 ? 'Rect' : 'Round') as 'Rect' | 'Round',
-        x: -5.54 + i * 2.77, y: 1.42, width: 1.7, height: 1.7, holeDiameter: 1.0, layer: 'All' as const
+        x: -5.54 + i * 2.77, y: -1.42, width: 1.7, height: 1.7, holeDiameter: 1.0, layer: 'All' as const
       })),
       ...Array.from({ length: 4 }, (_, i) => ({
         id: `p_${i + 6}`, number: `${i + 6}`, type: 'THT' as const, shape: 'Round' as const,
-        x: -4.155 + i * 2.77, y: -1.42, width: 1.7, height: 1.7, holeDiameter: 1.0, layer: 'All' as const
+        x: -4.155 + i * 2.77, y: 1.42, width: 1.7, height: 1.7, holeDiameter: 1.0, layer: 'All' as const
       })),
-      { id: 'm1', number: '10', type: 'THT', shape: 'Round', x: -12.5, y: 0, width: 4.5, height: 4.5, holeDiameter: 3.2, layer: 'All' },
-      { id: 'm2', number: '11', type: 'THT', shape: 'Round', x: 12.5, y: 0, width: 4.5, height: 4.5, holeDiameter: 3.2, layer: 'All' }
+      { id: 'm1', number: '', type: 'MountingHole', shape: 'Round', x: -12.5, y: 0, width: 4.5, height: 4.5, holeDiameter: 3.2, layer: 'All' },
+      { id: 'm2', number: '', type: 'MountingHole', shape: 'Round', x: 12.5, y: 0, width: 4.5, height: 4.5, holeDiameter: 3.2, layer: 'All' }
     ],
     graphics: [
       { type: 'rect', layer: 'TopSilk', x: -15.4, y: -6.5, w: 30.8, h: 12.6, width: 0.2 },
@@ -301,6 +308,3 @@ export const connPatterns: PatternDef[] = [
     model3d: { shape: 'Box', bodyWidth: 30.8, bodyLength: 12.5, bodyHeight: 12.5, color: '#2b5797' }
   }
 ];
-
-// Clean up any stray prop above
-(connPatterns.find((p) => p.id === 'PAT_RES49')!.pads[2] as unknown as Record<string, unknown>).number2 = undefined;

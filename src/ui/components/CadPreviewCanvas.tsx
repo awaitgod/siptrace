@@ -89,9 +89,13 @@ export function drawSymbolPrimitives(
       let align = p.align ?? 'center';
       if (flipX && align === 'left') align = 'right';
       else if (flipX && align === 'right') align = 'left';
+      ctx.translate(c.x, c.y);
+      if (angleDeg === 90 || angleDeg === 270) {
+        ctx.rotate(-Math.PI / 2);
+      }
       ctx.textAlign = align;
       ctx.textBaseline = 'middle';
-      ctx.fillText(p.text, c.x, c.y);
+      ctx.fillText(p.text, 0, 0);
       ctx.restore();
     }
   }
@@ -368,7 +372,7 @@ export const PatternPreviewCanvas: React.FC<{ pattern: PatternDef | null }> = ({
         ctx.stroke();
       } else if (g.type === 'arc') {
         ctx.beginPath();
-        ctx.arc(g.cx, g.cy, g.r, g.startAngle, g.endAngle);
+        ctx.arc(g.cx, g.cy, g.r, (g.startAngle * Math.PI) / 180, (g.endAngle * Math.PI) / 180);
         ctx.stroke();
       }
       ctx.restore();

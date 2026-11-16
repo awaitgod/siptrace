@@ -26,7 +26,8 @@ export function isBlockedByThermalRelief(
   px: number,
   py: number,
   pour: PcbCopperPour,
-  thermalPads: WorldPad[]
+  thermalPads: WorldPad[],
+  gridStep = 0.25
 ): boolean {
   if (pour.thermalType === 'Direct') return false;
   for (const tp of thermalPads) {
@@ -49,7 +50,8 @@ export function isBlockedByThermalRelief(
     }
     if (inThermalZone) {
       if (pour.thermalType === 'None') return true;
-      const spokeHalf = pour.thermalSpokeWidth * 0.5;
+      // Ensure spokes are never thinner than half the sampling grid step so they remain rasterizable
+      const spokeHalf = Math.max(pour.thermalSpokeWidth * 0.5, gridStep * 0.6);
       const keepSpoke =
         pour.thermalType === '4Spoke' ? ly <= spokeHalf || lx <= spokeHalf : ly <= spokeHalf;
       if (!keepSpoke) return true;

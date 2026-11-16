@@ -46,6 +46,12 @@ export interface CopperPourDraftOptions {
   fillType: PcbCopperPour['fillType'];
 }
 
+/** Selected non-component / non-trace secondary object on the PCB canvas. */
+export interface PcbExtraSelection {
+  kind: 'shape' | 'cutout' | 'keepout' | 'pour';
+  id: string;
+}
+
 /** Active distance measurement endpoints in world millimeters. */
 export interface MeasureRulerState {
   start: Point2D;

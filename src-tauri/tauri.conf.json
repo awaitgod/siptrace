@@ -15,10 +15,10 @@
       {
         "label": "main",
         "title": "SIPTrace",
-        "width": 414,
-        "height": 648,
-        "minWidth": 390,
-        "minHeight": 580,
+        "width": 364,
+        "height": 268,
+        "minWidth": 344,
+        "minHeight": 266,
         "resizable": true,
         "center": true
       }

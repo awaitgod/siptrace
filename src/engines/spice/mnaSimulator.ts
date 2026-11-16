@@ -43,22 +43,34 @@ function buildMnaCircuit(sch: SchematicProject): MnaCircuit {
     return netIdx.get(netName) ?? -1;
   };
 
+function parsePowerRailVoltage(net: string): number | null {
+  const up = net.trim().toUpperCase();
+  if (up === 'VCC' || up === 'VDD' || up === 'VIN') return 5.0;
+  if (up === 'VCC_3V3' || up === 'VDD_3V3' || up === '+3V3' || up === '3V3') return 3.3;
+  const m = /^([+-]?)(\d+(?:[.,Vv]\d+)?)[Vv]?$/.exec(net.trim());
+  if (!m) return null;
+  const numStr = m[2].replace(',', '.').replace(/[Vv]/, '.');
+  const val = parseFloat(numStr);
+  if (!Number.isFinite(val)) return null;
+  return m[1] === '-' ? -val : val;
+}
   const resistors: Res[] = [];
   const caps: Cap[] = [];
   const inds: Ind[] = [];
   const diodes: Diode[] = [];
   const activeStages: ActiveStage[] = [];
-  const vsources: VSource[] = [];
+  const vsources: (VSource & { isSignalStimulus?: boolean })[] = [];
 
   for (const net of netListArr) {
-    if (/^\+?\d/.test(net) || net === 'VCC' || net === 'VDD' || net === 'VIN') {
-      const vVal = net.includes('3V3') ? 3.3 : net.includes('12') ? 12.0 : net.includes('24') ? 24.0 : 5.0;
-      vsources.push({ nPos: getIdx(net), nNeg: -1, v: vVal, acAmp: net === 'VIN' ? 1.0 : 0.25 });
+    const vVal = parsePowerRailVoltage(net);
+    if (vVal !== null) {
+      const isSig = net.toUpperCase() === 'VIN';
+      vsources.push({ nPos: getIdx(net), nNeg: -1, v: vVal, acAmp: 1.0, isSignalStimulus: isSig });
     }
   }
   if (vsources.length === 0 && netListArr.length > 0) {
     const stimNet = netListArr.find((n) => /in|tx|rx|sig/i.test(n)) ?? netListArr[0];
-    vsources.push({ nPos: getIdx(stimNet), nNeg: -1, v: 5.0, acAmp: 1.0 });
+    vsources.push({ nPos: getIdx(stimNet), nNeg: -1, v: 5.0, acAmp: 1.0, isSignalStimulus: true });
   }
 
   const seen = new Set<string>();
@@ -119,8 +131,8 @@ function solveDcOrTransientStep(circuit: MnaCircuit, dt: number | null, tSec: nu
 
   for (const r of resistors) stampG(r.n1, r.n2, 1 / r.r);
   for (const d of diodes) {
-    // Small bias conductance only; nonlinear conduction checked with clamping below
-    stampG(d.n1, d.n2, 2e-4);
+    // Low reverse-bias leakage conductance; nonlinear conduction stamped in NR loop below
+    stampG(d.n1, d.n2, 1e-9);
   }
   for (const st of activeStages) {
     stampG(st.nOut, st.nRef, 1 / st.rOut);
@@ -152,16 +164,19 @@ function solveDcOrTransientStep(circuit: MnaCircuit, dt: number | null, tSec: nu
       A[vs.nNeg][row] -= 1;
       A[row][vs.nNeg] -= 1;
     }
+    const sigV = (vs as VSource & { isSignalStimulus?: boolean }).isSignalStimulus
+      ? (vs.acAmp ?? 0) * Math.sin(2 * Math.PI * 1000 * tSec)
+      : 0;
     b[row] =
       dt !== null
-        ? vs.v * (1 - Math.exp(-tSec / 5e-5)) + (vs.acAmp ?? 0) * Math.sin(2 * Math.PI * 1000 * tSec)
+        ? vs.v * (1 - Math.exp(-tSec / 5e-5)) + sigV
         : vs.v;
   });
 
   // Iterative piecewise-linear pass for diode forward bias & saturating active stages
   let x = solveLinearSystem(A, b) ?? new Array<number>(dim).fill(0);
   const maxSupplyV = vsources.reduce((m, v) => Math.max(m, Math.abs(v.v)), 5.0);
-  for (let iter = 0; iter < 3; iter++) {
+  for (let iter = 0; iter < 6; iter++) {
     const A2 = A.map((row) => [...row]);
     const b2 = [...b];
     const addG = (n1: number, n2: number, g: number) => {
@@ -180,8 +195,9 @@ function solveDcOrTransientStep(circuit: MnaCircuit, dt: number | null, tSec: nu
       const v1 = d.n1 >= 0 ? x[d.n1] : 0;
       const v2 = d.n2 >= 0 ? x[d.n2] : 0;
       if (v1 - v2 >= d.vf * 0.7) {
-        addG(d.n1, d.n2, 5e-3);
-        addI(d.n1, d.n2, -5e-3 * d.vf);
+        const gOn = 0.2;
+        addG(d.n1, d.n2, gOn);
+        addI(d.n1, d.n2, -gOn * d.vf);
       }
     }
     for (const st of activeStages) {

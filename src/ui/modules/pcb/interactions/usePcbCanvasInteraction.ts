@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PatternDef, PcbCopperPour, PcbProject, Point2D } from '../../../../core/types';
-import { dist, pointToSegmentDist, polygonBounds, uid } from '../../../../core/geometry';
+import { dist, pointInPolygon, pointToSegmentDist, polygonBounds, uid } from '../../../../core/geometry';
 import { broadcastEdaEvent } from '../../../../core/store';
 import { snapPoint, snapToGrid } from '../../../../core/units';
 import { applyMeanderToTrace } from '../../../../engines/autorouter';
@@ -16,6 +16,7 @@ import {
   CopperLayerId,
   MeasureRulerState,
   PcbDragState,
+  PcbExtraSelection,
   PcbToolId,
   PcbViewport
 } from '../types';
@@ -35,6 +36,7 @@ export interface UsePcbCanvasInteractionParams {
   setSelectedCompId: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedTraceId: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedViaId?: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedExtraObj?: React.Dispatch<React.SetStateAction<PcbExtraSelection | null>>;
   routeNetName: string;
   setRouteNetName: React.Dispatch<React.SetStateAction<string>>;
   routeDraftPts: Point2D[];
@@ -57,6 +59,7 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
   const [viewport, setViewport] = useState<PcbViewport>({ ox: 110, oy: 90, pxPerMm: 6.2 });
   const [cursorMm, setCursorMm] = useState<Point2D>({ x: 0, y: 0 });
   const dragRef = useRef<PcbDragState>({ ...INITIAL_DRAG_STATE });
+  const rmbStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const zoomToFit = useCallback(() => {
     const wrap = p.canvasWrapRef.current;
@@ -177,6 +180,7 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
 
     if (e.button === 1 || (e.button === 2 && p.routeDraftPts.length === 0 && p.polyDraftPts.length === 0)) {
       if (e.button === 1) e.preventDefault();
+      if (e.button === 2) rmbStartRef.current = { x: e.clientX, y: e.clientY };
       dragRef.current = {
         mode: 'pan',
         startScreenX: e.clientX,
@@ -192,6 +196,7 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
     }
 
     if (e.button === 2) {
+      rmbStartRef.current = null;
       finalizeRightClickDrafts();
       return;
     }
@@ -281,7 +286,7 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
       if (hitTr) {
         p.commitPcb((prev) => ({
           ...prev,
-          traces: prev.traces.map((tr) => (tr.id === hitTr.id ? applyMeanderToTrace(tr, 4.0, 1.2, 1.2) : tr))
+          traces: prev.traces.map((tr) => (tr.id === hitTr.id ? applyMeanderToTrace(tr, 4.0, 1.2, 1.2, prev) : tr))
         }));
         p.setStatusMessage(`Применена змейка (выравнивание длины) к проводнику цепи «${hitTr.netName}».`);
       }
@@ -305,13 +310,16 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
     }
 
     if (p.tool === 'shapeText') {
-      p.commitPcb((prev) => ({
-        ...prev,
-        shapes: [
-          ...prev.shapes,
-          { id: uid('txt'), layer: 'TopSilk', type: 'text', x1: snapped.x, y1: snapped.y, width: 0.2, text: 'SIPTrace', size: 2.0 }
-        ]
-      }));
+      const txt = window.prompt('Введите текст маркировки (шелкография):', 'SIPTrace');
+      if (txt && txt.trim()) {
+        p.commitPcb((prev) => ({
+          ...prev,
+          shapes: [
+            ...prev.shapes,
+            { id: uid('txt'), layer: 'TopSilk', type: 'text', x1: snapped.x, y1: snapped.y, width: 0.2, text: txt.trim(), size: 2.0 }
+          ]
+        }));
+      }
       p.setTool('select');
       return;
     }
@@ -338,6 +346,7 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
       p.setSelectedViaId?.(hitVia.id);
       p.setSelectedTraceId(null);
       p.setSelectedCompId(null);
+      p.setSelectedExtraObj?.(null);
       p.setHighlightedNet(hitVia.netName || null);
       p.setStatusMessage(`Выбрано переходное отверстие (${hitVia.netName || 'без цепи'}). Del — удалить.`);
       return;
@@ -353,19 +362,30 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
       p.setSelectedTraceId(hitTrace.id);
       p.setSelectedViaId?.(null);
       p.setSelectedCompId(null);
+      p.setSelectedExtraObj?.(null);
       p.setHighlightedNet(hitTrace.netName || null);
       return;
     }
 
-    // Select component
-    const hitComp = p.pcb.components.find(
-      (c) => dist(worldPt, c) <= Math.max(2.5, Math.min(c.courtyard.width, c.courtyard.height) * 0.45)
-    );
+    // Rectangular rotated courtyard hit-test (supports wide connectors XP/XT accurately; pick smallest if nested)
+    const hitComp = [...p.pcb.components]
+      .filter((c) => {
+        const rad = (-c.angle * Math.PI) / 180;
+        const dx = worldPt.x - c.x;
+        const dy = worldPt.y - c.y;
+        const lx = dx * Math.cos(rad) - dy * Math.sin(rad);
+        const ly = dx * Math.sin(rad) + dy * Math.cos(rad);
+        const hw = Math.max(1.5, c.courtyard.width * 0.5);
+        const hh = Math.max(1.5, c.courtyard.height * 0.5);
+        return Math.abs(lx) <= hw && Math.abs(ly) <= hh;
+      })
+      .sort((a, b) => a.courtyard.width * a.courtyard.height - b.courtyard.width * b.courtyard.height)[0];
     if (hitComp) {
       p.setSelectedCompId(hitComp.id);
       p.setSelectedTraceId(null);
       p.setSelectedViaId?.(null);
-      broadcastEdaEvent('crossprobe:refdes', { refDes: hitComp.refDes });
+      p.setSelectedExtraObj?.(null);
+      broadcastEdaEvent('crossprobe:refdes', { refDes: hitComp.refDes, source: 'pcb', target: 'schematic' });
       dragRef.current = {
         mode: 'moveComp',
         startScreenX: e.clientX,
@@ -381,9 +401,67 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
       return;
     }
 
+    // Hit-test shapes (lines, text, rects, circles), cutouts, keepouts, and copper pours
+    const hitShape = p.pcb.shapes.find((sh) => {
+      if ((sh.type === 'line' || sh.type === 'dimension') && sh.x2 !== undefined && sh.y2 !== undefined) {
+        return pointToSegmentDist(worldPt, { x: sh.x1, y: sh.y1 }, { x: sh.x2, y: sh.y2 }) <= 1.2;
+      }
+      if (sh.type === 'rect' && sh.w !== undefined && sh.h !== undefined) {
+        return worldPt.x >= sh.x1 && worldPt.x <= sh.x1 + sh.w && worldPt.y >= sh.y1 && worldPt.y <= sh.y1 + sh.h;
+      }
+      if (sh.type === 'circle' && sh.r !== undefined) {
+        return Math.abs(dist(worldPt, { x: sh.x1, y: sh.y1 }) - sh.r) <= 1.2;
+      }
+      if (sh.type === 'text') {
+        const wApprox = Math.max(4, (sh.text?.length ?? 4) * (sh.size ?? 2) * 0.65);
+        const hApprox = Math.max(2.5, (sh.size ?? 2) * 1.4);
+        return worldPt.x >= sh.x1 - 1 && worldPt.x <= sh.x1 + wApprox && worldPt.y >= sh.y1 - hApprox && worldPt.y <= sh.y1 + 1.5;
+      }
+      return false;
+    });
+    if (hitShape) {
+      p.setSelectedCompId(null);
+      p.setSelectedTraceId(null);
+      p.setSelectedViaId?.(null);
+      p.setSelectedExtraObj?.({ kind: 'shape', id: hitShape.id });
+      p.setStatusMessage(`Выбран графический объект (${hitShape.type}). Del — удалить.`);
+      return;
+    }
+
+    const hitCutout = p.pcb.cutouts.find((cut) => cut.points.length >= 3 && pointInPolygon(worldPt, cut.points));
+    if (hitCutout) {
+      p.setSelectedCompId(null);
+      p.setSelectedTraceId(null);
+      p.setSelectedViaId?.(null);
+      p.setSelectedExtraObj?.({ kind: 'cutout', id: hitCutout.id });
+      p.setStatusMessage('Выбран вырез платы. Del — удалить.');
+      return;
+    }
+
+    const hitKeepout = p.pcb.keepouts.find((ko) => ko.points.length >= 3 && pointInPolygon(worldPt, ko.points));
+    if (hitKeepout) {
+      p.setSelectedCompId(null);
+      p.setSelectedTraceId(null);
+      p.setSelectedViaId?.(null);
+      p.setSelectedExtraObj?.({ kind: 'keepout', id: hitKeepout.id });
+      p.setStatusMessage(`Выбрана зона запрета (${hitKeepout.kind}). Del — удалить.`);
+      return;
+    }
+
+    const hitPour = p.pcb.copperPours.find((cp) => cp.outline.length >= 3 && pointInPolygon(worldPt, cp.outline));
+    if (hitPour) {
+      p.setSelectedCompId(null);
+      p.setSelectedTraceId(null);
+      p.setSelectedViaId?.(null);
+      p.setSelectedExtraObj?.({ kind: 'pour', id: hitPour.id });
+      p.setStatusMessage(`Выбран полигон заливки «${hitPour.netName}». Del — удалить.`);
+      return;
+    }
+
     p.setSelectedCompId(null);
     p.setSelectedTraceId(null);
     p.setSelectedViaId?.(null);
+    p.setSelectedExtraObj?.(null);
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -416,6 +494,16 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
   };
 
   const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (e.button === 2 && rmbStartRef.current) {
+      const moved = Math.hypot(e.clientX - rmbStartRef.current.x, e.clientY - rmbStartRef.current.y);
+      rmbStartRef.current = null;
+      if (moved <= 4 && p.tool !== 'select') {
+        p.setTool('select');
+        p.setLineStartPt(null);
+        p.setMeasurePts(null);
+        p.setStatusMessage('Активный инструмент отменён.');
+      }
+    }
     if (
       dragRef.current.mode === 'moveComp' &&
       Math.hypot(e.clientX - dragRef.current.startScreenX, e.clientY - dragRef.current.startScreenY) > 3 &&

@@ -6,7 +6,7 @@ import { SchematicObjectDialog } from './components/dialogs/SchematicObjectDialo
 import { SchematicProject, SchematicSheet } from '../../../core/types';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppModuleId, ComponentLibrary, ErcError, PlacedComponent, Point2D, SchNetPort, SpiceSimResult } from '../../../core/types';
-import { broadcastEdaEvent, consumePendingConversionReport, createProjectFromOptions, loadActivePcb, NewProjectOptions, openAppModule, recordRecentProject, saveActivePcb, saveHotkeys, saveSettings } from '../../../core/store';
+import { broadcastEdaEvent, consumePendingConversionReport, createProjectFromOptions, getUserComponentLibraries, loadActivePcb, NewProjectOptions, openAppModule, recordRecentProject, saveActivePcb, saveHotkeys, saveSettings } from '../../../core/store';
 import { DEFAULT_ERC_SETTINGS, ErcSettings, extractSchematicNets, runSchematicErc } from '../../../engines/erc';
 import { GostConversionReport, importCadSchematic, serializeSchematic } from '../../../engines/importers';
 import { clearSavedFileHandle, pickCadFile, saveTextFile } from '../../../core/utils/fileIo';
@@ -82,7 +82,10 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
     }>({ components: {}, patterns: {} });
     const drawingDefinitions = useMemo(() => ({ ...customCompMap, ...(tool === 'paste' ? pasteDefinitions.components : {}) }), [customCompMap, tool, pasteDefinitions]);
     const [clipboardVersion, setClipboardVersion] = useState(0);
-    const openProperties = useCallback((ids: string[]) => setPropertiesIds(ids), []);
+    const openProperties = useCallback((ids: string[]) => {
+        if (ids.length === 0) return;
+        setPropertiesIds(ids);
+    }, []);
     const [managerTab, setManagerTab] = useState<'components' | 'nets' | 'erc'>('components');
     const [ercRevision, setErcRevision] = useState<SchematicProject | null>(null);
     const [ercErrors, setErcErrors] = useState<ErcError[]>([]);
@@ -130,17 +133,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
     const canvasWrapRef = useRef<HTMLDivElement | null>(null);
     // Library browser derivations
     const allLibraries = useMemo<ComponentLibrary[]>(() => {
-        const libs = [...GOST_COMPONENT_LIBRARIES];
-        if (userComponents.length > 0) {
-            libs.push({
-                id: 'user_gost_ugos',
-                name: 'Пользовательские (УГО)',
-                category: 'Пользовательские',
-                description: 'Пользовательские компоненты УГО',
-                isUserLibrary: true,
-                components: userComponents
-            });
-        }
+        const libs = [...GOST_COMPONENT_LIBRARIES, ...getUserComponentLibraries()];
         return sortLibsAlpha
             ? [...libs].sort((a, b) => a.name.localeCompare(b.name, 'ru'))
             : libs;
@@ -165,7 +158,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
         return findPatternById(previewComponentDef.patternId, {
             ...project.customPatternDefs,
             ...customPatMap
-        }) ?? null;
+        }) ?? userPatterns.find((p) => p.name.toUpperCase() === previewComponentDef.patternId.toUpperCase()) ?? null;
     }, [previewComponentDef, project.customPatternDefs, userPatterns]);
     const selectedPlacedComp = useMemo(() => selectedCompIds.length > 0
         ? activeSheet.components.find((c) => c.id === selectedCompIds[0]) ?? null
@@ -420,7 +413,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
         handleConvertToPcb, deleteSelection, rotateSelection, flipSelection, zoomToFit, handleRunErc,
         onPrint: () => printSchematicProject(project, customCompMap), onCopy, onPaste, onCut, onDuplicate, onSelectAll: () => setSelectedIds(allIds(activeSheet)), onProperties: () => openProperties(selectedIds), onNudge,
         onFind: () => setShowFindDialog(true), onGrid: () => setShowGrid(v => !v), onZoom: (factor) => setZoomByPercent(zoomPercent * factor) });
-    useEffect(() => { setErcErrors([]); }, [project]);
+    useEffect(() => { setErcErrors([]); }, [project.sheets, project.customComponentDefs]);
     // Canvas render loop
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -587,7 +580,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
         </div>
 
         <div className="dt-splitter" role="separator" aria-label="Ширина свойств" tabIndex={0} onPointerDown={e => resizePanel('right', e)}/>
-        <SchematicRightSidebar selectedIds={selectedIds} onProperties={() => openProperties(selectedIds)} ercStale={ercRevision !== project} project={project} activeSheet={activeSheet} userPatterns={userPatterns} selectedPlacedComp={selectedPlacedComp} inspectorCompDef={inspectorCompDef} selectedPartIndex={selectedPartIndex} selectedWireId={selectedWireId} selectedPortId={selectedPortId} selectedCompIds={selectedCompIds} setSelectedCompIds={setSelectedCompIds} managerTab={managerTab} setManagerTab={setManagerTab} schematicNets={schematicNets} highlightedNet={highlightedNet} setHighlightedNet={(action)=>{setStoredSelection([]);setHighlightedNet(action);}} ercErrors={ercErrors} setShowTitleDialog={setShowTitleDialog} onCenterWorldPt={centerOnWorldPt} commitProject={commitProject} updateActiveSheet={updateActiveSheet}/>
+        <SchematicRightSidebar selectedIds={selectedIds} onProperties={() => openProperties(selectedIds)} ercStale={ercRevision?.sheets !== project.sheets || ercRevision?.customComponentDefs !== project.customComponentDefs} project={project} activeSheet={activeSheet} userPatterns={userPatterns} selectedPlacedComp={selectedPlacedComp} inspectorCompDef={inspectorCompDef} selectedPartIndex={selectedPartIndex} selectedWireId={selectedWireId} selectedPortId={selectedPortId} selectedCompIds={selectedCompIds} setSelectedCompIds={setSelectedCompIds} managerTab={managerTab} setManagerTab={setManagerTab} schematicNets={schematicNets} highlightedNet={highlightedNet} setHighlightedNet={(action) => { setHighlightedNet((prev) => { const next = typeof action === 'function' ? action(prev) : action; if (next !== null) setStoredSelection([]); return next; }); }} ercErrors={ercErrors} setShowTitleDialog={setShowTitleDialog} onCenterWorldPt={centerOnWorldPt} commitProject={commitProject} updateActiveSheet={updateActiveSheet}/>
       </div>
 
       <StatusBar hint={`${statusMessage} | ${autosaveStatus}${isDirty ? " | Изменения не записаны в файл" : ""}`} extraCenter={`Лист: ${activeSheet.name} | Элементов: ${activeSheet.components.filter((c) => !c.refDes.startsWith('#')).length} | Цепей: ${schematicNets.length}`} gridMm={project.gridSize} units={project.units} cursorX={cursorMm.x} cursorY={cursorMm.y} onToggleUnits={() => commitProject((prev) => ({
@@ -596,7 +589,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
         }), false)}/>
 
       {propertiesIds && <SchematicObjectDialog project={project} sheet={activeSheet} ids={propertiesIds} defs={customCompMap} onApply={(next) => { updateActiveSheet(() => next); setPropertiesIds(null); }} onClose={() => setPropertiesIds(null)}/>}
-      {contextMenu && (<SchematicContextMenu menu={contextMenu} onProperties={() => openProperties(contextMenu.ids ?? selectedIds)} onCopy={onCopy} onPaste={onPaste} hotkeys={hotkeys} onWireAction={(action) => { if (contextMenu.wireId)
+      {contextMenu && (<SchematicContextMenu menu={contextMenu} onProperties={() => openProperties(contextMenu.ids ?? selectedIds)} onCopy={onCopy} onPaste={onPaste} canPaste={!!getClipboard()} hotkeys={hotkeys} onWireAction={(action) => { if (contextMenu.wireId)
             updateActiveSheet(s => editWire(s, contextMenu.wireId!, cursorMm, action)); }} onRotate={rotateSelection} onFlipX={() => flipSelection('X')} onFlipY={() => flipSelection('Y')} onDelete={deleteSelection} onClose={() => setContextMenu(null)}/>)}
 
       {showTitleDialog && (<TitleBlockDialog format={activeSheet.format} titleBlock={activeSheet.titleBlock} onApply={(fmt, tb) => {

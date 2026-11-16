@@ -39,10 +39,11 @@ export const GOST_REFDES_GROUPS: GostPrefixInfo[] = [
   { prefix: 'P', groupName: 'Приборы измерительные и интерфейсы', description: 'Виртуальные терминалы, приборы' },
   { prefix: 'GB', groupName: 'Батареи и аккумуляторы', description: 'Химические источники тока' },
   { prefix: 'W', groupName: 'Антенны и линии СВЧ', description: 'Антенные элементы' },
-  { prefix: 'Z', groupName: 'Фильтры и линии задержки', description: 'Кварцевые, керамические, LC-фильтры' }
+  { prefix: 'Z', groupName: 'Фильтры и линии задержки', description: 'Кварцевые, керамические, LC-фильтры' },
+  { prefix: 'MH', groupName: 'Отверстия крепёжные и элементы конструкции', description: 'Монтажные отверстия, стойки, экраны' }
 ];
 
 export const GOST_GROUP_ORDER = [
   'A', 'B', 'BA', 'BQ', 'C', 'D', 'DA', 'DD', 'F', 'FU', 'GB', 'HG', 'HL', 'K', 'L',
-  'M', 'P', 'R', 'RK', 'RP', 'SA', 'SB', 'T', 'U', 'VD', 'VS', 'VT', 'VU', 'W', 'X', 'XP', 'XS', 'XT', 'Z'
+  'M', 'MH', 'P', 'R', 'RK', 'RP', 'SA', 'SB', 'T', 'U', 'VD', 'VS', 'VT', 'VU', 'W', 'X', 'XP', 'XS', 'XT', 'Z'
 ];

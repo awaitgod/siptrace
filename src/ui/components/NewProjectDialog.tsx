@@ -118,7 +118,7 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
         aria-modal="true"
         aria-labelledby="new-project-title"
         tabIndex={-1}
-        style={{ width: 390, minWidth: 320, maxWidth: '94vw', maxHeight: '92vh' }}
+        style={{ width: 480, minWidth: 340, maxWidth: '94vw', maxHeight: '92vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="dt-modal-title">

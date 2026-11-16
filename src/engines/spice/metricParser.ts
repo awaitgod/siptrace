@@ -13,7 +13,7 @@ export function parseMetricValue(valStr: string, defaultUnit = 1): number {
     raw = `${infix[1]}.${infix[3]}${unitChar}`;
   }
 
-  const m = /^([\d.]+)\s*([a-zA-Zа-яА-ЯµμΩ]*)/.exec(raw);
+  const m = /^([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*([a-zA-Zа-яА-ЯµμΩ]*)/.exec(raw);
   if (!m) return defaultUnit;
   const num = parseFloat(m[1]);
   if (!isFinite(num)) return defaultUnit;

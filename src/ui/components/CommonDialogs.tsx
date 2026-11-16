@@ -209,7 +209,13 @@ export const SpiceSimDialog: React.FC<{
     onRunMode?: (mode: 'DC' | 'Transient' | 'AC', stopTimeMs?: number) => void;
     onClose: () => void;
 }> = ({ result, onExportNetlist, onRunMode, onClose }) => {
-    const [plotMode, setPlotMode] = useState<'Transient' | 'AC'>(result.frequencies && result.frequencies.length > 0 ? 'AC' : 'Transient');
+    const [plotMode, setPlotMode] = useState<'Transient' | 'AC'>(
+        result.mode === 'AC'
+            ? 'AC'
+            : result.timePoints.length > 0
+                ? 'Transient'
+                : (result.frequencies && result.frequencies.length > 0 ? 'AC' : 'Transient')
+    );
     const netNames = Object.keys(result.waveforms).filter((n) => !n.startsWith('#')).slice(0, 6);
     const acNetNames = Object.keys(result.acMagnitudeDb ?? {}).filter((n) => !n.startsWith('#')).slice(0, 6);
     const colors = ['#00ff66', '#ffaa00', '#00ccff', '#ff5577', '#ffff44', '#cc88ff'];

@@ -55,6 +55,7 @@ export function applyConfigurablePanelization(
       const dx = ix * stepX;
       const dy = iy * stepY;
       const netPrefix = `P${ix + 1}_${iy + 1}_`;
+      const refSuffix = `_P${ix + 1}_${iy + 1}`;
       const scopeNet = (net: string) => (net ? `${netPrefix}${net}` : '');
 
       for (const c of pcb.components) {
@@ -63,7 +64,14 @@ export function applyConfigurablePanelization(
         for (const [k, v] of Object.entries(cloned.padNets)) {
           scopedPadNets[k] = scopeNet(v);
         }
-        extraComps.push({ ...cloned, id: uid('panC'), x: c.x + dx, y: c.y + dy, padNets: scopedPadNets });
+        extraComps.push({
+          ...cloned,
+          id: uid('panC'),
+          refDes: `${c.refDes}${refSuffix}`,
+          x: c.x + dx,
+          y: c.y + dy,
+          padNets: scopedPadNets
+        });
       }
       for (const t of pcb.traces) {
         extraTraces.push({
@@ -126,13 +134,43 @@ export function applyConfigurablePanelization(
     }
   }
 
+  const totalW = w * cols + spacingMm * Math.max(0, cols - 1);
+  const totalH = h * rows + spacingMm * Math.max(0, rows - 1);
+  // Add V-score / routing break-lines on BoardOutline layer between tiles
+  for (let ix = 1; ix < Math.max(1, cols); ix++) {
+    const xLine = b.minX + ix * stepX - spacingMm * 0.5;
+    extraShapes.push({
+      id: uid('vscoreX'),
+      layer: 'BoardOutline',
+      type: 'line',
+      x1: xLine,
+      y1: b.minY,
+      x2: xLine,
+      y2: b.minY + totalH,
+      width: 0.2
+    });
+  }
+  for (let iy = 1; iy < Math.max(1, rows); iy++) {
+    const yLine = b.minY + iy * stepY - spacingMm * 0.5;
+    extraShapes.push({
+      id: uid('vscoreY'),
+      layer: 'BoardOutline',
+      type: 'line',
+      x1: b.minX,
+      y1: yLine,
+      x2: b.minX + totalW,
+      y2: yLine,
+      width: 0.2
+    });
+  }
+
   return {
     ...pcb,
     boardOutline: [
       { x: b.minX, y: b.minY },
-      { x: b.minX + w * cols + spacingMm * Math.max(0, cols - 1), y: b.minY },
-      { x: b.minX + w * cols + spacingMm * Math.max(0, cols - 1), y: b.minY + h * rows + spacingMm * Math.max(0, rows - 1) },
-      { x: b.minX, y: b.minY + h * rows + spacingMm * Math.max(0, rows - 1) }
+      { x: b.minX + totalW, y: b.minY },
+      { x: b.minX + totalW, y: b.minY + totalH },
+      { x: b.minX, y: b.minY + totalH }
     ],
     components: [...pcb.components, ...extraComps],
     traces: [...pcb.traces, ...extraTraces],

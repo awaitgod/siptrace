@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 test('new project dialog contains keyboard focus and restores it on close', async ({ page }) => {
-  await page.goto('/?module=launcher');
-  const opener = page.getByRole('button', { name: '+ Создать проект...' });
+  await page.goto('/?module=schematic');
+  const opener = page.locator('button[title="Новая схема"]');
   await opener.focus();
   await page.keyboard.press('Enter');
   const dialog = page.getByRole('dialog', { name: 'Новый проект — SIPTrace' });

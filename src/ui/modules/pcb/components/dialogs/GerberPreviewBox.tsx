@@ -22,6 +22,7 @@ export const GerberPreviewBox: React.FC<GerberPreviewBoxProps> = ({
   const ref = useRef<HTMLCanvasElement>(null);
   const [zoomMul, setZoomMul] = useState(1);
   const [pan, setPan] = useState<Point2D>({ x: 0, y: 0 });
+  const baseScaleRef = useRef(1);
   const dragRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
 
   useEffect(() => {
@@ -89,6 +90,7 @@ export const GerberPreviewBox: React.FC<GerberPreviewBoxProps> = ({
     const minY = ys.length ? Math.min(...ys) - 4 : 0;
     const maxY = ys.length ? Math.max(...ys) + 4 : 70;
     const baseScale = Math.min((w - 28) / Math.max(10, maxX - minX), (h - 28) / Math.max(10, maxY - minY));
+    baseScaleRef.current = baseScale;
     const sc = baseScale * zoomMul;
     const cx = (minX + maxX) / 2;
     const cy = (minY + maxY) / 2;
@@ -196,7 +198,20 @@ export const GerberPreviewBox: React.FC<GerberPreviewBoxProps> = ({
       <div style={{ position: 'absolute', right: 6, top: 6, display: 'flex', gap: 4 }}>
         <button type="button" className="dt-btn" style={{ minWidth: 24, height: 20, padding: '0 6px' }} onClick={() => setZoomMul((z) => Math.min(12, z * 1.25))}>+</button>
         <button type="button" className="dt-btn" style={{ minWidth: 24, height: 20, padding: '0 6px' }} onClick={() => setZoomMul((z) => Math.max(0.3, z * 0.8))}>-</button>
-        <button type="button" className="dt-btn" style={{ minWidth: 28, height: 20, padding: '0 6px' }} onClick={() => { setZoomMul(1); setPan({ x: 0, y: 0 }); }}>1:1</button>
+        <button
+          type="button"
+          className="dt-btn"
+          title="Реальный физический масштаб 1:1 (96 DPI ≈ 3.78 px/мм)"
+          style={{ minWidth: 28, height: 20, padding: '0 6px' }}
+          onClick={() => {
+            const truePxPerMm = 96 / 25.4;
+            setZoomMul(Math.max(0.3, Math.min(12, truePxPerMm / Math.max(0.1, baseScaleRef.current))));
+            setPan({ x: 0, y: 0 });
+          }}
+        >
+          1:1
+        </button>
+        <button type="button" className="dt-btn" title="Вписать всю плату" style={{ minWidth: 44, height: 20, padding: '0 6px' }} onClick={() => { setZoomMul(1); setPan({ x: 0, y: 0 }); }}>Вписать</button>
       </div>
     </div>
   );

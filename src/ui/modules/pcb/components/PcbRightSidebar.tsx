@@ -1,7 +1,8 @@
 import React from 'react';
 import { DrcError, PcbPlacedComponent, PcbProject } from '../../../../core/types';
 import { DipIcon } from '../../../theme/DipTraceIcons';
-import { CopperLayerId } from '../types';
+import { CopperLayerId, PcbExtraSelection } from '../types';
+import { updateAllCopperPours } from '../../../../engines/copperPour';
 
 export interface PcbRightSidebarProps {
   pcb: PcbProject;
@@ -18,6 +19,12 @@ export interface PcbRightSidebarProps {
   handleApplyViaStitching: () => void;
   selectedCompId: string | null;
   setSelectedCompId: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedTraceId?: string | null;
+  setSelectedTraceId?: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedViaId?: string | null;
+  setSelectedViaId?: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedExtraObj?: PcbExtraSelection | null;
+  setSelectedExtraObj?: React.Dispatch<React.SetStateAction<PcbExtraSelection | null>>;
   highlightedNet: string | null;
   setHighlightedNet: React.Dispatch<React.SetStateAction<string | null>>;
   netNames: string[];
@@ -144,7 +151,17 @@ export const PcbRightSidebar: React.FC<PcbRightSidebarProps> = (p) => (
     <div className="dt-panel-card" style={{ height: '27%' }}>
       <div className="dt-panel-header">
         <span>Свойства</span>
-        <span style={{ fontSize: 10, color: '#666' }}>{p.selectedComp ? p.selectedComp.refDes : 'Плата'}</span>
+        <span style={{ fontSize: 10, color: '#666' }}>
+          {p.selectedComp
+            ? p.selectedComp.refDes
+            : p.selectedViaId
+              ? 'Via'
+              : p.selectedTraceId
+                ? 'Дорожка'
+                : p.selectedExtraObj
+                  ? p.selectedExtraObj.kind
+                  : 'Плата'}
+        </span>
       </div>
       <div className="dt-panel-body">
         {p.selectedComp ? (
@@ -192,8 +209,46 @@ export const PcbRightSidebar: React.FC<PcbRightSidebarProps> = (p) => (
               </div>
             </div>
             <div className="dt-prop-row">
-              <div className="dt-prop-key">Коорд. (мм)</div>
-              <div className="dt-prop-val">{p.selectedComp.x.toFixed(2)}, {p.selectedComp.y.toFixed(2)}</div>
+              <div className="dt-prop-key">X, мм</div>
+              <div className="dt-prop-val">
+                <input
+                  type="number"
+                  step="0.25"
+                  className="dt-prop-input"
+                  value={Number(p.selectedComp.x.toFixed(2))}
+                  onChange={(e) => {
+                    const nx = parseFloat(e.target.value);
+                    if (!Number.isFinite(nx)) return;
+                    p.commitPcb((prev) => ({
+                      ...prev,
+                      components: prev.components.map((c) =>
+                        c.id === p.selectedComp!.id && !c.locked ? { ...c, x: nx } : c
+                      )
+                    }));
+                  }}
+                />
+              </div>
+            </div>
+            <div className="dt-prop-row">
+              <div className="dt-prop-key">Y, мм</div>
+              <div className="dt-prop-val">
+                <input
+                  type="number"
+                  step="0.25"
+                  className="dt-prop-input"
+                  value={Number(p.selectedComp.y.toFixed(2))}
+                  onChange={(e) => {
+                    const ny = parseFloat(e.target.value);
+                    if (!Number.isFinite(ny)) return;
+                    p.commitPcb((prev) => ({
+                      ...prev,
+                      components: prev.components.map((c) =>
+                        c.id === p.selectedComp!.id && !c.locked ? { ...c, y: ny } : c
+                      )
+                    }));
+                  }}
+                />
+              </div>
             </div>
             <div className="dt-prop-row">
               <div className="dt-prop-key">Закреплён</div>
@@ -213,6 +268,135 @@ export const PcbRightSidebar: React.FC<PcbRightSidebarProps> = (p) => (
               </div>
             </div>
           </>
+        ) : p.selectedViaId && p.pcb.vias.some((v) => v.id === p.selectedViaId) ? (
+          (() => {
+            const via = p.pcb.vias.find((v) => v.id === p.selectedViaId)!;
+            return (
+              <>
+                <div className="dt-prop-row">
+                  <div className="dt-prop-key">Цепь</div>
+                  <div className="dt-prop-val">{via.netName || 'Без цепи'}</div>
+                </div>
+                <div className="dt-prop-row">
+                  <div className="dt-prop-key">X, Y (мм)</div>
+                  <div className="dt-prop-val">{via.x.toFixed(2)}, {via.y.toFixed(2)}</div>
+                </div>
+                <div className="dt-prop-row">
+                  <div className="dt-prop-key">Ø внеш / отв</div>
+                  <div className="dt-prop-val">{via.outerDiameter.toFixed(2)} / {via.holeDiameter.toFixed(2)}</div>
+                </div>
+                <div style={{ padding: 4 }}>
+                  <button
+                    className="dt-btn"
+                    style={{ width: '100%' }}
+                    onClick={() => {
+                      p.commitPcb((prev) => ({ ...prev, vias: prev.vias.filter((v) => v.id !== via.id) }));
+                      p.setSelectedViaId?.(null);
+                    }}
+                  >
+                    Удалить переход (Del)
+                  </button>
+                </div>
+              </>
+            );
+          })()
+        ) : p.selectedTraceId && p.pcb.traces.some((tr) => tr.id === p.selectedTraceId) ? (
+          (() => {
+            const tr = p.pcb.traces.find((t) => t.id === p.selectedTraceId)!;
+            return (
+              <>
+                <div className="dt-prop-row">
+                  <div className="dt-prop-key">Цепь</div>
+                  <div className="dt-prop-val">{tr.netName || 'Без цепи'}</div>
+                </div>
+                <div className="dt-prop-row">
+                  <div className="dt-prop-key">Слой</div>
+                  <div className="dt-prop-val">{tr.layer}</div>
+                </div>
+                <div className="dt-prop-row">
+                  <div className="dt-prop-key">Ширина, мм</div>
+                  <div className="dt-prop-val">
+                    <input
+                      type="number"
+                      step="0.05"
+                      min="0.1"
+                      className="dt-prop-input"
+                      value={tr.width}
+                      onChange={(e) => {
+                        const nw = Math.max(0.1, parseFloat(e.target.value) || 0.25);
+                        p.commitPcb((prev) => ({
+                          ...prev,
+                          traces: prev.traces.map((t) => (t.id === tr.id ? { ...t, width: nw } : t))
+                        }));
+                      }}
+                    />
+                  </div>
+                </div>
+                <div style={{ padding: 4 }}>
+                  <button
+                    className="dt-btn"
+                    style={{ width: '100%' }}
+                    onClick={() => {
+                      p.commitPcb((prev) => ({ ...prev, traces: prev.traces.filter((t) => t.id !== tr.id) }));
+                      p.setSelectedTraceId?.(null);
+                    }}
+                  >
+                    Удалить дорожку (Del)
+                  </button>
+                </div>
+              </>
+            );
+          })()
+        ) : p.selectedExtraObj ? (
+          (() => {
+            const obj = p.selectedExtraObj;
+            const sh = obj.kind === 'shape' ? p.pcb.shapes.find((s) => s.id === obj.id) : undefined;
+            const pour = obj.kind === 'pour' ? p.pcb.copperPours.find((c) => c.id === obj.id) : undefined;
+            return (
+              <>
+                <div className="dt-prop-row">
+                  <div className="dt-prop-key">Объект</div>
+                  <div className="dt-prop-val">
+                    {sh ? `Графика (${sh.type})` : pour ? `Полигон (${pour.netName})` : obj.kind === 'cutout' ? 'Вырез платы' : 'Зона запрета'}
+                  </div>
+                </div>
+                {sh?.type === 'text' && (
+                  <div className="dt-prop-row">
+                    <div className="dt-prop-key">Текст</div>
+                    <div className="dt-prop-val">
+                      <input
+                        className="dt-prop-input"
+                        value={sh.text ?? ''}
+                        onChange={(e) =>
+                          p.commitPcb((prev) => ({
+                            ...prev,
+                            shapes: prev.shapes.map((s) => (s.id === sh.id ? { ...s, text: e.target.value } : s))
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
+                <div style={{ padding: 4 }}>
+                  <button
+                    className="dt-btn"
+                    style={{ width: '100%' }}
+                    onClick={() => {
+                      p.commitPcb((prev) => {
+                        if (obj.kind === 'shape') return { ...prev, shapes: prev.shapes.filter((s) => s.id !== obj.id) };
+                        if (obj.kind === 'cutout') return updateAllCopperPours({ ...prev, cutouts: prev.cutouts.filter((c) => c.id !== obj.id) });
+                        if (obj.kind === 'keepout') return updateAllCopperPours({ ...prev, keepouts: prev.keepouts.filter((k) => k.id !== obj.id) });
+                        return { ...prev, copperPours: prev.copperPours.filter((cp) => cp.id !== obj.id) };
+                      });
+                      p.setSelectedExtraObj?.(null);
+                    }}
+                  >
+                    Удалить объект (Del)
+                  </button>
+                </div>
+              </>
+            );
+          })()
         ) : (
           <>
             <div className="dt-prop-row">

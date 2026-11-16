@@ -73,29 +73,7 @@ const makeDualRowHeader = (
     '#141414'
   );
 
-// Standard IC packages (DIP-16/18/20/28/40, SOIC-16, SSOP-28, TQFP-32/44, SOT-223, SOT-23-5)
-const PAT_DIP16 = makePattern(
-  'PAT_DIP16',
-  'DIP-16 (ГОСТ 17467)',
-  'Корпуса микросхем ИМС (ГОСТ)',
-  '201.16-1',
-  'Двухрядный штыревой 16-выводной (шаг 2,54 мм, ширина 7,62 мм)',
-  generateParametricPattern({
-    family: 'DIP',
-    name: 'DIP-16',
-    pinCount: 16,
-    pitch: 2.54,
-    rowSpacing: 7.62,
-    padWidth: 1.6,
-    padHeight: 1.4,
-    holeDiameter: 0.85,
-    bodyWidth: 6.4,
-    bodyLength: 19.3,
-    bodyHeight: 3.6,
-    densityLevel: 'B'
-  })
-);
-
+// Standard IC packages (DIP-28N, SOIC-16, SSOP-28, TQFP-32/44, SOT-223, SOT-23-5)
 const PAT_DIP28_N = makePattern(
   'PAT_DIP28_N',
   'DIP-28 узкий (2119.28-1)',
@@ -242,6 +220,7 @@ const PAT_SOT223: PatternDef = {
   ],
   graphics: [
     { type: 'rect', layer: 'TopSilk', x: -3.3, y: -1.8, w: 6.6, h: 3.6, width: 0.15 },
+    { type: 'circle', layer: 'TopSilk', cx: -2.3, cy: 1.4, r: 0.2, width: 0.15, fill: true },
     { type: 'rect', layer: 'TopAssembly', x: -3.25, y: -1.75, w: 6.5, h: 3.5, width: 0.1 }
   ],
   courtyard: { width: 7.4, height: 8.6 },
@@ -261,9 +240,14 @@ const PAT_SOT23_5: PatternDef = {
     { id: 'p4', number: '4', type: 'SMD', shape: 'RoundedRect', x: 0.95, y: -1.3, width: 0.6, height: 1.05, cornerRadius: 0.08, layer: 'Top' },
     { id: 'p5', number: '5', type: 'SMD', shape: 'RoundedRect', x: -0.95, y: -1.3, width: 0.6, height: 1.05, cornerRadius: 0.08, layer: 'Top' }
   ],
-  graphics: [{ type: 'rect', layer: 'TopSilk', x: -1.5, y: -0.85, w: 3.0, h: 1.7, width: 0.14 }],
-  courtyard: { width: 3.6, height: 4.0 },
-  model3d: { shape: 'TO92', bodyWidth: 2.9, bodyLength: 1.6, bodyHeight: 1.1, color: '#1b1b1e' }
+  graphics: [
+    { type: 'rect', layer: 'TopAssembly', x: -1.5, y: -0.85, w: 3.0, h: 1.7, width: 0.1 },
+    { type: 'line', layer: 'TopSilk', x1: -1.55, y1: -0.6, x2: -1.55, y2: 0.6, width: 0.14 },
+    { type: 'line', layer: 'TopSilk', x1: 1.55, y1: -0.6, x2: 1.55, y2: 0.6, width: 0.14 },
+    { type: 'circle', layer: 'TopSilk', cx: -1.55, cy: 1.3, r: 0.18, width: 0.14, fill: true }
+  ],
+  courtyard: { width: 3.8, height: 4.0 },
+  model3d: { shape: 'SOT23', bodyWidth: 2.9, bodyLength: 1.6, bodyHeight: 1.1, color: '#1b1b1e' }
 };
 
 // 7-Segment single-digit indicator (10 pins: 1..5 bottom left->right, 6..10 top right->left — exact Lab 7 pinout)
@@ -389,8 +373,11 @@ const PAT_USB_TYPE_B: PatternDef = {
     { id: 's1', number: '', type: 'MountingHole', shape: 'Round', x: -6.0, y: 2.7, width: 3.2, height: 3.2, holeDiameter: 2.3, layer: 'All' },
     { id: 's2', number: '', type: 'MountingHole', shape: 'Round', x: 6.0, y: 2.7, width: 3.2, height: 3.2, holeDiameter: 2.3, layer: 'All' }
   ],
-  graphics: [{ type: 'rect', layer: 'TopSilk', x: -6.0, y: -5.0, w: 12.0, h: 16.0, width: 0.18 }],
-  courtyard: { width: 15.6, height: 17.0 },
+  graphics: [
+    { type: 'rect', layer: 'TopAssembly', x: -6.0, y: -5.0, w: 12.0, h: 16.0, width: 0.15 },
+    { type: 'rect', layer: 'TopSilk', x: -6.0, y: -5.0, w: 12.0, h: 16.0, width: 0.18 }
+  ],
+  courtyard: { width: 16.0, height: 23.0 },
   model3d: { shape: 'Box', bodyWidth: 12.0, bodyLength: 16.0, bodyHeight: 11.0, color: '#9ca4ae' }
 };
 
@@ -416,8 +403,14 @@ const PAT_USB_MINI_B: PatternDef = {
     { id: 'ms1', number: '', type: 'SMD', shape: 'Rect', x: -4.2, y: -1.0, width: 1.8, height: 2.2, layer: 'Top' },
     { id: 'ms2', number: '', type: 'SMD', shape: 'Rect', x: 4.2, y: -1.0, width: 1.8, height: 2.2, layer: 'Top' }
   ],
-  graphics: [{ type: 'rect', layer: 'TopSilk', x: -3.85, y: -4.0, w: 7.7, h: 9.2, width: 0.15 }],
-  courtyard: { width: 10.6, height: 10.2 },
+  graphics: [
+    { type: 'rect', layer: 'TopAssembly', x: -3.85, y: -4.0, w: 7.7, h: 9.2, width: 0.12 },
+    { type: 'line', layer: 'TopSilk', x1: -3.85, y1: 5.2, x2: 3.85, y2: 5.2, width: 0.15 },
+    { type: 'line', layer: 'TopSilk', x1: -3.85, y1: 0.5, x2: -3.85, y2: 5.2, width: 0.15 },
+    { type: 'line', layer: 'TopSilk', x1: 3.85, y1: 0.5, x2: 3.85, y2: 5.2, width: 0.15 },
+    { type: 'circle', layer: 'TopSilk', cx: -2.2, cy: -3.6, r: 0.18, width: 0.15, fill: true }
+  ],
+  courtyard: { width: 10.6, height: 10.6 },
   model3d: { shape: 'Box', bodyWidth: 7.7, bodyLength: 9.2, bodyHeight: 3.9, color: '#9ea5ae' }
 };
 
@@ -432,48 +425,16 @@ const PAT_DC_JACK_5_5: PatternDef = {
     { id: 'dc2', number: '2', type: 'THT', shape: 'Round', x: -4.7, y: 0, width: 2.8, height: 3.2, holeDiameter: 1.4, layer: 'All' },
     { id: 'dc3', number: '3', type: 'THT', shape: 'Round', x: 0, y: 0, width: 3.2, height: 2.2, holeDiameter: 1.4, layer: 'All' }
   ],
-  graphics: [{ type: 'rect', layer: 'TopSilk', x: -4.5, y: -7.2, w: 9.0, h: 14.4, width: 0.18 }],
-  courtyard: { width: 11.6, height: 15.6 },
-  model3d: { shape: 'Box', bodyWidth: 9.0, bodyLength: 14.4, bodyHeight: 11.0, color: '#1b1b1d' }
-};
-
-const PAT_DB9_F: PatternDef = {
-  id: 'PAT_DB9_F',
-  name: 'DB-9F / ОНЦ (RS-232)',
-  library: 'Соединители и модули (ГОСТ / Лаб.)',
-  gostName: 'DB-9F (DRB-9F)',
-  description: 'Угловой соединитель RS-232 на 9 контактов для печатной платы',
-  pads: [
-    ...Array.from({ length: 5 }, (_, i): PadDef => ({
-      id: `d_${i + 1}`,
-      number: String(i + 1),
-      type: 'THT',
-      shape: i === 0 ? 'Rect' : 'Round',
-      x: (i - 2) * 2.77,
-      y: -1.42,
-      width: 1.7,
-      height: 1.7,
-      holeDiameter: 1.0,
-      layer: 'All'
-    })),
-    ...Array.from({ length: 4 }, (_, i): PadDef => ({
-      id: `d_${6 + i}`,
-      number: String(6 + i),
-      type: 'THT',
-      shape: 'Round',
-      x: (i - 1.5) * 2.77,
-      y: 1.42,
-      width: 1.7,
-      height: 1.7,
-      holeDiameter: 1.0,
-      layer: 'All'
-    })),
-    { id: 'dm1', number: '', type: 'MountingHole', shape: 'Round', x: -12.5, y: 0, width: 4.5, height: 4.5, holeDiameter: 3.2, layer: 'All' },
-    { id: 'dm2', number: '', type: 'MountingHole', shape: 'Round', x: 12.5, y: 0, width: 4.5, height: 4.5, holeDiameter: 3.2, layer: 'All' }
+  graphics: [
+    { type: 'rect', layer: 'TopAssembly', x: -4.5, y: -7.2, w: 9.0, h: 14.4, width: 0.12 },
+    { type: 'line', layer: 'TopSilk', x1: -4.5, y1: -7.2, x2: 4.5, y2: -7.2, width: 0.18 },
+    { type: 'line', layer: 'TopSilk', x1: 4.5, y1: -7.2, x2: 4.5, y2: 7.2, width: 0.18 },
+    { type: 'line', layer: 'TopSilk', x1: 4.5, y1: 7.2, x2: -4.5, y2: 7.2, width: 0.18 },
+    { type: 'line', layer: 'TopSilk', x1: -4.5, y1: -7.2, x2: -4.5, y2: -2.0, width: 0.18 },
+    { type: 'line', layer: 'TopSilk', x1: -4.5, y1: 2.0, x2: -4.5, y2: 7.2, width: 0.18 }
   ],
-  graphics: [{ type: 'rect', layer: 'TopSilk', x: -15.4, y: -6.2, w: 30.8, h: 12.5, width: 0.18 }],
-  courtyard: { width: 32.0, height: 14.5 },
-  model3d: { shape: 'Box', bodyWidth: 30.8, bodyLength: 12.5, bodyHeight: 12.5, color: '#2b558c' }
+  courtyard: { width: 13.6, height: 15.6 },
+  model3d: { shape: 'Box', bodyWidth: 9.0, bodyLength: 14.4, bodyHeight: 11.0, color: '#1b1b1d' }
 };
 
 const PAT_POT_SP3_4: PatternDef = {

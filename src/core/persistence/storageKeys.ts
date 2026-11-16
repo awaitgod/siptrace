@@ -3,6 +3,7 @@ export const STORAGE_KEYS = {
   ACTIVE_PCB: 'gosttrace_active_pcb_v2',
   USER_COMPONENTS: 'gosttrace_user_components_v1',
   USER_PATTERNS: 'gosttrace_user_patterns_v1',
+  IMPORTED_LIBRARY_BUNDLES: 'gosttrace_imported_lib_bundles_v1',
   HOTKEYS: 'gosttrace_hotkeys_v1',
   SETTINGS: 'gosttrace_settings_v1',
   RECENT_SNAPSHOTS: 'gosttrace_recent_snapshots_v1',

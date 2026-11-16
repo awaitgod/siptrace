@@ -494,6 +494,13 @@ export const PcbCamDialog: React.FC<PcbCamDialogProps> = ({
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <canvas ref={gcodeCanvasRef} style={{ width: '100%', height: 240, border: '1px solid #475569' }} />
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 10.5, padding: '3px 6px', background: '#0f172a', color: '#e2e8f0', border: '1px solid #334155' }}>
+                    <span><span style={{ color: '#22c55e' }}>■</span> Изоляция Top</span>
+                    <span><span style={{ color: '#ef4444' }}>■</span> Изоляция Bottom</span>
+                    <span><span style={{ color: '#38bdf8' }}>●</span> Сверловка</span>
+                    <span><span style={{ color: '#eab308' }}>■</span> Обрезка контура</span>
+                    <span><span style={{ color: '#64748b' }}>┄</span> Холостые переходы</span>
+                  </div>
                   <div style={{ fontSize: 11, background: '#e5f1fb', border: '1px solid #99d1ff', padding: '4px 8px' }}>
                     Кадров G-Code: <b>{gcodeResult.stats.lineCount}</b> · Контуров: <b>{gcodeResult.stats.isolationLoops}</b> · Сверловок: <b>{gcodeResult.stats.drillCount}</b> · Путь: <b>{gcodeResult.stats.totalLengthMm} мм</b> (~{gcodeResult.stats.estimatedMinutes} мин)
                   </div>

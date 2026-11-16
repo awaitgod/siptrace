@@ -222,6 +222,8 @@ export function createPcbTopMenus(p: CreatePcbTopMenusParams): TopMenuSpec[] {
       id: 'tools',
       label: 'Инструменты',
       items: [
+        { label: 'Импорт и управление библиотеками CAD (.lib / .kicad_mod / .lbr)...', onClick: () => window.dispatchEvent(new CustomEvent('siptrace:open-cadlib')) },
+        { separator: true },
         { label: 'Калькулятор ширины дорожек по току и импеданса (ВЧ / Диффпары)...', onClick: () => p.setShowRfDialog(true) },
         { label: 'Редактор корпусов...', onClick: () => openAppModule('patternEditor', (m) => p.onSwitchModule?.(m)) },
         { label: 'Горячие клавиши...', onClick: () => p.setShowHotkeysDialog(true) }

@@ -49,27 +49,40 @@ export function extractSchematicNets(project: SchematicProject): NetGraphNode[] 
         kind: 'pin';
         pin: PinWorld;
         sheetId: string;
+        scopeId: string;
     } | {
         kind: 'wire';
         wireId: string;
         points: Point2D[];
         netName: string;
         sheetId: string;
+        scopeId: string;
     } | {
         kind: 'port';
         x: number;
         y: number;
         netName: string;
         sheetId: string;
-        isGlobal: boolean; displayName?:string;
+        scopeId: string;
+        isGlobal: boolean;
+        displayName?: string;
     };
     const items: Item[] = [];
+    // Count hierarchy blocks targeting each sheet so multi-instanced child sheets stay electrically isolated.
+    const sheetBlockRefs = new Map<string, string[]>();
     for (const sheet of project.sheets) {
+        for (const block of sheet.hierarchyBlocks) {
+            if (!sheetBlockRefs.has(block.targetSheetId))
+                sheetBlockRefs.set(block.targetSheetId, []);
+            sheetBlockRefs.get(block.targetSheetId)!.push(block.id);
+        }
+    }
+    const pushSheetItems = (sheet: SchematicProject['sheets'][number], scopeId: string, instanceBlockId?: string) => {
         for (const comp of sheet.components) {
             const def = resolveComponentDef(comp.componentDefId, project.customComponentDefs);
             const pins = getComponentWorldPins(comp, project.customComponentDefs);
             for (const pin of pins) {
-                items.push({ kind: 'pin', pin, sheetId: sheet.id });
+                items.push({ kind: 'pin', pin, sheetId: sheet.id, scopeId });
                 if (def?.isNetPort && def.portNetName) {
                     items.push({
                         kind: 'port',
@@ -77,13 +90,14 @@ export function extractSchematicNets(project: SchematicProject): NetGraphNode[] 
                         y: pin.y,
                         netName: comp.value || def.portNetName,
                         sheetId: sheet.id,
+                        scopeId,
                         isGlobal: true
                     });
                 }
             }
         }
         for (const wire of sheet.wires) {
-            items.push({ kind: 'wire', wireId: wire.id, points: wire.points, netName: wire.netName, sheetId: sheet.id });
+            items.push({ kind: 'wire', wireId: wire.id, points: wire.points, netName: wire.netName, sheetId: sheet.id, scopeId });
         }
         for (const port of sheet.netPorts) {
             items.push({
@@ -92,35 +106,77 @@ export function extractSchematicNets(project: SchematicProject): NetGraphNode[] 
                 y: port.y,
                 netName: port.netName,
                 sheetId: sheet.id,
+                scopeId,
                 isGlobal: port.style === 'Power' || port.style === 'Ground' || port.style === 'OffPageIn' || port.style === 'OffPageOut'
             });
         }
-    }
-    // Explicit hierarchy interfaces connect a parent pin to a named local child port.
-    for (const sheet of project.sheets)
         for (const block of sheet.hierarchyBlocks) {
+            const targetRefs = sheetBlockRefs.get(block.targetSheetId) ?? [];
+            const child = project.sheets.find(s => s.id === block.targetSheetId);
+            const childScopeId = child && targetRefs.length > 1 ? `${child.id}::${block.id}` : child?.id;
             for (const pin of block.pins) {
-                items.push({ kind: 'port', ...transformPoint(pin.side === 'right' ? block.w : 0, pin.offset, block.x, block.y, block.angle ?? 0, block.flipX, block.flipY), netName: `@hier:${block.id}:${pin.name}`, sheetId: sheet.id, isGlobal: true });
-                const child = project.sheets.find(s => s.id === block.targetSheetId);
-                for (const port of child?.netPorts.filter(p => p.netName === pin.name) ?? [])
-                    items.push({ kind: 'port', x: port.x, y: port.y, netName: `@hier:${block.id}:${pin.name}`, sheetId: child!.id, isGlobal: true });
+                items.push({
+                    kind: 'port',
+                    ...transformPoint(pin.side === 'right' ? block.w : 0, pin.offset, block.x, block.y, block.angle ?? 0, block.flipX, block.flipY),
+                    netName: `@hier:${block.id}:${pin.name}`,
+                    sheetId: sheet.id,
+                    scopeId,
+                    isGlobal: true
+                });
+                if (child && childScopeId) {
+                    for (const port of child.netPorts.filter(p => p.netName === pin.name)) {
+                        items.push({
+                            kind: 'port',
+                            x: port.x,
+                            y: port.y,
+                            netName: `@hier:${block.id}:${pin.name}`,
+                            sheetId: child.id,
+                            scopeId: childScopeId,
+                            isGlobal: true
+                        });
+                    }
+                }
             }
         }
-    for (const sheet of project.sheets)
         for (const tap of sheet.busTaps) {
             const wire = sheet.wires.find(w => w.id === tap.wireId), bus = sheet.buses.find(b => b.id === tap.busId);
-            if (wire && bus && wire.points.length)
-                items.push({ kind: 'port', ...wire.points[0], netName: `@bus:${sheet.id}:${bus.id}:${tap.signalName}`, displayName:tap.signalName, sheetId: sheet.id, isGlobal: true });
+            if (wire && bus && wire.points.length) {
+                items.push({
+                    kind: 'port',
+                    ...wire.points[0],
+                    netName: `@bus:${scopeId}:${bus.id}:${tap.signalName}`,
+                    displayName: tap.signalName,
+                    sheetId: sheet.id,
+                    scopeId,
+                    isGlobal: true
+                });
+            }
         }
-    for (const sheet of project.sheets)
         for (const c of sheet.components.filter(c => c.autoPower)) {
             for (const pin of getComponentWorldPins(c, project.customComponentDefs))
                 if (pin.isHiddenPower || pin.electricalType === 'Power') {
                     const name = /GND|VSS|AGND|DGND/i.test(pin.pinName) ? 'GND' : /VCC|VDD|AVCC/i.test(pin.pinName) ? pin.pinName.toUpperCase() : '';
                     if (name)
-                        items.push({ kind: 'port', x: pin.x, y: pin.y, sheetId: sheet.id, netName: name, isGlobal: true });
+                        items.push({ kind: 'port', x: pin.x, y: pin.y, sheetId: sheet.id, scopeId, netName: name, isGlobal: true });
                 }
         }
+        void instanceBlockId;
+    };
+    const scopeMeta = new Map<string, { sheet: SchematicProject['sheets'][number] }>();
+    for (const sheet of project.sheets) {
+        const refs = sheetBlockRefs.get(sheet.id) ?? [];
+        if (refs.length > 1) {
+            for (const blockId of refs) {
+                const sid = `${sheet.id}::${blockId}`;
+                scopeMeta.set(sid, { sheet });
+                pushSheetItems(sheet, sid, blockId);
+            }
+        }
+        else {
+            scopeMeta.set(sheet.id, { sheet });
+            pushSheetItems(sheet, sheet.id);
+        }
+    }
     // Disjoint Set Union
     const parent = items.map((_, i) => i);
     const find = (i: number): number => {
@@ -152,10 +208,10 @@ export function extractSchematicNets(project: SchematicProject): NetGraphNode[] 
         }
         return false;
     };
-    for (const sheet of project.sheets) {
+    for (const [scopeId, { sheet }] of scopeMeta) {
         const sheetIndices = items
             .map((item, idx) => ({ item, idx }))
-            .filter((x) => x.item.sheetId === sheet.id);
+            .filter((x) => x.item.scopeId === scopeId);
         for (let i = 0; i < sheetIndices.length; i++) {
             const a = sheetIndices[i];
             for (let j = i + 1; j < sheetIndices.length; j++) {
@@ -186,6 +242,10 @@ export function extractSchematicNets(project: SchematicProject): NetGraphNode[] 
                 }
                 else if (b.item.kind === 'port' && a.item.kind === 'pin') {
                     if (dist(b.item, a.item.pin) < SNAP_EPS)
+                        union(a.idx, b.idx);
+                }
+                else if (a.item.kind === 'port' && b.item.kind === 'port') {
+                    if (dist(a.item, b.item) < SNAP_EPS)
                         union(a.idx, b.idx);
                 }
                 else if (a.item.kind === 'wire' && b.item.kind === 'wire') {
@@ -224,7 +284,7 @@ export function extractSchematicNets(project: SchematicProject): NetGraphNode[] 
                 ? item.netName
                 : '';
         if (name) {
-            const key = item.kind === 'port' && item.isGlobal ? name : `${item.sheetId}:${name}`;
+            const key = item.kind === 'port' && item.isGlobal ? name : `${item.scopeId}:${name}`;
             if (!byExplicitName.has(key))
                 byExplicitName.set(key, []);
             byExplicitName.get(key)!.push(idx);
@@ -255,7 +315,10 @@ export function extractSchematicNets(project: SchematicProject): NetGraphNode[] 
                 g.explicitNames.push(item.netName);
         }
         else if (item.kind === 'port') {
-            if(item.displayName) g.explicitNames.push(item.displayName);
+            if (item.displayName) {
+                g.explicitNames.push(item.displayName);
+                g.portNames.push(item.displayName);
+            }
             if (!item.netName.startsWith('@')) {
                 g.portNames.push(item.netName);
                 g.explicitNames.push(item.netName);
@@ -357,9 +420,17 @@ export function runSchematicErc(project: SchematicProject, settings: ErcSettings
             pinToSheet.set(comp.id, sheet.id);
         }
     }
+    const POWER_RAIL_RE = /^(?:[ADPS]?GND[AD]?|0V?|V(?:CC|DD|SS|EE|BAT|BUS|IN|OUT)[A-Z0-9_]*|[AD]V(?:CC|DD|SS)|[+-]\d+(?:[.,]\d+)?(?:V\d*)?|\d+(?:[.,]\d+)?V\d*)$/i;
+    const wireLocations = new Map<string, { sheetId: string; x: number; y: number }>();
+    for (const sheet of project.sheets) {
+        for (const w of sheet.wires) {
+            if (w.points.length > 0)
+                wireLocations.set(w.id, { sheetId: sheet.id, x: w.points[0].x, y: w.points[0].y });
+        }
+    }
     for (const net of nets) {
         // Check power/ground rail short circuit (e.g. +5V shorted to GND or +3V3)
-        const distinctPowerNames = Array.from(new Set(net.portNames.filter((pn) => /^(GND|0|VCC|VDD|VSS|\+?\d[\d.,]*V?|\+3V3|\+5V|\+12V|\+24V|-?\d+V)$/i.test(pn.trim()))));
+        const distinctPowerNames = Array.from(new Set(net.portNames.filter((pn) => POWER_RAIL_RE.test(pn.trim()))));
         if (distinctPowerNames.length > 1) {
             const firstPin = net.pins[0];
             errors.push({
@@ -375,6 +446,37 @@ export function runSchematicErc(project: SchematicProject, settings: ErcSettings
         }
         // Exclude #GND / #PWR port dummy components from pin count when checking single-pin nets
         const realPins = net.pins.filter((p) => !p.refDes.startsWith('#'));
+        // Report dangling wire(s) not attached to any component pin or port
+        if (settings.checkUnconnectedPins && realPins.length === 0 && net.wireIds.length > 0 && net.portNames.length === 0) {
+            const loc = wireLocations.get(net.wireIds[0]);
+            errors.push({
+                id: `erc_${errIdx++}`,
+                severity: 'Warning',
+                sheetId: loc?.sheetId ?? project.activeSheetId,
+                x: loc?.x ?? 0,
+                y: loc?.y ?? 0,
+                code: 'ERC-UNCON',
+                message: `Висячий проводник «${net.netName}» не подключён ни к одному выводу.`,
+                objectId: net.wireIds[0]
+            });
+        }
+        // Report NotConnected pins that are wired to a net or other pins
+        if (realPins.length > 1 || net.wireIds.length > 0 || net.portNames.length > 0) {
+            for (const p of realPins) {
+                if (p.electricalType === 'NotConnected') {
+                    errors.push({
+                        id: `erc_${errIdx++}`,
+                        severity: 'Error',
+                        sheetId: pinToSheet.get(p.compId) ?? project.activeSheetId,
+                        x: p.x,
+                        y: p.y,
+                        code: 'ERC-NC',
+                        message: `Вывод типа NotConnected (${p.refDes}.${p.pinNumber}) подключён к цепи «${net.netName}».`,
+                        objectId: p.compId
+                    });
+                }
+            }
+        }
         if (settings.checkSinglePinNets && realPins.length === 1 && net.wireIds.length > 0 && net.portNames.length === 0) {
             const p = realPins[0];
             errors.push({
@@ -435,11 +537,34 @@ export function runSchematicErc(project: SchematicProject, settings: ErcSettings
                 });
             }
         }
+        else if (settings.checkFloatingInputs && realPins.length >= 1 && net.portNames.length === 0 && !POWER_RAIL_RE.test(net.netName)) {
+            const hasDriverOrPassive = realPins.some((p) => p.electricalType !== 'Input' && p.electricalType !== 'NotConnected');
+            if (!hasDriverOrPassive) {
+                for (const p of realPins) {
+                    if (p.electricalType !== 'Input')
+                        continue;
+                    const sourceSheet = project.sheets.find(s => s.id === pinToSheet.get(p.compId));
+                    const markedNC = sourceSheet?.shapes.some(sh => sh.type === 'text' && sh.text === '× NC' && dist(sh, p) < .25);
+                    if (markedNC)
+                        continue;
+                    errors.push({
+                        id: `erc_${errIdx++}`,
+                        severity: 'Warning',
+                        sheetId: pinToSheet.get(p.compId) ?? project.activeSheetId,
+                        x: p.x,
+                        y: p.y,
+                        code: 'ERC-FLOAT',
+                        message: `Входной вывод ${p.refDes}.${p.pinNumber}${p.pinName ? ` (${p.pinName})` : ''} в цепи «${net.netName}» не имеет источника сигнала.`,
+                        objectId: p.compId
+                    });
+                }
+            }
+        }
     }
     // Warn when multi-component schematic with ICs has neither GND nor VCC/power net
     const realComps = project.sheets.flatMap((s) => s.components.filter((c) => !c.refDes.startsWith('#')));
     const hasIc = realComps.some((c) => /^(DA|DD|U)\d+/i.test(c.refDes));
-    const hasAnyPowerOrGnd = nets.some((n) => n.portNames.length > 0 || /^(GND|0|VCC|VDD|\+\d)/i.test(n.netName));
+    const hasAnyPowerOrGnd = nets.some((n) => n.portNames.length > 0 || POWER_RAIL_RE.test(n.netName));
     if (realComps.length >= 2 && hasIc && !hasAnyPowerOrGnd) {
         errors.push({
             id: `erc_${errIdx++}`,

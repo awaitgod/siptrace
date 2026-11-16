@@ -20,7 +20,7 @@ export function createDefaultPcbLayers(layerCount: 2 | 4 = 2): PcbLayerConfig[] 
     { id: 'TopPaste', name: 'Паста Верх', kind: 'NonSignal', routingDirection: 'Any', color: '#999999', visible: false, enabled: true },
     { id: 'BottomPaste', name: 'Паста Низ', kind: 'NonSignal', routingDirection: 'Any', color: '#777777', visible: false, enabled: true },
     { id: 'TopAssembly', name: 'Сборочный Верх', kind: 'NonSignal', routingDirection: 'Any', color: '#FFCC00', visible: false, enabled: true },
-    { id: 'Courtyard', name: 'Двор (Courtyard)', kind: 'NonSignal', routingDirection: 'Any', color: '#808080', visible: true, enabled: true },
+    { id: 'Courtyard', name: 'Контур установки (Courtyard)', kind: 'NonSignal', routingDirection: 'Any', color: '#808080', visible: true, enabled: true },
     { id: 'BoardOutline', name: 'Контур платы', kind: 'NonSignal', routingDirection: 'Any', color: '#CC44FF', visible: true, enabled: true },
     { id: 'Keepout', name: 'Запрет (Keepout)', kind: 'NonSignal', routingDirection: 'Any', color: '#FF0088', visible: true, enabled: true }
   );

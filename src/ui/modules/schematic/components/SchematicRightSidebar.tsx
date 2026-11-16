@@ -3,6 +3,7 @@ import { ErcError, ComponentDef, PatternDef, PlacedComponent, SchematicProject, 
 import { formatCoord } from '../../../../core/units';
 import { NetGraphNode } from '../../../../engines/erc';
 import { findPatternById } from '../../../../gost/libraries/gostPatterns';
+import { SHEET_FORMATS } from '../../../../gost/gostTitleBlock';
 import { DipIcon } from '../../../theme/DipTraceIcons';
 export interface SchematicRightSidebarProps {
     selectedIds?: string[];
@@ -36,7 +37,7 @@ export const SchematicRightSidebar: React.FC<SchematicRightSidebarProps> = (p) =
     <div className="dt-panel-card" style={{ height: '31%' }}>
       <div className="dt-panel-header">
         <span>Свойства</span>
-        <span style={{ fontSize: 10, color: '#666' }}>{p.selectedPlacedComp ? p.selectedPlacedComp.refDes : 'Лист'}</span>
+        <span style={{ fontSize: 10, color: '#666' }}>{p.selectedPlacedComp ? p.selectedPlacedComp.refDes : p.selectedWireId ? 'Проводник' : p.selectedPortId ? 'Порт цепи' : (p.selectedIds?.length ?? 0) > 0 ? `Объекты (${p.selectedIds!.length})` : 'Лист'}</span>
       </div>
       <div className="dt-panel-body">
         {p.selectedPlacedComp ? (<>
@@ -146,7 +147,8 @@ export const SchematicRightSidebar: React.FC<SchematicRightSidebarProps> = (p) =
                       <option value="Ground">Земля (GND)</option>
                       <option value="PortLeft">Вход (Input)</option>
                       <option value="PortRight">Выход (Output)</option>
-                      <option value="OffPageIn">Двунапр. (BiDir)</option>
+                      <option value="OffPageIn">Межлистовой вход (Off-Page In)</option>
+                      <option value="OffPageOut">Межлистовой выход (Off-Page Out)</option>
                     </select>
                   </div>
                 </div>
@@ -155,7 +157,7 @@ export const SchematicRightSidebar: React.FC<SchematicRightSidebarProps> = (p) =
             <div className="dt-prop-row">
               <div className="dt-prop-key">Проект</div>
               <div className="dt-prop-val">
-                <input className="dt-prop-input" value={p.project.projectName} onChange={(e) => p.commitProject((prev) => ({ ...prev, projectName: e.target.value }), false)}/>
+                <input className="dt-prop-input" title={p.project.projectName} value={p.project.projectName} onChange={(e) => p.commitProject((prev) => ({ ...prev, projectName: e.target.value }), false)}/>
               </div>
             </div>
             <div className="dt-prop-row">
@@ -164,7 +166,7 @@ export const SchematicRightSidebar: React.FC<SchematicRightSidebarProps> = (p) =
             </div>
             <div className="dt-prop-row">
               <div className="dt-prop-key">Формат</div>
-              <div className="dt-prop-val">{p.activeSheet.format}</div>
+              <div className="dt-prop-val" title={SHEET_FORMATS[p.activeSheet.format]?.label ?? p.activeSheet.format}>{SHEET_FORMATS[p.activeSheet.format]?.label ?? p.activeSheet.format}</div>
             </div>
             <div className="dt-prop-row">
               <div className="dt-prop-key">Штамп ГОСТ</div>

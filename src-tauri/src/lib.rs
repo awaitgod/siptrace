@@ -6,8 +6,8 @@ fn set_module_window_size(window: WebviewWindow, is_launcher: bool) {
         if window.is_maximized().unwrap_or(false) {
             let _ = window.unmaximize();
         }
-        let _ = window.set_min_size(Some(Size::Logical(LogicalSize::new(390.0, 580.0))));
-        let _ = window.set_size(Size::Logical(LogicalSize::new(414.0, 648.0)));
+        let _ = window.set_min_size(Some(Size::Logical(LogicalSize::new(344.0, 266.0))));
+        let _ = window.set_size(Size::Logical(LogicalSize::new(364.0, 268.0)));
         let _ = window.center();
     } else {
         let _ = window.set_min_size(Some(Size::Logical(LogicalSize::new(1024.0, 680.0))));

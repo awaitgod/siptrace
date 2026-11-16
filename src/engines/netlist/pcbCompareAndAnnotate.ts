@@ -38,11 +38,11 @@ export function comparePcbToSchematic(sch: SchematicProject, pcb: PcbProject): C
   for (const comp of pcb.components) {
     const schInfo = schCompByRef.get(comp.refDes);
     if (schInfo) {
-      if (schInfo.value && comp.value && schInfo.value !== comp.value) {
-        changedNets.push(`${comp.refDes}: номинал схема «${schInfo.value}» ≠ плата «${comp.value}»`);
+      if ((schInfo.value ?? '') !== (comp.value ?? '')) {
+        changedNets.push(`${comp.refDes}: номинал схема «${schInfo.value || '—'}» ≠ плата «${comp.value || '—'}»`);
       }
-      if (schInfo.patternId && comp.patternId && schInfo.patternId !== comp.patternId) {
-        changedNets.push(`${comp.refDes}: корпус схема «${schInfo.patternId}» ≠ плата «${comp.patternId}»`);
+      if ((schInfo.patternId ?? '') !== (comp.patternId ?? '')) {
+        changedNets.push(`${comp.refDes}: корпус схема «${schInfo.patternId || '—'}» ≠ плата «${comp.patternId || '—'}»`);
       }
     }
     for (const pad of comp.pads) {

@@ -72,6 +72,29 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
     latest.current = p;
     const rawCursor = useRef<Point2D>({ x: 0, y: 0 });
     const initialFitPending = useRef(false);
+    const [isPanning, setIsPanning] = useState(false);
+    const panFrame = useRef<number | null>(null);
+    const pendingPan = useRef<SchViewport | null>(null);
+    const flushPan = useCallback(() => {
+        if (panFrame.current !== null) cancelAnimationFrame(panFrame.current);
+        panFrame.current = null;
+        if (pendingPan.current) setViewport(pendingPan.current);
+        pendingPan.current = null;
+        setIsPanning(false);
+    }, []);
+    useEffect(() => {
+        const canvas = p.canvasRef.current;
+        if (!canvas) return;
+        // Suppress WebView2's native middle-button autoscroll as well as pointer defaults.
+        const suppressAutoscroll = (e: MouseEvent) => { if (e.button === 1) e.preventDefault(); };
+        canvas.addEventListener('mousedown', suppressAutoscroll);
+        canvas.addEventListener('auxclick', suppressAutoscroll);
+        return () => {
+            canvas.removeEventListener('mousedown', suppressAutoscroll);
+            canvas.removeEventListener('auxclick', suppressAutoscroll);
+            if (panFrame.current !== null) cancelAnimationFrame(panFrame.current);
+        };
+    }, [p.canvasRef]);
     const zoomToFit = useCallback(() => {
         const wrap = p.canvasWrapRef.current, dim = SHEET_FORMATS[p.activeSheet.format];
         if (!wrap || wrap.clientWidth < 300 || wrap.clientHeight < 200)
@@ -141,8 +164,10 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
             }
         return targets.filter(t => dist(t.point, pt) * viewport.pxPerMm <= 8).sort((a, b) => dist(a.point, pt) - dist(b.point, pt))[0] ?? null;
     };
-    const snapWorldSmart = (pt: Point2D): Point2D => targetAt(pt)?.point ?? snapPoint(pt, p.project.gridSize);
+    // Wire-preview rendering must also skip snapping while the middle button pans.
+    const snapWorldSmart = (pt: Point2D): Point2D => drag.current?.mode === 'pan' ? pt : targetAt(pt)?.point ?? snapPoint(pt, p.project.gridSize);
     const cancelOperation = useCallback(() => {
+        flushPan();
         const cur = latest.current;
         if (drag.current) {
             drag.current = null;
@@ -155,12 +180,13 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
         cur.setPasteDraft(null);
         cur.setContextMenu(null);
         cur.setTool('select');
-    }, []);
+    }, [flushPan]);
     useEffect(() => {
         const onCancel = () => cancelOperation();
         window.addEventListener('siptrace:cancel', onCancel);
         window.addEventListener('blur', onCancel);
         const finish = () => { const d = drag.current; if (d) {
+            if (d.mode === 'pan') flushPan();
             if (previewRef.current) {
                 const result = previewRef.current;
                 latest.current.updateActiveSheet(() => result);
@@ -172,7 +198,7 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
         } };
         window.addEventListener('pointerup', finish);
         return () => { window.removeEventListener('siptrace:cancel', onCancel); window.removeEventListener('blur', onCancel); window.removeEventListener('pointerup', finish); };
-    }, [cancelOperation]);
+    }, [cancelOperation, flushPan]);
     useEffect(() => { if (!['wire', 'bus'].includes(p.tool))
         p.setWireDraftPts([]); if (!['shapeLine', 'shapeRect', 'shapeCircle'].includes(p.tool))
         p.setShapeStartPt(null); if (p.tool !== 'paste')
@@ -220,6 +246,8 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
         const base: Drag = { mode: 'move', point: pt, screen: { x: e.clientX, y: e.clientY }, viewport, project: p.project, ids: p.selectedIds, detach: e.altKey };
         if (e.button === 1) {
             e.preventDefault();
+            setHoverTarget(null);
+            setIsPanning(true);
             drag.current = { ...base, mode: 'pan' };
             return;
         }
@@ -364,6 +392,16 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
         drag.current = { ...base, ids };
     };
     const handleCanvasMouseMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        const panning = drag.current;
+        if (panning?.mode === 'pan') {
+            if (!(e.buttons & 4)) { handleCanvasMouseUp(e); return; }
+            pendingPan.current = { ...panning.viewport, ox: panning.viewport.ox + e.clientX - panning.screen.x, oy: panning.viewport.oy + e.clientY - panning.screen.y };
+            if (panFrame.current === null) panFrame.current = requestAnimationFrame(() => {
+                panFrame.current = null;
+                if (pendingPan.current) setViewport(pendingPan.current);
+            });
+            return;
+        }
         const pt = world(e.clientX, e.clientY);
         rawCursor.current = pt;
         const target = targetAt(pt);
@@ -378,10 +416,6 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
             return;
         if (!e.buttons) {
             handleCanvasMouseUp(e);
-            return;
-        }
-        if (d.mode === 'pan') {
-            setViewport({ ...d.viewport, ox: d.viewport.ox + e.clientX - d.screen.x, oy: d.viewport.oy + e.clientY - d.screen.y });
             return;
         }
         if (d.mode === 'marquee' || d.mode === 'zoom') {
@@ -433,6 +467,7 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
         const d = drag.current;
         if (!d)
             return;
+        if (d.mode === 'pan') flushPan();
         if (d.mode === 'marquee' || d.mode === 'zoom') {
             const pt = world(e.clientX, e.clientY), minX = Math.min(pt.x, d.point.x), maxX = Math.max(pt.x, d.point.x), minY = Math.min(pt.y, d.point.y), maxY = Math.max(pt.y, d.point.y);
             if (d.mode === 'marquee' && maxX - minX > .5 && maxY - minY > .5) {
@@ -491,5 +526,5 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
         const hit = id ? findEntity(p.activeSheet, id) : null;
         p.setContextMenu({ x: e.clientX, y: e.clientY, ids: id ? (p.selectedIds.includes(id) ? p.selectedIds : [id]) : [], compId: hit?.kind === 'components' ? id! : undefined, wireId: hit?.kind === 'wires' ? id! : undefined });
     };
-    return { displaySheet: dragPreview ?? p.activeSheet, viewport, cursorMm, zoomPercent, setZoomByPercent, zoomToFit, centerOnWorldPt, snapWorldSmart, hoverTarget, cancelOperation, handleCanvasMouseDown, handleCanvasMouseMove, handleCanvasMouseUp, handleCanvasDoubleClick, handleCanvasWheel, handleContextMenu };
+    return { isPanning, displaySheet: dragPreview ?? p.activeSheet, viewport, cursorMm, zoomPercent, setZoomByPercent, zoomToFit, centerOnWorldPt, snapWorldSmart, hoverTarget, cancelOperation, handleCanvasMouseDown, handleCanvasMouseMove, handleCanvasMouseUp, handleCanvasDoubleClick, handleCanvasWheel, handleContextMenu };
 }

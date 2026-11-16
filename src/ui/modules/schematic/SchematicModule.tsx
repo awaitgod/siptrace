@@ -53,7 +53,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
     const [sortLibsAlpha, setSortLibsAlpha] = useState<boolean>(false);
     const [searchCompQuery, setSearchCompQuery] = useState<string>('');
     // Selection, highlight, ERC, and canvas draft states
-    const selectedCompIds = selectedIds.filter(id => activeSheet.components.some(c => c.id === id));
+    const selectedCompIds = useMemo(() => selectedIds.filter(id => activeSheet.components.some(c => c.id === id)), [selectedIds, activeSheet.components]);
     const selectedWireId = activeSheet.wires.find(w => selectedIds.includes(w.id))?.id ?? null;
     const selectedPortId = activeSheet.netPorts.find(w => selectedIds.includes(w.id))?.id ?? null;
     const setSelectedWireId = (id: string | null) => { if (id)
@@ -358,7 +358,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
             broadcastEdaEvent('crossprobe:refdes', { refDes: comp.refDes });
     }, [selectedCompIds, activeSheet.components]);
     // Canvas interactions & viewport
-    const { viewport, displaySheet, cursorMm, zoomPercent, setZoomByPercent, zoomToFit, centerOnWorldPt, snapWorldSmart, hoverTarget, handleCanvasMouseDown, handleCanvasMouseMove, handleCanvasMouseUp, handleCanvasDoubleClick, handleCanvasWheel, handleContextMenu } = useSchematicInteraction({
+    const { viewport, displaySheet, isPanning, cursorMm, zoomPercent, setZoomByPercent, zoomToFit, centerOnWorldPt, snapWorldSmart, hoverTarget, handleCanvasMouseDown, handleCanvasMouseMove, handleCanvasMouseUp, handleCanvasDoubleClick, handleCanvasWheel, handleContextMenu } = useSchematicInteraction({
         canvasRef,
         canvasWrapRef,
         project,
@@ -573,7 +573,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
             display: 'block',
             width: '100%',
             height: '100%',
-            cursor: tool === 'select' ? (hoverTarget ? 'crosshair' : 'default') : 'crosshair', touchAction: 'none'
+            cursor: isPanning ? 'grabbing' : tool === 'select' ? (hoverTarget ? 'crosshair' : 'default') : 'crosshair', touchAction: 'none'
         }} tabIndex={0} aria-label="Редактор электрической схемы" onPointerDown={handleCanvasMouseDown} onPointerMove={handleCanvasMouseMove} onPointerUp={handleCanvasMouseUp} onDoubleClick={handleCanvasDoubleClick} onWheel={handleCanvasWheel} onContextMenu={handleContextMenu}/>
           </div>
           <SchematicSheetBar project={project} activeSheet={activeSheet} commitProject={commitProject}/>

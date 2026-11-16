@@ -143,3 +143,37 @@ test('launcher expansion fits the initial sheet once and later resize preserves 
  await page.setViewportSize({width:1440,height:900});const zoom=page.locator('.dt-tb-select').first().locator('option:checked');await expect.poll(async()=>parseInt(await zoom.innerText(),10)).toBeGreaterThan(100);
  await page.keyboard.press('+');const before=await zoom.innerText();await page.setViewportSize({width:1280,height:800});await expect(zoom).toHaveText(before);
 });
+for (const wireDraft of [false, true]) test(`held middle button pans without hit testing or document edits (wire draft: ${wireDraft})`, async ({ page }) => {
+    if(wireDraft){await page.keyboard.press('w');await click(page,150,150);}
+    await page.evaluate(() => {
+        const proto = CanvasRenderingContext2D.prototype;
+        const originalSetTransform = proto.setTransform, originalTranslate = proto.translate;
+        const armed = new WeakSet<CanvasRenderingContext2D>();
+        proto.setTransform = function (...args: any[]) {
+            if (this.canvas.matches('.dt-canvas-wrap canvas')) { armed.add(this); (window as any).__panPaints++; }
+            return originalSetTransform.apply(this, args as any);
+        };
+        proto.translate = function (x, y) {
+            if (armed.has(this)) { (window as any).__camera = { x, y }; armed.delete(this); }
+            return originalTranslate.call(this, x, y);
+        };
+        // Smart snapping reads this geometry. Panning must not touch it.
+        (window as any).__pinScans = 0; (window as any).__panPaints = 0;
+        const hypot = Math.hypot;
+        Math.hypot = (...values) => { (window as any).__pinScans++; return hypot(...values); };
+    });
+    const start = await xy(page, 160, 150);
+    await page.mouse.move(start.x, start.y);
+    await expect.poll(() => page.evaluate(() => !!(window as any).__camera)).toBe(true);
+    const before = await page.evaluate(() => (window as any).__camera);
+    const project = await read(page);
+    await page.mouse.down({ button: 'middle' });
+    await page.evaluate(() => { (window as any).__pinScans = 0; (window as any).__panPaints = 0; });
+    await page.mouse.move(start.x + 120, start.y + 80, { steps: 8 });
+    const counts = await page.evaluate(() => ({ scans: (window as any).__pinScans, paints: (window as any).__panPaints }));
+    await page.mouse.up({ button: 'middle' });
+    await expect.poll(() => page.evaluate(() => (window as any).__camera)).toEqual({ x: before.x + 120, y: before.y + 80 });
+    // Four pin-length calculations per paint are expected; smart hit testing adds more.
+    expect(counts.scans).toBeLessThanOrEqual(counts.paints * 4);
+    expect(await read(page)).toEqual(project);
+});

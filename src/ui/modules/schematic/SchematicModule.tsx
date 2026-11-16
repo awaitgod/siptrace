@@ -1,3 +1,4 @@
+import { useSchematicCrossprobe } from './hooks/useSchematicCrossprobe';
 import { printSchematicProject } from './services/printSchematic';
 import { useEditorSession } from './hooks/useEditorSession';
 import { allIds, copyFragment, getClipboard, pasteFragment, deleteEntities, transformEntities, selectionBounds, findEntity, collections, editWire } from '../../../core/schematic/editing';
@@ -39,7 +40,15 @@ export interface SchematicModuleProps {
 }
 /** Main Schematic Capture CAD coordinator composing toolbars, library browser, 2D canvas, inspector, and modals. */
 export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule }) => {
-    const [selectedIds, setSelectedIds] = useEditorSession<string[]>('schematic-selection', []);
+    const [selectedIds, setStoredSelection] = useEditorSession<string[]>('schematic-selection', []);
+    const [highlightedNet, setHighlightedNet] = useState<string | null>(null);
+    const setSelectedIds = useCallback<React.Dispatch<React.SetStateAction<string[]>>>((action) => {
+        setHighlightedNet(null);
+        setStoredSelection(previous => {
+            const next = [...new Set(typeof action === 'function' ? action(previous) : action)];
+            return next.length === previous.length && next.every((id, i) => id === previous[i]) ? previous : next;
+        });
+    }, [setStoredSelection]);
     const setSelectedCompIds = setSelectedIds;
     const [statusMessage, setStatusMessage] = useState('Готов к работе. Выберите компонент слева или нажмите W для проводника.');
     const { project, history, redoStack, isDirty, autosaveStatus, settings, setSettings, hotkeys, setHotkeys, userComponents, userPatterns, activeSheet, customCompMap, commitProject, pushUndoSnapshot, replaceProject, markProjectSaved, updateActiveSheet, handleUndo, handleRedo } = useSchematicProjectState({ setSelectedCompIds, setStatusMessage });
@@ -54,6 +63,11 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
     const [searchCompQuery, setSearchCompQuery] = useState<string>('');
     // Selection, highlight, ERC, and canvas draft states
     const selectedCompIds = useMemo(() => selectedIds.filter(id => activeSheet.components.some(c => c.id === id)), [selectedIds, activeSheet.components]);
+    useEffect(() => {
+        const present = new Set(allIds(activeSheet));
+        const valid = selectedIds.filter(id => present.has(id) || (/^(refDes|value)@(.+)$/.test(id) && present.has(id.slice(id.indexOf('@') + 1))));
+        if (valid.length !== selectedIds.length) setSelectedIds(valid);
+    }, [activeSheet, selectedIds, setSelectedIds]);
     const selectedWireId = activeSheet.wires.find(w => selectedIds.includes(w.id))?.id ?? null;
     const selectedPortId = activeSheet.netPorts.find(w => selectedIds.includes(w.id))?.id ?? null;
     const setSelectedWireId = (id: string | null) => { if (id)
@@ -69,7 +83,6 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
     const drawingDefinitions = useMemo(() => ({ ...customCompMap, ...(tool === 'paste' ? pasteDefinitions.components : {}) }), [customCompMap, tool, pasteDefinitions]);
     const [clipboardVersion, setClipboardVersion] = useState(0);
     const openProperties = useCallback((ids: string[]) => setPropertiesIds(ids), []);
-    const [highlightedNet, setHighlightedNet] = useState<string | null>(null);
     const [managerTab, setManagerTab] = useState<'components' | 'nets' | 'erc'>('components');
     const [ercRevision, setErcRevision] = useState<SchematicProject | null>(null);
     const [ercErrors, setErcErrors] = useState<ErcError[]>([]);
@@ -350,13 +363,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
         setClipboardVersion(v => v + 1);
         setStatusMessage(`Скопировано объектов: ${selectedIds.length}.`);
     }, [project, activeSheet, selectedIds]);
-    useEffect(() => {
-        if (selectedCompIds.length !== 1)
-            return;
-        const comp = activeSheet.components.find((c) => c.id === selectedCompIds[0]);
-        if (comp)
-            broadcastEdaEvent('crossprobe:refdes', { refDes: comp.refDes });
-    }, [selectedCompIds, activeSheet.components]);
+    useSchematicCrossprobe({ project, selectedIds, setSelectedIds, commitProject });
     // Canvas interactions & viewport
     const { viewport, displaySheet, isPanning, cursorMm, zoomPercent, setZoomByPercent, zoomToFit, centerOnWorldPt, snapWorldSmart, hoverTarget, handleCanvasMouseDown, handleCanvasMouseMove, handleCanvasMouseUp, handleCanvasDoubleClick, handleCanvasWheel, handleContextMenu } = useSchematicInteraction({
         canvasRef,
@@ -580,7 +587,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
         </div>
 
         <div className="dt-splitter" role="separator" aria-label="Ширина свойств" tabIndex={0} onPointerDown={e => resizePanel('right', e)}/>
-        <SchematicRightSidebar selectedIds={selectedIds} onProperties={() => openProperties(selectedIds)} ercStale={ercRevision !== project} project={project} activeSheet={activeSheet} userPatterns={userPatterns} selectedPlacedComp={selectedPlacedComp} inspectorCompDef={inspectorCompDef} selectedPartIndex={selectedPartIndex} selectedWireId={selectedWireId} selectedPortId={selectedPortId} selectedCompIds={selectedCompIds} setSelectedCompIds={setSelectedCompIds} managerTab={managerTab} setManagerTab={setManagerTab} schematicNets={schematicNets} highlightedNet={highlightedNet} setHighlightedNet={setHighlightedNet} ercErrors={ercErrors} setShowTitleDialog={setShowTitleDialog} onCenterWorldPt={centerOnWorldPt} commitProject={commitProject} updateActiveSheet={updateActiveSheet}/>
+        <SchematicRightSidebar selectedIds={selectedIds} onProperties={() => openProperties(selectedIds)} ercStale={ercRevision !== project} project={project} activeSheet={activeSheet} userPatterns={userPatterns} selectedPlacedComp={selectedPlacedComp} inspectorCompDef={inspectorCompDef} selectedPartIndex={selectedPartIndex} selectedWireId={selectedWireId} selectedPortId={selectedPortId} selectedCompIds={selectedCompIds} setSelectedCompIds={setSelectedCompIds} managerTab={managerTab} setManagerTab={setManagerTab} schematicNets={schematicNets} highlightedNet={highlightedNet} setHighlightedNet={(action)=>{setStoredSelection([]);setHighlightedNet(action);}} ercErrors={ercErrors} setShowTitleDialog={setShowTitleDialog} onCenterWorldPt={centerOnWorldPt} commitProject={commitProject} updateActiveSheet={updateActiveSheet}/>
       </div>
 
       <StatusBar hint={`${statusMessage} | ${autosaveStatus}${isDirty ? " | Изменения не записаны в файл" : ""}`} extraCenter={`Лист: ${activeSheet.name} | Элементов: ${activeSheet.components.filter((c) => !c.refDes.startsWith('#')).length} | Цепей: ${schematicNets.length}`} gridMm={project.gridSize} units={project.units} cursorX={cursorMm.x} cursorY={cursorMm.y} onToggleUnits={() => commitProject((prev) => ({
@@ -617,8 +624,8 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
                 setHighlightedNet(null);
                 setStatusMessage('Компонент выделен.');
             }} onSelectNet={(netName) => {
+                setStoredSelection([]);
                 setHighlightedNet(netName);
-                setSelectedCompIds([]);
                 setManagerTab('nets');
                 setStatusMessage(`Выделена цепь «${netName}».`);
             }} onClose={() => setShowFindDialog(false)}/>)}

@@ -111,15 +111,7 @@ export function useSchematicProjectState({ setSelectedCompIds, setStatusMessage 
             commitProject(p => backAnnotateSchematic(p, payload));
             setStatusMessage('Обратная аннотация применена.');
         }
-        if (channel === 'crossprobe:refdes' && payload?.refDes) {
-            const current = stateRef.current.project;
-            const sheet = current.sheets.find(s => s.components.some(c => c.refDes === payload.refDes));
-            const comp = sheet?.components.find(c => c.refDes === payload.refDes);
-            if (sheet && comp) {
-                commitProject(p => ({ ...p, activeSheetId: sheet.id }), false);
-                setTimeout(()=>{setSelectedCompIds([comp.id]);window.dispatchEvent(new CustomEvent('siptrace:crossprobe',{detail:{x:comp.x,y:comp.y}}));},0);
-            }
-        }
+
     }), [commitProject, setSelectedCompIds, setStatusMessage]);
     const handleUndo = useCallback(() => dispatch({ type: 'undo' }), []);
     const handleRedo = useCallback(() => dispatch({ type: 'redo' }), []);

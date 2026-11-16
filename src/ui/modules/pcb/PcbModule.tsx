@@ -465,25 +465,28 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
     }
   }, [confirmDiscardIfDirty, replacePcb]);
 
+  const remoteProbeId = useRef<string | null>(null);
   // Cross-probe synchronization between Schematic & PCB
   useEffect(() => {
     if (!selectedCompId) return;
+    if(remoteProbeId.current===selectedCompId){remoteProbeId.current=null;return;}
     const comp = pcb.components.find((c) => c.id === selectedCompId);
-    if (comp) broadcastEdaEvent('crossprobe:refdes', { refDes: comp.refDes });
+    if (comp) broadcastEdaEvent('crossprobe:refdes', { refDes: comp.refDes, source:'pcb', target:'schematic' });
   }, [selectedCompId, pcb.components]);
 
   useEffect(() => {
     return subscribeEdaEvents((ch, payload: unknown) => {
-      if (ch === 'crossprobe:refdes' && (payload as { refDes?: string })?.refDes) {
+      if (ch === 'crossprobe:refdes' && (payload as { refDes?: string })?.refDes && (payload as {source?:string}).source!=='pcb') {
         const ref = (payload as { refDes: string }).refDes;
         const comp = pcb.components.find((c) => c.refDes === ref);
-        if (comp) {
+        if (comp && comp.id !== selectedCompId) {
+          remoteProbeId.current=comp.id;
           setSelectedCompId(comp.id);
           setStatusMessage(`Перекрёстный выбор со схемы: ${comp.refDes}`);
         }
       }
     });
-  }, [pcb.components]);
+  }, [pcb.components, selectedCompId]);
 
   const topMenus = useMemo(
     () =>

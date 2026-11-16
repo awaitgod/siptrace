@@ -1,3 +1,4 @@
+import { hitTestEntity } from '../../../../core/schematic/hitTesting';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ComponentDef, Point2D, SchematicProject, SchematicSheet, SchNetPort, PlacedComponent } from '../../../../core/types';
 import { dist, pointToSegmentDist, uid, transformPoint } from '../../../../core/geometry';
@@ -185,7 +186,7 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
         const onCancel = () => cancelOperation();
         window.addEventListener('siptrace:cancel', onCancel);
         window.addEventListener('blur', onCancel);
-        const finish = () => { const d = drag.current; if (d) {
+        const finish = (event: PointerEvent) => { const d = drag.current; if (d && !(event.buttons & (d.mode === 'pan' ? 4 : 1))) {
             if (d.mode === 'pan') flushPan();
             if (previewRef.current) {
                 const result = previewRef.current;
@@ -197,36 +198,28 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
             latest.current.setMarqueeBox(null);
         } };
         window.addEventListener('pointerup', finish);
-        return () => { window.removeEventListener('siptrace:cancel', onCancel); window.removeEventListener('blur', onCancel); window.removeEventListener('pointerup', finish); };
+        window.addEventListener('pointercancel', onCancel);
+        return () => { window.removeEventListener('siptrace:cancel', onCancel); window.removeEventListener('blur', onCancel); window.removeEventListener('pointerup', finish); window.removeEventListener('pointercancel', onCancel); };
     }, [cancelOperation, flushPan]);
-    useEffect(() => { if (!['wire', 'bus'].includes(p.tool))
+    useEffect(() => {
+        if (drag.current && drag.current.mode !== 'pan') {
+            drag.current = null;
+            previewRef.current = null;
+            setDragPreview(null);
+            p.setMarqueeBox(null);
+        }
+        if (!['select', 'zoomBox', 'paste'].includes(p.tool)) p.setSelectedIds([]);
+        if (!['wire', 'bus'].includes(p.tool))
         p.setWireDraftPts([]); if (!['shapeLine', 'shapeRect', 'shapeCircle'].includes(p.tool))
         p.setShapeStartPt(null); if (p.tool !== 'paste')
         p.setPasteDraft(null); }, [p.tool]);
     const hitAt = (pt: Point2D): string | null => {
-        const r = 6 / viewport.pxPerMm;
-        for (const c of [...p.activeSheet.components].reverse())
-            for (const field of ['refDes', 'value'] as const) {
-                if (!(field === 'refDes' ? c.showRefDes : c.showValue))
-                    continue;
-                const id = labelId(c.id, field), b = entityBounds(p.activeSheet, id, p.customCompMap);
-                if (pt.x >= b.minX && pt.x <= b.maxX && pt.y >= b.minY && pt.y <= b.maxY)
-                    return id;
-            }
-        const ordered = [...p.activeSheet.netPorts.map(o => o.id), ...p.activeSheet.junctions.map(o => o.id), ...allIds(p.activeSheet).reverse().filter(id => !p.activeSheet.netPorts.some(o => o.id === id) && !p.activeSheet.junctions.some(o => o.id === id))];
-        for (const id of ordered) {
-            const item = findEntity(p.activeSheet, id)!;
-            if (item.object.points) {
-                if (item.object.points.some((q: Point2D, i: number) => i && pointToSegmentDist(pt, item.object.points[i - 1], q) <= r))
-                    return id;
-            }
-            else {
-                const b = entityBounds(p.activeSheet, id, p.customCompMap);
-                if (pt.x >= b.minX - r && pt.x <= b.maxX + r && pt.y >= b.minY - r && pt.y <= b.maxY + r)
-                    return id;
-            }
-        }
-        return null;
+        const tolerance = 6 / viewport.pxPerMm;
+        const labels = [...p.activeSheet.components].reverse().flatMap(c => [labelId(c.id, 'refDes'), labelId(c.id, 'value')]);
+        const priority = [...p.activeSheet.netPorts, ...p.activeSheet.junctions, ...[...p.activeSheet.components].reverse()].map(o => o.id);
+        const priorityIds = new Set(priority);
+        const ordered = [...labels, ...priority, ...allIds(p.activeSheet).reverse().filter(id => !priorityIds.has(id))];
+        return ordered.find(id => hitTestEntity(p.activeSheet, id, pt, tolerance, p.customCompMap)) ?? null;
     };
     const handleCanvasMouseDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
         const pt = world(e.clientX, e.clientY);
@@ -246,6 +239,7 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
         const base: Drag = { mode: 'move', point: pt, screen: { x: e.clientX, y: e.clientY }, viewport, project: p.project, ids: p.selectedIds, detach: e.altKey };
         if (e.button === 1) {
             e.preventDefault();
+            previewRef.current = null;setDragPreview(null);p.setMarqueeBox(null);
             setHoverTarget(null);
             setIsPanning(true);
             drag.current = { ...base, mode: 'pan' };
@@ -366,6 +360,7 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
         }
         const hit = hitAt(pt);
         if (!hit) {
+            p.setMarqueeBox(null);
             if (!e.shiftKey)
                 p.setSelectedIds([]);
             drag.current = { ...base, mode: 'marquee', ids: e.shiftKey ? p.selectedIds : [] };
@@ -392,6 +387,11 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
         drag.current = { ...base, ids };
     };
     const handleCanvasMouseMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if ((e.buttons & 4) && drag.current?.mode !== 'pan') {
+            previewRef.current = null; setDragPreview(null); p.setMarqueeBox(null); setHoverTarget(null); setIsPanning(true);
+            drag.current = { mode:'pan', point:world(e.clientX,e.clientY), screen:{x:e.clientX,y:e.clientY}, viewport, project:p.project, ids:p.selectedIds };
+            return;
+        }
         const panning = drag.current;
         if (panning?.mode === 'pan') {
             if (!(e.buttons & 4)) { handleCanvasMouseUp(e); return; }
@@ -465,7 +465,7 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
     };
     const handleCanvasMouseUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
         const d = drag.current;
-        if (!d)
+        if (!d || (e.buttons & (d.mode === 'pan' ? 4 : 1)))
             return;
         if (d.mode === 'pan') flushPan();
         if (d.mode === 'marquee' || d.mode === 'zoom') {

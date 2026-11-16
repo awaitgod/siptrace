@@ -177,3 +177,64 @@ for (const wireDraft of [false, true]) test(`held middle button pans without hit
     expect(counts.scans).toBeLessThanOrEqual(counts.paints * 4);
     expect(await read(page)).toEqual(project);
 });
+test('blank left click clears an object or mixed selection and disables destructive commands', async ({page}) => {
+    const original=await read(page);
+    await click(page,75,75);await expect(page.locator('.dt-tree-row.selected')).toHaveCount(1);
+    await click(page,180,170);await expect(page.getByRole('button',{name:/^Свойства выделения/})).toBeDisabled();
+    await page.keyboard.press('Delete');await page.waitForTimeout(300);expect(await read(page)).toEqual(original);
+    await page.keyboard.press('Control+a');await expect(page.getByRole('button',{name:/^Свойства выделения/})).toBeEnabled();
+    await click(page,180,170);await expect(page.getByRole('button',{name:/^Свойства выделения/})).toBeDisabled();
+    await page.keyboard.press('r');await page.keyboard.press('ArrowRight');await page.waitForTimeout(300);expect(await read(page)).toEqual(original);
+});
+test('empty space within outline geometry clears selection instead of selecting its bounding box', async ({page}) => {
+    const project=fixture();project.sheets[0].shapes.push({id:'outline',type:'rect',x:40,y:40,w:160,h:110,width:.35},{id:'diagonal',type:'line',x1:40,y1:40,x2:200,y2:150,width:.35},{id:'ring',type:'circle',cx:170,cy:130,r:40,width:.35});
+    await page.addInitScript(({key,project})=>localStorage.setItem(key,JSON.stringify(project)),{key,project});await page.reload();await page.waitForTimeout(180);
+    await click(page,40,60);await expect(page.getByRole('button',{name:/^Свойства выделения/})).toBeEnabled();
+    await click(page,180,140);await expect(page.getByRole('button',{name:/^Свойства выделения/})).toBeDisabled();
+    await page.keyboard.press('Delete');await page.waitForTimeout(300);expect((await read(page)).sheets[0].shapes).toHaveLength(4);
+});
+test('blank click also clears highlighted electrical nets',async({page})=>{
+    await page.getByTitle('Цепи схемы',{exact:true}).click();await page.locator('.dt-tree-row').filter({hasText:'GND'}).click();await expect(page.locator('.dt-tree-row.selected')).toHaveCount(1);
+    await click(page,180,170);await expect(page.locator('.dt-tree-row.selected')).toHaveCount(0);
+    await expect(page.getByRole('button',{name:/^Свойства выделения/})).toBeDisabled();
+});
+test('another schematic window cannot echo selections back or restore a cleared selection',async({page,context})=>{
+    const other=await context.newPage();
+    const instrument=()=>{
+        (window as any).__crossprobeSends=0;
+        const send=BroadcastChannel.prototype.postMessage;
+        BroadcastChannel.prototype.postMessage=function(data:any){if(data?.channel==='crossprobe:refdes'){(window as any).__crossprobeSends++;if((window as any).__crossprobeSends>8)return;}return send.call(this,data);};
+    };
+    try{
+        await other.setViewportSize({width:1440,height:900});await other.goto(page.url());await expect(other.locator('.dt-right-sidebar')).toContainText('R1');
+        await page.evaluate(instrument);await other.evaluate(instrument);await page.bringToFront();
+        await click(page,75,75);await expect(page.locator('.dt-tree-row.selected')).toHaveCount(1);await page.waitForTimeout(250);
+        expect(await other.evaluate(()=>(window as any).__crossprobeSends)).toBe(0);
+        await click(page,180,170);await page.waitForTimeout(250);await expect(page.getByRole('button',{name:/^Свойства выделения/})).toBeDisabled();
+        // A late reply from an older window must not overwrite the foreground click.
+        await other.evaluate(()=>{const bc=new BroadcastChannel('gosttrace-eda-events');bc.postMessage({channel:'crossprobe:refdes',senderId:'legacy-window',payload:{refDes:'R1'}});bc.close();});
+        await page.waitForTimeout(250);await expect(page.getByRole('button',{name:/^Свойства выделения/})).toBeDisabled();
+        // Genuine PCB probing into a background schematic remains available and does not echo.
+        // Headless browsers can keep both pages focused: let the local-input guard expire.
+        await page.waitForTimeout(1100);
+        await other.bringToFront();await other.evaluate(()=>{const bc=new BroadcastChannel('gosttrace-eda-events');bc.postMessage({channel:'crossprobe:refdes',senderId:'pcb-window',payload:{refDes:'R2',source:'pcb',target:'schematic'}});bc.close();});
+        await expect(page.locator('.dt-tree-row.selected')).toContainText(['R2']);expect(await page.evaluate(()=>(window as any).__crossprobeSends)).toBe(1);
+    }finally{await other.close();}
+});
+test('entering a drawing tool clears old selection and cancels an unfinished object drag',async({page})=>{
+    const original=await read(page),start=await xy(page,75,75);
+    await page.mouse.move(start.x,start.y);await page.mouse.down();await page.mouse.move(start.x+30,start.y+20,{steps:3});
+    await page.keyboard.press('w');await expect(page.getByRole('button',{name:/^Свойства выделения/})).toBeDisabled();
+    await page.mouse.up();await page.waitForTimeout(350);expect(await read(page)).toEqual(original);
+    await page.keyboard.press('Escape');await click(page,180,170);await page.keyboard.press('Delete');await page.waitForTimeout(300);expect(await read(page)).toEqual(original);
+});
+test('middle-button chord does not commit a stale object drag or end when only left is released',async({page})=>{
+    const original=await read(page),start=await xy(page,75,75);
+    await page.mouse.move(start.x,start.y);await page.mouse.down();await page.mouse.move(start.x+30,start.y+20,{steps:3});
+    await page.mouse.down({button:'middle'});await page.mouse.move(start.x+45,start.y+30);
+    await page.mouse.up({button:'left'});await expect(page.locator('.dt-canvas-wrap canvas')).toHaveCSS('cursor','grabbing');
+    await page.mouse.move(start.x+90,start.y+60,{steps:3});await page.mouse.up({button:'middle'});await expect(page.locator('.dt-canvas-wrap canvas')).not.toHaveCSS('cursor','grabbing');
+    await page.waitForTimeout(350);expect(await read(page)).toEqual(original);
+    const canvas=await page.locator('.dt-canvas-wrap canvas').boundingBox();await page.mouse.click(canvas!.x+canvas!.width-30,canvas!.y+canvas!.height-30);
+    await expect(page.getByRole('button',{name:/^Свойства выделения/})).toBeDisabled();
+});

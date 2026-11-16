@@ -1,0 +1,14 @@
+node_modules/
+dist/
+release/
+src-tauri/target/
+src-tauri/gen/
+test-results/
+playwright-report/
+tests/screenshots/
+audit-ui-results/
+audit/screenshots/
+audit/diptrace-samples/
+*.log
+.env
+.env.*

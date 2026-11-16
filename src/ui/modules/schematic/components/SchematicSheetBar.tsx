@@ -1,70 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SchematicProject, SchematicSheet } from '../../../../core/types';
+import { uid } from '../../../../core/geometry';
+import { allIds, copyFragment, pasteFragment, selectionBounds, transformEntities } from '../../../../core/schematic/editing';
 import { SHEET_FORMATS } from '../../../../gost/gostTitleBlock';
 import { buildNextSchematicSheet } from '../services/schematicActionsService';
-
-export interface SchematicSheetBarProps {
-  project: SchematicProject;
-  activeSheet: SchematicSheet;
-  commitProject: (updater: (prev: SchematicProject) => SchematicProject, pushUndo?: boolean) => void;
+interface Props {
+    project: SchematicProject;
+    activeSheet: SchematicSheet;
+    commitProject: (fn: (p: SchematicProject) => SchematicProject, undo?: boolean) => void;
 }
-
-/** Bottom multi-sheet selector tabs and current GOST sheet format indicator. */
-export const SchematicSheetBar: React.FC<SchematicSheetBarProps> = ({
-  project,
-  activeSheet,
-  commitProject
-}) => (
-  <div className="dt-sheet-bar">
-    <div className="dt-sheet-tabs">
-      {project.sheets.map((s) => (
-        <div
-          key={s.id}
-          className={`dt-sheet-tab ${s.id === project.activeSheetId ? 'active' : ''}`}
-          title="Клик — переключить; двойной клик — переименовать"
-          onClick={() => commitProject((p) => ({ ...p, activeSheetId: s.id }), false)}
-          onDoubleClick={() => {
-            const nextName = window.prompt('Имя листа:', s.name);
-            if (nextName && nextName.trim()) {
-              commitProject((p) => ({
-                ...p,
-                sheets: p.sheets.map((sh) => (sh.id === s.id ? { ...sh, name: nextName.trim() } : sh))
-              }));
-            }
-          }}
-        >
-          {s.name}
-        </div>
-      ))}
-      <button
-        className="dt-btn"
-        style={{ minWidth: 20, height: 17, padding: '0 6px', fontSize: 11, lineHeight: '15px' }}
-        title="Добавить новый лист"
-        onClick={() => {
-          const nextSheet = buildNextSchematicSheet(project, activeSheet);
-          commitProject((p) => {
-            const total = p.sheets.length + 1;
-            const sheets = [...p.sheets, nextSheet].map((sh, idx) => ({
-              ...sh,
-              titleBlock: {
-                ...sh.titleBlock,
-                sheetNumber: idx + 1,
-                totalSheets: total
-              }
-            }));
-            return {
-              ...p,
-              activeSheetId: nextSheet.id,
-              sheets
-            };
-          });
-        }}
-      >
-        +
-      </button>
-    </div>
-    <div style={{ fontSize: 10.5, color: '#444', paddingRight: 6 }}>
-      {SHEET_FORMATS[activeSheet.format].label}
-    </div>
-  </div>
-);
+export const SchematicSheetBar: React.FC<Props> = ({ project, activeSheet, commitProject }) => {
+    const [manager, setManager] = useState(false), [error, setError] = useState('');
+    const change = (fn: (p: SchematicProject) => SchematicProject) => commitProject(p => { const next = fn(p); return { ...next, sheets: next.sheets.map((s, i) => ({ ...s, titleBlock: { ...s.titleBlock, sheetNumber: i + 1, totalSheets: next.sheets.length } })) }; });
+    const add = () => { const sheet = buildNextSchematicSheet(project, activeSheet); change(p => ({ ...p, activeSheetId: sheet.id, sheets: [...p.sheets, sheet] })); };
+    return <div className="dt-sheet-bar"><div className="dt-sheet-tabs" role="tablist" aria-label="Листы схемы">{project.sheets.map(s => <button key={s.id} role="tab" aria-selected={s.id === activeSheet.id} className={`dt-sheet-tab ${s.id === activeSheet.id ? 'active' : ''}`} onClick={() => commitProject(p => ({ ...p, activeSheetId: s.id }), false)} onDoubleClick={() => setManager(true)} onKeyDown={e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const i = project.sheets.findIndex(sh => sh.id === s.id), next = project.sheets[(i + (e.key === 'ArrowRight' ? 1 : project.sheets.length - 1)) % project.sheets.length];
+        commitProject(p => ({ ...p, activeSheetId: next.id }), false);
+    } }}>{s.name}</button>)}<button className="dt-btn" title="Добавить новый лист" onClick={add}>+</button><button className="dt-btn" onClick={() => setManager(true)}>Листы...</button></div><span>{SHEET_FORMATS[activeSheet.format].label}</span>
+ {manager && <div className="dt-modal-backdrop"><div className="dt-modal" style={{ width: 650 }}><div className="dt-modal-title"><span>Управление листами</span><button onClick={() => setManager(false)}>×</button></div><div className="dt-modal-body">{project.sheets.map((s, i) => <div key={s.id} style={{ display: 'flex', gap: 5, marginBottom: 6 }}><input aria-label={`Имя ${s.name}`} className="dt-input" value={s.name} onChange={e => change(p => ({ ...p, sheets: p.sheets.map(sh => sh.id === s.id ? { ...sh, name: e.target.value } : sh) }))}/><button className="dt-btn" disabled={!i} onClick={() => change(p => { const sheets = [...p.sheets]; [sheets[i - 1], sheets[i]] = [sheets[i], sheets[i - 1]]; return { ...p, sheets }; })}>↑</button><button className="dt-btn" disabled={i === project.sheets.length - 1} onClick={() => change(p => { const sheets = [...p.sheets]; [sheets[i + 1], sheets[i]] = [sheets[i], sheets[i + 1]]; return { ...p, sheets }; })}>↓</button><button className="dt-btn" onClick={() => { const source = copyFragment(project, s, allIds(s)); const fragment = pasteFragment(project, source, { x: 0, y: 0 }, project.customComponentDefs); const copy = { ...fragment.sheet, id: uid('sheet'), name: s.name + ' — копия' }; const b = selectionBounds(s, allIds(s), project.customComponentDefs); Object.assign(copy, transformEntities(copy, allIds(copy), { dx: b.minX, dy: b.minY, preserveConnections: false }, project.customComponentDefs)); change(p => ({ ...p, sheets: [...p.sheets, copy], activeSheetId: copy.id })); }}>Дублировать</button><button className="dt-btn" disabled={project.sheets.length === 1} onClick={() => { const refs = project.sheets.flatMap(sh => sh.hierarchyBlocks.filter(b => b.targetSheetId === s.id)); if (refs.length) {
+        setError('Сначала переназначьте дочерний лист у блоков: ' + refs.map(b => b.name).join(', '));
+        return;
+    } change(p => ({ ...p, sheets: p.sheets.filter(sh => sh.id !== s.id), activeSheetId: p.activeSheetId === s.id ? p.sheets.find(sh => sh.id !== s.id)!.id : p.activeSheetId })); }}>Удалить</button></div>)}{error && <p role="alert">{error}</p>}<p>Связи листов: {project.sheets.flatMap(s => s.hierarchyBlocks.map(b => `${s.name} → ${project.sheets.find(sh => sh.id === b.targetSheetId)?.name ?? 'не найден'}`)).join('; ') || 'нет иерархических блоков'}</p></div><div className="dt-modal-footer"><button className="dt-btn" onClick={add}>Добавить лист</button><button className="dt-btn" onClick={() => setManager(false)}>Закрыть</button></div></div></div>}
+ </div>;
+};

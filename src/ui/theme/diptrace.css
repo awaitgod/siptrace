@@ -806,3 +806,12 @@ html, body, #root {
 ::-webkit-scrollbar-thumb:hover {
   background: #a6a6a6;
 }
+
+.dt-schematic .dt-left-sidebar{width:var(--sch-left);min-width:var(--sch-left)}
+.dt-schematic .dt-right-sidebar{width:var(--sch-right);min-width:var(--sch-right)}
+.dt-splitter{width:5px;flex:none;background:#c8c8c8;cursor:col-resize;touch-action:none}
+.dt-splitter:hover,.dt-splitter:focus{background:#0078d7}
+button.dt-dropdown-row{display:flex;width:100%;border:0;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer}
+button.dt-dropdown-row:hover,button.dt-dropdown-row:focus{background:#cce8ff;outline:1px solid #0078d7}
+[role=button]:focus-visible,.dt-sheet-tab:focus-visible{outline:2px solid #0078d7;outline-offset:-2px}
+@media print{body>#root{display:none}#siptrace-print{display:block}}

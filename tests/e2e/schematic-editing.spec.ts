@@ -1,0 +1,145 @@
+import { test, expect, Page } from '@playwright/test';
+import { fixture } from '../fixtures/editorProject';
+const key = 'gosttrace_active_schematic_v2';
+async function read(page: Page) { return page.evaluate(k => JSON.parse(localStorage.getItem(k)!), key); }
+async function xy(page: Page, x: number, y: number) { const b = (await page.locator('.dt-canvas-wrap canvas').boundingBox())!; const z = Math.max(.4, Math.min((b.width - 36) / 297, (b.height - 28) / 210)); return { x: b.x + b.width / 2 + (x - 148.5) * z, y: b.y + b.height / 2 + (y - 105) * z }; }
+async function click(page: Page, x: number, y: number, button: 'left' | 'right' = 'left') { const p = await xy(page, x, y); await page.mouse.click(p.x, p.y, { button }); }
+async function drag(page: Page, x1: number, y1: number, x2: number, y2: number) { const a = await xy(page, x1, y1), b = await xy(page, x2, y2); await page.mouse.move(a.x, a.y); await page.mouse.down(); await page.mouse.move(b.x, b.y, { steps: 6 }); await page.mouse.up(); }
+test.beforeEach(async ({ page }) => { await page.setViewportSize({ width: 1440, height: 900 }); await page.addInitScript(({ key, project }) => localStorage.setItem(key, JSON.stringify(project)), { key, project: fixture() }); await page.goto('/?module=schematic'); await expect(page.locator('.dt-right-sidebar')).toContainText('R1'); await page.waitForTimeout(150); });
+test('a highlighted pin starts a wire in Select, right click and Escape cancel', async ({ page }) => {
+    await click(page, 65, 75);
+    await expect(page.getByTitle('Проложить провод (W)', { exact: true })).toHaveClass(/active/);
+    await click(page, 135, 75);
+    await expect.poll(async () => (await read(page)).sheets[0].wires.length).toBe(3);
+    await page.keyboard.press('w');
+    await click(page, 150, 150, 'right');
+    await expect(page.getByTitle('Режим выделения (Esc)', { exact: true })).toHaveClass(/active/);
+    await page.keyboard.press('w');
+    await click(page, 150, 150);
+    await page.keyboard.press('Escape');
+    await expect(page.getByTitle('Режим выделения (Esc)', { exact: true })).toHaveClass(/active/);
+});
+test('marquee Delete, Undo and Redo operate atomically on every entity', async ({ page }) => {
+    await drag(page, 50, 50, 150, 130);
+    await page.keyboard.press('Delete');
+    await expect.poll(async () => (await read(page)).sheets[0].wires.length).toBe(0);
+    expect((await read(page)).sheets[0].shapes).toHaveLength(0);
+    await page.keyboard.press('Control+z');
+    await expect.poll(async () => (await read(page)).sheets[0].wires.length).toBe(2);
+    expect((await read(page)).sheets[0].netPorts).toHaveLength(1);
+    await page.keyboard.press('Control+y');
+    await expect.poll(async () => (await read(page)).sheets[0].components.length).toBe(0);
+});
+test('group drag moves junction, branch, port and notes with one undo', async ({ page }) => {
+    await drag(page, 50, 50, 150, 130);
+    await drag(page, 75, 75, 85, 85);
+    await expect.poll(async () => (await read(page)).sheets[0].junctions[0].x).toBe(110);
+    const s = (await read(page)).sheets[0];
+    expect(s.netPorts[0]).toMatchObject({ x: 110, y: 110 });
+    expect(s.shapes[0]).toMatchObject({ x: 90, y: 120 });
+    expect(s.wires[1].points[0]).toEqual({ x: 110, y: 85 });
+    await page.keyboard.press('Control+z');
+    await expect.poll(async () => (await read(page)).sheets[0].components[0].x).toBe(75);
+    await expect(page.getByTitle('Отменить (Ctrl+Z)', { exact: true })).toBeDisabled();
+});
+test('context deletion has one target and the menu supports Escape', async ({ page }) => {
+    await click(page, 75, 75);
+    await click(page, 100, 87.5, 'right');
+    await expect(page.getByRole('menu')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    await click(page, 100, 87.5, 'right');
+    await page.getByRole('menuitem', { name: 'Удалить провод', exact: true }).click();
+    await expect.poll(async () => (await read(page)).sheets[0].wires.length).toBe(1);
+    expect((await read(page)).sheets[0].components).toHaveLength(2);
+});
+test('copy and preview paste preserve an entire fragment and select the result', async ({ page }) => {
+    await drag(page, 50, 50, 150, 130);
+    await page.keyboard.press('Control+c');
+    await page.keyboard.press('Control+v');
+    expect((await read(page)).sheets[0].components).toHaveLength(2);
+    await click(page, 180, 140);
+    await expect.poll(async () => (await read(page)).sheets[0].wires.length).toBe(4);
+    const s = (await read(page)).sheets[0];
+    expect(s.components.map((c: any) => c.refDes)).toEqual(['R1', 'R2', 'R3', 'R4']);
+    expect(s.netPorts).toHaveLength(2);
+    await expect(page.locator('.dt-tree-row.selected')).toHaveCount(2);
+});
+test('rotation moves the labels and remains one history command', async ({ page }) => {
+    await click(page, 75, 75);
+    await page.keyboard.press('r');
+    await expect.poll(async () => (await read(page)).sheets[0].components[0].angle).toBe(90);
+    expect((await read(page)).sheets[0].components[0].refDesOffset.x).toBeCloseTo(8);
+    await page.keyboard.press('Control+z');
+    await expect.poll(async () => (await read(page)).sheets[0].components[0].angle).toBe(0);
+    await expect(page.getByTitle('Отменить (Ctrl+Z)', { exact: true })).toBeDisabled();
+});
+test('releasing outside canvas ends drag and subsequent movement cannot alter the project', async ({ page }) => {
+    const a = await xy(page, 75, 75);
+    await page.mouse.move(a.x, a.y);
+    await page.mouse.down();
+    await page.mouse.move(a.x + 30, 10, { steps: 4 });
+    await page.mouse.up();
+    await page.waitForTimeout(350);
+    const before = (await read(page)).sheets[0].components[0];
+    const b = await xy(page, 95, 95);
+    await page.mouse.move(b.x, b.y);
+    await page.waitForTimeout(350);
+    expect((await read(page)).sheets[0].components[0]).toEqual(before);
+});
+test('plus, select all, nudge and cut work as editor commands', async ({ page }) => {
+    const zoom = await page.locator('.dt-tb-select').first().locator('option:checked').innerText();
+    await page.keyboard.press('+');
+    await expect(page.locator('.dt-tb-select').first().locator('option:checked')).not.toHaveText(zoom);
+    // Restore the known view through Home before using sheet coordinates.
+    await page.keyboard.press('Home');
+    await page.keyboard.press('Control+a');
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(async () => (await read(page)).sheets[0].components[0].x).toBe(77.5);
+    await page.keyboard.press('Control+x');
+    await expect.poll(async () => (await read(page)).sheets[0].components.length).toBe(0);
+});
+test('properties edit arbitrary text and Escape respects modal focus', async ({ page }) => {
+    await click(page, 83, 111);
+    await page.keyboard.press('e');
+    const dialog = page.getByRole('dialog', { name: 'Свойства объектов' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel('Текст', { exact: true }).fill('Edited < note');
+    await dialog.getByRole('button', { name: 'Применить' }).click();
+    await expect.poll(async () => (await read(page)).sheets[0].shapes[0].text).toBe('Edited < note');
+    await page.keyboard.press('e');
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+});
+test('autosave failures are visible and the in-memory document remains editable', async ({ page }) => {
+    await page.evaluate(() => { Storage.prototype.setItem = function () { throw new DOMException('Full', 'QuotaExceededError'); }; });
+    await click(page, 75, 75);
+    await page.keyboard.press('r');
+    await expect(page.locator('.dt-statusbar')).toContainText('ОШИБКА автосохранения');
+    await expect(page).toHaveTitle(/\*/);
+    await page.keyboard.press('Control+z');
+    await expect(page.getByTitle('Повторить (Ctrl+Y)', { exact: true })).toBeEnabled();
+});
+test('mixed selection canvas matches the reviewed reference', async ({ page }) => {
+    await drag(page, 50, 50, 150, 130);
+    await page.mouse.move(10, 10);
+    await expect(page.locator('.dt-canvas-wrap canvas')).toHaveScreenshot('schematic-mixed-selection.png', { animations: 'disabled', maxDiffPixelRatio: .001 });
+});
+test('switching modules preserves dirty state, selection, clipboard and Undo',async({page})=>{
+ await click(page,75,75);await page.keyboard.press('r');await expect.poll(async()=> (await read(page)).sheets[0].components[0].angle).toBe(90);
+ await page.keyboard.press('Control+c');
+ await page.locator('.dt-menubar').getByText('Библиотека',{exact:true}).click();await page.getByText('Открыть Редактор компонентов (УГО ГОСТ)...',{exact:true}).click();
+ await expect(page).toHaveURL(/module=componentEditor/);await page.goBack();await expect(page).toHaveURL(/module=schematic/);await expect(page).toHaveTitle(/\*/);
+ await expect(page.locator('.dt-tree-row.selected')).toHaveCount(1);await page.keyboard.press('Control+z');await expect.poll(async()=> (await read(page)).sheets[0].components[0].angle).toBe(0);await expect(page.getByTitle('Вставить (Ctrl+V)',{exact:true})).toBeEnabled();
+});
+test('print creates clean vector sheets with dimensions and complete content',async({page})=>{
+ await page.keyboard.press('Control+p');await expect(page.locator('#siptrace-print')).toHaveCount(1);
+ const output=await page.locator('#siptrace-print').evaluate((frame:HTMLIFrameElement)=>({sections:frame.contentDocument!.querySelectorAll('section').length,text:frame.contentDocument!.body.textContent,svg:frame.contentDocument!.querySelector('svg')?.getAttribute('width')}));
+ expect(output.sections).toBe(1);expect(output.text).toContain('1k');expect(output.text).toContain('Audit < note & value');expect(output.text).not.toContain('Менеджер проекта');expect(output.svg).toBe('297mm');
+});
+test('launcher expansion fits the initial sheet once and later resize preserves zoom',async({page})=>{
+ await page.setViewportSize({width:414,height:648});await page.goto('/?module=launcher');await page.getByRole('button',{name:'Схемотехника (Schematic Capture)',exact:true}).click();
+ await page.setViewportSize({width:1440,height:900});const zoom=page.locator('.dt-tb-select').first().locator('option:checked');await expect.poll(async()=>parseInt(await zoom.innerText(),10)).toBeGreaterThan(100);
+ await page.keyboard.press('+');const before=await zoom.innerText();await page.setViewportSize({width:1280,height:800});await expect(zoom).toHaveText(before);
+});

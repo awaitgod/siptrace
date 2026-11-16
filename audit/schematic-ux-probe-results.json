@@ -1,0 +1,293 @@
+{
+  "date": "2026-11-16",
+  "mode": "Vite development / React StrictMode / Edge headless",
+  "observations": [
+    {
+      "id": "right-click-cancel",
+      "observed": {
+        "wireToolStillActive": true
+      }
+    },
+    {
+      "id": "wire-from-select",
+      "observed": {
+        "wireCount": 2
+      }
+    },
+    {
+      "id": "marquee-delete",
+      "observed": {
+        "picked": [
+          "R1 - 1k - ЧИП_2012М (0805)",
+          "R2 - 1k - ЧИП_2012М (0805)"
+        ],
+        "remaining": {
+          "components": 0,
+          "wires": 2,
+          "junctions": 1,
+          "netPorts": 1,
+          "shapes": 1,
+          "buses": 1
+        }
+      }
+    },
+    {
+      "id": "single-wire-delete",
+      "observed": {
+        "remainingWireIds": [
+          "w1"
+        ]
+      }
+    },
+    {
+      "id": "copy-fragment",
+      "observed": {
+        "components": 4,
+        "wires": 2,
+        "ports": 1,
+        "selected": [
+          "R1 - 1k - ЧИП_2012М (0805)",
+          "R2 - 1k - ЧИП_2012М (0805)"
+        ]
+      }
+    },
+    {
+      "id": "move-group",
+      "observed": {
+        "components": [
+          {
+            "id": "c1",
+            "x": 85,
+            "y": 85
+          },
+          {
+            "id": "c2",
+            "x": 135,
+            "y": 85
+          }
+        ],
+        "wires": [
+          {
+            "id": "w1",
+            "points": [
+              {
+                "x": 95,
+                "y": 85
+              },
+              {
+                "x": 125,
+                "y": 85
+              }
+            ],
+            "netName": ""
+          },
+          {
+            "id": "w2",
+            "points": [
+              {
+                "x": 100,
+                "y": 75
+              },
+              {
+                "x": 100,
+                "y": 100
+              }
+            ],
+            "netName": ""
+          }
+        ],
+        "junctions": [
+          {
+            "id": "j1",
+            "x": 100,
+            "y": 75,
+            "netName": ""
+          }
+        ],
+        "ports": [
+          {
+            "id": "np1",
+            "x": 100,
+            "y": 100,
+            "angle": 0,
+            "style": "Ground",
+            "netName": "GND"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rotate-connected",
+      "observed": {
+        "angle": 90,
+        "refDesOffset": {
+          "x": 0,
+          "y": -8
+        },
+        "valueOffset": {
+          "x": 0,
+          "y": 8
+        },
+        "wire": {
+          "id": "w1",
+          "points": [
+            {
+              "x": 85,
+              "y": 75
+            },
+            {
+              "x": 115,
+              "y": 75
+            }
+          ],
+          "netName": ""
+        }
+      }
+    },
+    {
+      "id": "escape-context-menu",
+      "observed": {
+        "menusBefore": 1,
+        "menusAfter": 1
+      }
+    },
+    {
+      "id": "undo-single-action",
+      "observed": {
+        "angle": 0,
+        "undoDisabled": false
+      }
+    },
+    {
+      "id": "select-all",
+      "observed": {
+        "selected": []
+      }
+    },
+    {
+      "id": "zoom-plus",
+      "observed": {
+        "before": "173%\n25%\n50%\n75%\n100%\n125%\n150%\n165%\n200%\n300%\n400%",
+        "after": "173%\n25%\n50%\n75%\n100%\n125%\n150%\n165%\n200%\n300%\n400%"
+      }
+    },
+    {
+      "id": "escape-wire-tool",
+      "observed": {
+        "wireToolStillActive": true
+      }
+    },
+    {
+      "id": "move-port",
+      "observed": {
+        "port": {
+          "id": "np1",
+          "x": 110,
+          "y": 110,
+          "angle": 0,
+          "style": "Ground",
+          "netName": "GND"
+        },
+        "wire": {
+          "id": "w2",
+          "points": [
+            {
+              "x": 100,
+              "y": 75
+            },
+            {
+              "x": 100,
+              "y": 100
+            }
+          ],
+          "netName": ""
+        }
+      }
+    },
+    {
+      "id": "history-duplicate",
+      "observed": {
+        "afterFirstUndo": 0,
+        "afterSecondUndo": 0
+      }
+    },
+    {
+      "id": "context-deletes-stale-selection",
+      "observed": {
+        "remainingComponents": [
+          "c2"
+        ],
+        "remainingWires": [
+          "w1"
+        ]
+      }
+    },
+    {
+      "id": "rotate-placement-with-selection",
+      "observed": {
+        "existingComponentAngle": 90
+      }
+    },
+    {
+      "id": "drag-release-outside-canvas",
+      "observed": {
+        "afterRelease": {
+          "x": 82.5,
+          "y": -5
+        },
+        "afterReenter": {
+          "id": "c1",
+          "refDes": "R1",
+          "x": 95,
+          "y": 95,
+          "componentDefId": "audit",
+          "libraryId": "audit",
+          "value": "1k",
+          "typeName": "Audit symbol",
+          "partIndex": 1,
+          "angle": 0,
+          "flipX": false,
+          "flipY": false,
+          "patternId": "PAT_CHIP_2012M",
+          "refDesOffset": {
+            "x": 0,
+            "y": -8
+          },
+          "valueOffset": {
+            "x": 0,
+            "y": 8
+          },
+          "showRefDes": true,
+          "showValue": true
+        }
+      }
+    },
+    {
+      "id": "engine-observations",
+      "observed": {
+        "wireClassTransfer": {
+          "wireClass": "wide",
+          "pcbAssignments": {}
+        },
+        "multipart": {
+          "duplicateErrors": 2,
+          "renumbered": [
+            "R1",
+            "R2"
+          ]
+        },
+        "localPorts": [
+          [
+            "c1",
+            "c1_2"
+          ]
+        ],
+        "svgMissing": {
+          "value": true,
+          "note": true,
+          "busName": true
+        }
+      }
+    }
+  ]
+}

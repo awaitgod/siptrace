@@ -1,6 +1,6 @@
 {
   "name": "siptrace",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "SIPTrace",
   "scripts": {
     "dev": "vite",
@@ -8,7 +8,7 @@
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json",
     "tauri": "tauri",
-    "build:exe": "tauri build --no-bundle && node -e \"const fs=require('fs');fs.mkdirSync('release',{recursive:true});fs.copyFileSync('src-tauri/target/release/SIPTrace.exe','release/SIPTrace.exe')\"",
+    "build:exe": "tauri build --no-bundle && node scripts/package-exe.cjs",
     "test": "vitest run",
     "test:e2e": "playwright test"
   },

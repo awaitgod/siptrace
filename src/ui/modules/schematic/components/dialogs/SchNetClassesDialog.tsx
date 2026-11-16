@@ -1,47 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NetClassDef } from '../../../../../core/types';
-
-export interface SchNetClassesDialogProps {
-  netClasses: NetClassDef[];
-  onClose: () => void;
-}
-
-/** Modal displaying project Net Class rules (trace width, clearance, via dimensions). */
-export const SchNetClassesDialog: React.FC<SchNetClassesDialogProps> = ({
-  netClasses,
-  onClose
-}) => (
-  <div className="dt-modal-backdrop">
-    <div className="dt-modal" style={{ width: 520 }}>
-      <div className="dt-modal-title">
-        <span>Классы цепей (Net Classes)</span>
-        <button className="dt-btn" style={{ minWidth: 22, height: 18, padding: 0 }} onClick={onClose}>×</button>
-      </div>
-      <div className="dt-modal-body">
-        <table className="dt-table">
-          <thead>
-            <tr>
-              <th>Название</th>
-              <th>Ширина, мм</th>
-              <th>Зазор, мм</th>
-              <th>Отверст. пер., мм</th>
-            </tr>
-          </thead>
-          <tbody>
-            {netClasses.map((nc) => (
-              <tr key={nc.id}>
-                <td>{nc.name}</td>
-                <td>{nc.traceWidth}</td>
-                <td>{nc.clearance}</td>
-                <td>{nc.viaOuterDiameter}/{nc.viaHoleDiameter}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="dt-modal-footer">
-        <button className="dt-btn primary" onClick={onClose}>ОК</button>
-      </div>
-    </div>
-  </div>
-);
+export const SchNetClassesDialog: React.FC<{
+    netClasses: NetClassDef[];
+    onSave: (classes: NetClassDef[]) => void;
+    onClose: () => void;
+}> = ({ netClasses, onSave, onClose }) => {
+    const [classes, setClasses] = useState(structuredClone(netClasses)), [error, setError] = useState('');
+    const keys = ['name', 'traceWidth', 'clearance', 'viaOuterDiameter', 'viaHoleDiameter'] as const;
+    return <div className="dt-modal-backdrop"><div className="dt-modal" style={{ width: 700 }}><div className="dt-modal-title"><span>Классы цепей (Net Classes)</span><button className="dt-btn" onClick={onClose}>×</button></div><div className="dt-modal-body"><table className="dt-table"><thead><tr>{['Название', 'Ширина, мм', 'Зазор, мм', 'Диаметр перехода, мм', 'Сверло, мм'].map(t => <th key={t}>{t}</th>)}</tr></thead><tbody>{classes.map((nc, i) => <tr key={nc.id}>{keys.map(k => <td key={k}><input aria-label={`${nc.name}: ${k}`} className="dt-input" style={{ width: '100%' }} type={k === 'name' ? 'text' : 'number'} step="any" value={nc[k]} onChange={e => setClasses(c => c.map((r, j) => i === j ? { ...r, [k]: k === 'name' ? e.target.value : Number(e.target.value) } : r))}/></td>)}</tr>)}</tbody></table><button className="dt-btn" onClick={() => setClasses(c => [...c, { id: crypto.randomUUID(), name: `Класс ${c.length + 1}`, traceWidth: .25, minWidth: .15, maxWidth: 5, clearance: .2, viaOuterDiameter: .7, viaHoleDiameter: .35 }])}>Добавить класс</button>{error && <p role="alert">{error}</p>}</div><div className="dt-modal-footer"><button className="dt-btn primary" onClick={() => { if (classes.some(n => !n.name.trim() || ![n.traceWidth, n.clearance, n.viaOuterDiameter, n.viaHoleDiameter].every(v => Number.isFinite(v) && v > 0) || n.viaHoleDiameter >= n.viaOuterDiameter)) {
+        setError('Проверьте имена и размеры: сверло должно быть меньше диаметра перехода.');
+        return;
+    } onSave(classes); }}>Сохранить</button><button className="dt-btn" onClick={onClose}>Закрыть</button></div></div></div>;
+};

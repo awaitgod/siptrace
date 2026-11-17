@@ -1,2 +1,0 @@
-{"ms":0,"kind":"step","step":"Запрос к модели 1/50"}
-{"ms":1931,"kind":"api","http":400,"id":"chat-034zJFk3OSqCTgAKo36MGf","msApi":1930,"imageCount":0,"apiError":"{ \"error\": { \"message\": \"Invalid schema for function 'read_library': '^[\\\\\\\\p{L}\\\\\\\\p{N}_.#-]+$' is not a 'regex'.\", \"type\": \"invalid_request_error\", \"param\": \"tools[2].parameters\", \"code\": \"invalid_function_parameters\" }\n}"}

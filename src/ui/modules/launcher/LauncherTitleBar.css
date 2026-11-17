@@ -1,0 +1,22 @@
+html.siptrace-launcher-window, html.siptrace-launcher-window body, html.siptrace-launcher-window #root { background: transparent; overflow: hidden; }
+.launcher-titlebar { height: 50px; flex: 0 0 50px; padding: 0 15px 0 20px; display: flex; align-items: center; justify-content: space-between; color: #eef8ff; user-select: none; }
+.launcher-titlebar__brand { display: flex; align-items: center; gap: 9px; font: 800 10px/1 Inter, sans-serif; letter-spacing: .18em; }
+.launcher-titlebar__brand-mark { font-size: 20px; color: #9be9ff; line-height: 1; }
+.launcher-titlebar__controls { display: flex; gap: 7px; }
+.launcher-titlebar__controls button { border: 1px solid #ffffff2b; border-radius: 10px; width: 30px; height: 30px; background: #ffffff12; color: #edf8ff; display: grid; place-items: center; cursor: pointer; transition: background .18s, border-color .18s; }
+.launcher-titlebar__controls button:hover { background: #ffffff31; border-color: #ffffff60; }
+.launcher-titlebar__controls button:last-child:hover { background: #e85e74; border-color: #ffb3c0; }
+.launcher-titlebar__controls button:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+.launcher-titlebar__controls svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+
+.launcher-titlebar__drag{align-self:stretch;flex:1}
+
+.launcher-titlebar__controls button:hover,.launcher-titlebar__controls button:last-child:hover{background:#ffffff12;border-color:#ffffff2b}
+.launcher-titlebar__brand{letter-spacing:.02em;font-size:14px;font-weight:750;gap:7px}
+.launcher-titlebar__brand img{width:25px;height:25px}
+.launcher-titlebar__controls button,.launcher-titlebar__controls button:hover,.launcher-titlebar__controls button:last-child:hover{background:#fff;color:#1768bd;border:0}
+
+.launcher-titlebar__brand{font-size:16px;gap:8px}.launcher-titlebar__brand img{width:30px;height:30px}
+
+.launcher-titlebar{padding-left:12px}
+.launcher-titlebar__brand{font-size:18px;gap:9px}.launcher-titlebar__brand img{width:34px;height:34px}

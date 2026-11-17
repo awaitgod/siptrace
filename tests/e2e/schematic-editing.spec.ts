@@ -135,8 +135,9 @@ test('switching modules preserves dirty state, selection, clipboard and Undo',as
 });
 test('print creates clean vector sheets with dimensions and complete content',async({page})=>{
  await page.keyboard.press('Control+p');await expect(page.locator('#siptrace-print')).toHaveCount(1);
- const output=await page.locator('#siptrace-print').evaluate((frame:HTMLIFrameElement)=>({sections:frame.contentDocument!.querySelectorAll('section').length,text:frame.contentDocument!.body.textContent,svg:frame.contentDocument!.querySelector('svg')?.getAttribute('width')}));
+ const output=await page.locator('#siptrace-print').evaluate(async (frame:HTMLIFrameElement)=>{const doc=frame.contentDocument!; await doc.fonts.ready; return {sections:doc.querySelectorAll('section').length,text:doc.body.textContent,svg:doc.querySelector('svg')?.getAttribute('width'),embedded:doc.querySelector('svg style')?.textContent?.includes('data:font/ttf;base64,'),font:doc.fonts.check('12px OpenGost','Схема')};});
  expect(output.sections).toBe(1);expect(output.text).toContain('1k');expect(output.text).toContain('Audit < note & value');expect(output.text).not.toContain('Менеджер проекта');expect(output.svg).toBe('297mm');
+ expect(output.embedded).toBe(true);expect(output.font).toBe(true);
 });
 test('launcher expansion fits the initial sheet once and later resize preserves zoom',async({page})=>{
  await page.setViewportSize({width:364,height:268});await page.goto('/?module=launcher');await page.getByRole('button',{name:'Редактор схем',exact:true}).click();

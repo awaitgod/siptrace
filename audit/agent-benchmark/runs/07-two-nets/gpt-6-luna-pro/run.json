@@ -1,0 +1,41 @@
+{
+  "test": {
+    "id": "07-two-nets",
+    "name": "Двухслойная плата резисторов",
+    "type": "both",
+    "task": "Создай схему Э3 и связанную двухслойную плату 45×30 мм, ТЕСТ.000007 Э3. Два библиотечных резистора 0805 R1=1 кОм и R2=2 кОм. R1.1 и R2.1 — цепь A, R1.2 и R2.2 — B. Разведи обе цепи соблюдая DRC. Укажи результат сверки платы со схемой."
+  },
+  "model": "gpt-6-luna-pro",
+  "error": "Error: Ошибка AITUNNEL (HTTP 400). Проверьте доступность модели и поддержку инструментов.",
+  "durationMs": 1812,
+  "requests": [
+    {
+      "http": 400,
+      "id": "chat-034zJFk8wezzpDum68VUC7",
+      "msApi": 1809,
+      "imageCount": 0,
+      "apiError": "{ \"error\": { \"message\": \"Invalid schema for function 'read_library': '^[\\\\\\\\p{L}\\\\\\\\p{N}_.#-]+$' is not a 'regex'.\", \"type\": \"invalid_request_error\", \"param\": \"tools[2].parameters\", \"code\": \"invalid_function_parameters\" }\n}"
+    }
+  ],
+  "events": [
+    {
+      "ms": 0,
+      "kind": "step",
+      "step": "Запрос к модели 1/50"
+    },
+    {
+      "ms": 1810,
+      "kind": "api",
+      "http": 400,
+      "id": "chat-034zJFk8wezzpDum68VUC7",
+      "msApi": 1809,
+      "imageCount": 0,
+      "apiError": "{ \"error\": { \"message\": \"Invalid schema for function 'read_library': '^[\\\\\\\\p{L}\\\\\\\\p{N}_.#-]+$' is not a 'regex'.\", \"type\": \"invalid_request_error\", \"param\": \"tools[2].parameters\", \"code\": \"invalid_function_parameters\" }\n}"
+    }
+  ],
+  "independent": {},
+  "captures": [],
+  "draft": {
+    "plan": ""
+  }
+}

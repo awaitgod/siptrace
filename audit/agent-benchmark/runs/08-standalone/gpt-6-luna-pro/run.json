@@ -1,0 +1,41 @@
+{
+  "test": {
+    "id": "08-standalone",
+    "name": "Самостоятельная плата",
+    "type": "pcb",
+    "task": "Создай только плату «Переходник 0805», 36×25 мм, 2 слоя, без схемы. Два библиотечных корпуса 0805 с обозначениями R1 и R2, площадка 1 каждого в цепи A, площадка 2 каждого в цепи B. Размести и разведи, зазор не меньше 0,25 мм. Используй только доступные библиотечные корпуса."
+  },
+  "model": "gpt-6-luna-pro",
+  "error": "Error: Ошибка AITUNNEL (HTTP 400). Проверьте доступность модели и поддержку инструментов.",
+  "durationMs": 1720,
+  "requests": [
+    {
+      "http": 400,
+      "id": "chat-034zJFkMn8rmF6IFOw0Qpu",
+      "msApi": 1718,
+      "imageCount": 0,
+      "apiError": "{ \"error\": { \"message\": \"Invalid schema for function 'read_library': '^[\\\\\\\\p{L}\\\\\\\\p{N}_.#-]+$' is not a 'regex'.\", \"type\": \"invalid_request_error\", \"param\": \"tools[2].parameters\", \"code\": \"invalid_function_parameters\" }\n}"
+    }
+  ],
+  "events": [
+    {
+      "ms": 0,
+      "kind": "step",
+      "step": "Запрос к модели 1/50"
+    },
+    {
+      "ms": 1719,
+      "kind": "api",
+      "http": 400,
+      "id": "chat-034zJFkMn8rmF6IFOw0Qpu",
+      "msApi": 1718,
+      "imageCount": 0,
+      "apiError": "{ \"error\": { \"message\": \"Invalid schema for function 'read_library': '^[\\\\\\\\p{L}\\\\\\\\p{N}_.#-]+$' is not a 'regex'.\", \"type\": \"invalid_request_error\", \"param\": \"tools[2].parameters\", \"code\": \"invalid_function_parameters\" }\n}"
+    }
+  ],
+  "independent": {},
+  "captures": [],
+  "draft": {
+    "plan": ""
+  }
+}

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { ComponentDef, PatternDef, SymbolPin, SymbolPrimitive } from '../../core/types';
+import { ColorSchemeId, ComponentDef, PatternDef, SymbolPin, SymbolPrimitive } from '../../core/types';
 import { transformPoint } from '../../core/geometry';
 
 export function drawSymbolPrimitives(
@@ -85,7 +85,7 @@ export function drawSymbolPrimitives(
       ctx.save();
       ctx.fillStyle = textColor;
       const fontSize = Math.max(1.8, (p.size ?? 2.6) * pinFontScale);
-      ctx.font = `${p.italic ? 'italic ' : ''}${p.bold ? 'bold ' : ''}${fontSize}px "Segoe UI", Arial`;
+      ctx.font = `${p.italic ? 'italic ' : ''}${p.bold ? 'bold ' : ''}${fontSize}px "OpenGost", Arial`;
       let align = p.align ?? 'center';
       if (flipX && align === 'left') align = 'right';
       else if (flipX && align === 'right') align = 'left';
@@ -155,7 +155,7 @@ export function drawSymbolPrimitives(
     ctx.save();
     ctx.fillStyle = textColor;
     if (pin.showNumber && pin.number) {
-      ctx.font = `${1.8 * pinFontScale}px "Segoe UI", Arial`;
+      ctx.font = `${1.8 * pinFontScale}px "OpenGost", Arial`;
       if (isHoriz) {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
@@ -167,7 +167,7 @@ export function drawSymbolPrimitives(
       }
     }
     if (pin.showName && pin.name) {
-      ctx.font = `${1.85 * pinFontScale}px "Segoe UI", Arial`;
+      ctx.font = `${1.85 * pinFontScale}px "OpenGost", Arial`;
       const nameOffset = hasClock ? 1.9 : 0.85;
       const inwardX = pEnd.x + ux * nameOffset;
       const inwardY = pEnd.y + uy * nameOffset;
@@ -184,9 +184,10 @@ export function drawSymbolPrimitives(
   }
 }
 
-export const SymbolPreviewCanvas: React.FC<{ component: ComponentDef | null; partIndex?: number }> = ({
+export const SymbolPreviewCanvas: React.FC<{ component: ComponentDef | null; partIndex?: number; colorScheme?: ColorSchemeId }> = ({
   component,
-  partIndex = 1
+  partIndex = 1,
+  colorScheme = 'dark'
 }) => {
   const ref = useRef<HTMLCanvasElement>(null);
 
@@ -202,7 +203,9 @@ export const SymbolPreviewCanvas: React.FC<{ component: ComponentDef | null; par
     if (!ctx) return;
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#000000';
+    const light = colorScheme !== 'dark';
+    const bgColor = colorScheme === 'gost-bw' ? '#FFFFFF' : light ? '#F0F1F2' : '#000000';
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, w, h);
 
     if (!component) return;
@@ -247,14 +250,14 @@ export const SymbolPreviewCanvas: React.FC<{ component: ComponentDef | null; par
     ctx.save();
     ctx.translate(w / 2 - cx * scale, h / 2 - cy * scale);
     ctx.scale(scale, scale);
-    drawSymbolPrimitives(ctx, part.primitives, part.pins, 0, 0, 0, false, false, scale, '#E8E8E8', '#C8C888', '#D0D0D0', 1);
+    drawSymbolPrimitives(ctx, part.primitives, part.pins, 0, 0, 0, false, false, scale, light ? '#111111' : '#E8E8E8', light ? '#333333' : '#C8C888', light ? '#111111' : '#D0D0D0', 1, bgColor);
     ctx.restore();
-  }, [component, partIndex]);
+  }, [component, partIndex, colorScheme]);
 
   return <canvas ref={ref} className="dt-preview-box" />;
 };
 
-export const PatternPreviewCanvas: React.FC<{ pattern: PatternDef | null }> = ({ pattern }) => {
+export const PatternPreviewCanvas: React.FC<{ pattern: PatternDef | null; colorScheme?: ColorSchemeId }> = ({ pattern, colorScheme = 'dark' }) => {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -269,7 +272,9 @@ export const PatternPreviewCanvas: React.FC<{ pattern: PatternDef | null }> = ({
     if (!ctx) return;
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#000000';
+    const light = colorScheme !== 'dark';
+    const bgColor = colorScheme === 'gost-bw' ? '#FFFFFF' : light ? '#F0F1F2' : '#000000';
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, w, h);
 
     if (!pattern) return;
@@ -309,7 +314,7 @@ export const PatternPreviewCanvas: React.FC<{ pattern: PatternDef | null }> = ({
       ctx.save();
       ctx.translate(pad.x, pad.y);
       if (pad.angle) ctx.rotate((pad.angle * Math.PI) / 180);
-      ctx.fillStyle = pad.type === 'THT' ? '#00CC44' : pad.type === 'MountingHole' ? '#C0C0C0' : '#E54040';
+      ctx.fillStyle = colorScheme === 'gost-bw' ? '#111111' : light ? (pad.type === 'THT' ? '#006600' : pad.type === 'MountingHole' ? '#555555' : '#A12424') : pad.type === 'THT' ? '#00CC44' : pad.type === 'MountingHole' ? '#C0C0C0' : '#E54040';
       if (pad.shape === 'Round') {
         ctx.beginPath();
         ctx.arc(0, 0, pad.width / 2, 0, Math.PI * 2);
@@ -338,7 +343,7 @@ export const PatternPreviewCanvas: React.FC<{ pattern: PatternDef | null }> = ({
         ctx.fillRect(-pad.width / 2, -pad.height / 2, pad.width, pad.height);
       }
       if ((pad.holeDiameter ?? 0) > 0) {
-        ctx.fillStyle = '#000000';
+        ctx.fillStyle = bgColor;
         ctx.beginPath();
         ctx.arc(0, 0, pad.holeDiameter! / 2, 0, Math.PI * 2);
         ctx.fill();
@@ -352,12 +357,12 @@ export const PatternPreviewCanvas: React.FC<{ pattern: PatternDef | null }> = ({
       if (g.layer !== 'TopSilk' && g.layer !== 'Courtyard' && g.layer !== 'TopAssembly') continue;
       ctx.save();
       if (g.layer === 'Courtyard') {
-        ctx.strokeStyle = '#00CED1';
+        ctx.strokeStyle = colorScheme === 'gost-bw' ? '#111111' : light ? '#007579' : '#00CED1';
         ctx.setLineDash([0.6, 0.4]);
       } else if (g.layer === 'TopAssembly') {
-        ctx.strokeStyle = '#999999';
+        ctx.strokeStyle = light ? '#555555' : '#999999';
       } else {
-        ctx.strokeStyle = '#FFFFFF';
+        ctx.strokeStyle = light ? '#111111' : '#FFFFFF';
       }
       if (g.type === 'line') {
         ctx.beginPath();
@@ -379,7 +384,7 @@ export const PatternPreviewCanvas: React.FC<{ pattern: PatternDef | null }> = ({
     }
 
     ctx.restore();
-  }, [pattern]);
+  }, [pattern, colorScheme]);
 
   return <canvas ref={ref} className="dt-preview-box" style={{ height: 76 }} />;
 };

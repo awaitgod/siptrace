@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { ComponentDef, ComponentLibrary, PatternDef, SchNetPort } from '../../../../core/types';
+import { ColorSchemeId, ComponentDef, ComponentLibrary, PatternDef, SchNetPort } from '../../../../core/types';
 import { CadLibraryManagerDialog } from '../../../components/CadLibraryManagerDialog';
 import { PatternPreviewCanvas, SymbolPreviewCanvas } from '../../../components/CadPreviewCanvas';
 import { SchToolId } from '../types';
 
 export interface SchematicLeftSidebarProps {
+  colorScheme: ColorSchemeId;
   allLibraries: ComponentLibrary[];
   selectedLibId: string;
   setSelectedLibId: (id: string) => void;
@@ -57,6 +58,7 @@ export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => 
           {p.allLibraries.map((lib) => (
             <div
               key={lib.id}
+              title={lib.name}
               className={`dt-lib-item ${lib.id === p.selectedLibId ? 'selected' : ''}`}
               onClick={() => {
                 p.setSelectedLibId(lib.id);
@@ -70,11 +72,11 @@ export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => 
             </div>
           ))}
         </div>
-        <div style={{ padding: '2px 4px', background: '#e8e8e8', borderBottom: '1px solid #bdbdbd' }}>
+        <div className="dt-sidebar-actions">
           <button
             type="button"
             className="dt-btn"
-            style={{ width: '100%', fontSize: 11, height: 22 }}
+            style={{ width: '100%' }}
             data-testid="schematic-cadlib-btn"
             onClick={() => setShowCadLibManager(true)}
           >
@@ -89,8 +91,8 @@ export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => 
       <span aria-hidden="true">{p.toolsExpanded ? '▼' : '▶'}</span>
     </button>
     {p.toolsExpanded && (
-      <div style={{ background: '#202020', color: '#fff', padding: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <label style={{ fontSize: 10.5 }}>
+      <div className="dt-sidebar-tools">
+        <label>
           Тип порта цепи:
           <select
             className="dt-select"
@@ -125,18 +127,10 @@ export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => 
       <span aria-hidden="true">{p.sortLibsAlpha ? '✓' : ''}</span>
     </button>
 
-    <div style={{ padding: '2px 3px', background: '#141414', borderBottom: '1px solid #333' }}>
+    <div className="dt-sidebar-search">
       <input
-        style={{
-          width: '100%',
-          height: 18,
-          fontSize: 10.5,
-          background: '#000',
-          color: '#eee',
-          border: '1px solid #444',
-          padding: '0 4px',
-          outline: 'none'
-        }}
+        className="dt-input"
+        aria-label="Фильтр компонентов"
         value={p.searchCompQuery}
         onChange={(e) => p.setSearchCompQuery(e.target.value)}
         placeholder="Фильтр компонентов..."
@@ -147,6 +141,7 @@ export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => 
       {p.displayedLibComps.map((comp) => (
         <div
           key={comp.id}
+          title={comp.name}
           className={`dt-comp-item ${comp.id === (p.previewComponentDef?.id ?? '') ? 'selected' : ''}`}
           onClick={() => {
             p.setSelectedLibCompId(comp.id);
@@ -160,7 +155,7 @@ export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => 
       ))}
     </div>
 
-    <div style={{ padding: '2px 5px', background: '#f0f0f0', borderTop: '1px solid #c0c0c0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div className="dt-sidebar-preview-controls">
       <span style={{ fontSize: 10.5 }}>
         {p.previewComponentDef && p.previewComponentDef.parts.length > 1 ? (
           <select
@@ -188,11 +183,11 @@ export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => 
     </div>
 
     <div className="dt-preview-area">
-      <SymbolPreviewCanvas component={p.previewComponentDef} partIndex={p.selectedPartIndex} />
+      <SymbolPreviewCanvas component={p.previewComponentDef} partIndex={p.selectedPartIndex} colorScheme={p.colorScheme} />
       <div className="dt-preview-label" title={p.previewPatternDef?.name}>
         {p.previewPatternDef?.name ?? 'Без корпуса'}
       </div>
-      <PatternPreviewCanvas pattern={p.previewPatternDef} />
+      <PatternPreviewCanvas pattern={p.previewPatternDef} colorScheme={p.colorScheme} />
     </div>
 
     {showCadLibManager && (

@@ -5,7 +5,7 @@ export function resolveSchematicPalette(scheme: ColorSchemeId): SchThemePalette 
     const isLight = scheme === 'light' || scheme === 'gost-bw';
     return {
         scheme,
-        bgColor: isLight ? '#FFFFFF' : '#000000',
+        bgColor: scheme === 'gost-bw' ? '#FFFFFF' : scheme === 'light' ? '#F0F1F2' : '#000000',
         frameColor: isLight ? '#111111' : '#DCDCDC',
         compColor: isLight ? '#000000' : '#FFFFFF',
         pinColor: isLight ? '#333333' : '#CCCCCC',

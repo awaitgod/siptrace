@@ -14,19 +14,20 @@ for (const [id, label] of modules) {
   test(`launcher opens ${id} from the keyboard and supports browser Back`, async ({ page }) => {
     await page.setViewportSize({ width: 344, height: 266 });
     await page.goto('/');
-    const launcher = page.locator('.dt-launcher-inner');
-    const button = launcher.getByRole('button', { name: label });
-    await expect(button).toBeVisible();
-    for (const [, name] of modules) {
-      await page.keyboard.press('Tab');
-      await expect(launcher.getByRole('button', { name, exact: true })).toBeFocused();
+    const editors = page.getByRole('region', { name: 'Редакторы' });
+    await expect(editors.getByRole('button', { name: label, exact: true })).toBeVisible();
+    const menu = page.getByRole('button', { name: 'Инструменты', exact: true });
+    await menu.focus();
+    await page.keyboard.press('Enter');
+    for (const [index, [, name]] of modules.entries()) {
+      if (index > 0) await page.keyboard.press('ArrowDown');
+      await expect(page.getByRole('menuitem', { name, exact: true })).toBeFocused();
       if (name === label) break;
     }
-    await expect(button).toBeInViewport({ ratio: 1 });
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(new RegExp(`module=${id}$`));
     await page.goBack();
-    await expect(button).toBeVisible();
+    await expect(editors.getByRole('button', { name: label, exact: true })).toBeVisible();
   });
 }
 

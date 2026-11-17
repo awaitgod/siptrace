@@ -1,7 +1,8 @@
+import { convertSchematicToPcb } from '../../../../../engines/netlist/schematicToPcbConverter';
 import React from 'react';
 import { PcbProject } from '../../../../../core/types';
 import { broadcastEdaEvent, loadActiveSchematic, saveActiveSchematic } from '../../../../../core/store';
-import { backAnnotateSchematic, comparePcbToSchematic, convertSchematicToPcb } from '../../../../../engines/netlist';
+import { backAnnotateSchematic, comparePcbToSchematic } from '../../../../../engines/netlist';
 
 export interface PcbCompareDialogProps {
   pcb: PcbProject;

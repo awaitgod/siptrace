@@ -153,6 +153,63 @@ export function createBlankPcbProject(opts: {
   };
 }
 
+/** Creates an editable schematic without changing the active document. */
+export function createBlankSchematicProject(opts: NewProjectOptions): SchematicProject {
+  const safeName = opts.projectName.trim() || 'Новый_проект';
+  const safeTitle = opts.titleName.trim() || safeName;
+  const baseDes = opts.designation.trim() || 'АБВГ.000000.001';
+  const schDesignation = /\sЭ3$/i.test(baseDes) ? baseDes : `${baseDes} Э3`;
+  return {
+    version: '1.0',
+    filePath: '',
+    projectName: safeName,
+    units: opts.units,
+    gridSize: 2.5,
+    origin: { x: 0, y: 0 },
+    sheets: [
+      {
+        id: 'sheet_1',
+        name: 'Лист 1',
+        format: opts.sheetFormat,
+        titleBlock: createDefaultGostTitleBlock({
+          name: safeTitle,
+          designation: schDesignation,
+          developer: opts.developer,
+          checker: opts.checker,
+          normControl: opts.normControl,
+          organization: opts.organization,
+          date: formatTodayDate()
+        }),
+        components: [],
+        wires: [],
+        buses: [],
+        busTaps: [],
+        junctions: [],
+        netPorts: [],
+        diffPairs: [],
+        hierarchyBlocks: [],
+        shapes: []
+      }
+    ],
+    activeSheetId: 'sheet_1',
+    netClasses: [
+      {
+        id: 'nc_default',
+        name: 'Сигнальные',
+        traceWidth: 0.25,
+        minWidth: 0.15,
+        maxWidth: 5,
+        clearance: 0.2,
+        viaOuterDiameter: 0.7,
+        viaHoleDiameter: 0.35
+      }
+    ],
+    netClassAssignments: {},
+    customComponentDefs: {},
+    customPatternDefs: {}
+  };
+}
+
 /** Creates and persists a new project (Schematic + PCB, PCB-only, or Demo) and clears old disk save handles. */
 export function createProjectFromOptions(
   opts: NewProjectOptions,
@@ -180,7 +237,7 @@ export function createProjectFromOptions(
       designation: sch.sheets[0]?.titleBlock.designation || 'ГТРС.468364.001',
       module: targetModule,
       demoKey: 'rs485'
-    });
+    }, { schematic: sch, pcb });
     return {
       targetModule,
       schematic: sch,
@@ -205,7 +262,7 @@ export function createProjectFromOptions(
       designation: sch.sheets[0]?.titleBlock.designation || 'ГТРС.468364.005',
       module: targetModule,
       demoKey: 'mcu'
-    });
+    }, { schematic: sch, pcb });
     return {
       targetModule,
       schematic: sch,
@@ -215,56 +272,8 @@ export function createProjectFromOptions(
   }
 
   if (opts.mode === 'schematic_only') {
-    const schDesignation = /\sЭ3$/i.test(baseDes) ? baseDes : `${baseDes} Э3`;
-    const schematic: SchematicProject = {
-      version: '1.0',
-      filePath: '',
-      projectName: safeName,
-      units: opts.units,
-      gridSize: 2.5,
-      origin: { x: 0, y: 0 },
-      sheets: [
-        {
-          id: 'sheet_1',
-          name: 'Лист 1',
-          format: opts.sheetFormat,
-          titleBlock: createDefaultGostTitleBlock({
-            name: safeTitle,
-            designation: schDesignation,
-            developer: opts.developer,
-            checker: opts.checker,
-            normControl: opts.normControl,
-            organization: opts.organization,
-            date: formatTodayDate()
-          }),
-          components: [],
-          wires: [],
-          buses: [],
-          busTaps: [],
-          junctions: [],
-          netPorts: [],
-          diffPairs: [],
-          hierarchyBlocks: [],
-          shapes: []
-        }
-      ],
-      activeSheetId: 'sheet_1',
-      netClasses: [
-        {
-          id: 'nc_default',
-          name: 'Сигнальные',
-          traceWidth: 0.25,
-          minWidth: 0.15,
-          maxWidth: 5,
-          clearance: 0.2,
-          viaOuterDiameter: 0.7,
-          viaHoleDiameter: 0.35
-        }
-      ],
-      netClassAssignments: {},
-      customComponentDefs: {},
-      customPatternDefs: {}
-    };
+    const schematic = createBlankSchematicProject(opts);
+    const schDesignation = schematic.sheets[0].titleBlock.designation;
 
     saveActiveSchematic(schematic);
     const blankPcb = createBlankPcbProject({

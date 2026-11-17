@@ -1,0 +1,1524 @@
+{
+  "id": "03-inner-layers",
+  "model": "deepseek-v4.1-flash-1017",
+  "status": "complete",
+  "durationMs": 114904,
+  "checkCount": 4,
+  "actual": {
+    "plan": "Задание 03-inner-layers: только плата (схемы быть не должно). Плата 48x34, 4 слоя, clearance 0.25, контур прямоугольник. R1..R4 — библиотечные резисторы 0805, Top, angle 0, позиции R1(9,10) R2(39,10) R3(9,24) R4(39,24), закрепить. Сети: BUS_A=R1.1+R2.1, BUS_B=R3.1+R4.1; площадки 2 без сети. RouteKeepout TopCopper и BottomCopper: прямоугольник (20,3)-(28,31). Требование: переход BUS_A через x=24 на Inner1, BUS_B на Inner2, по два сквозных via вне площадок. Других корпусов/цепей/зон/заливок не добавлять. Проверить DRC/ERC, unrouted, геометрию, затем снимки и finish.",
+    "targets": {
+      "documents": "pcb",
+      "designation": "03-inner-layers",
+      "board": {
+        "width": 48,
+        "height": 34,
+        "layers": 4,
+        "clearance": 0.25,
+        "keepouts": [
+          {
+            "layer": "TopCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          },
+          {
+            "layer": "BottomCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          }
+        ],
+        "positions": [
+          {
+            "ref": "R1",
+            "x": 9,
+            "y": 10,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R2",
+            "x": 39,
+            "y": 10,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R3",
+            "x": 9,
+            "y": 24,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R4",
+            "x": 39,
+            "y": 24,
+            "tolerance": 0.1
+          }
+        ]
+      }
+    },
+    "revision": 23,
+    "currentChecks": {
+      "erc": 0,
+      "drc": 8,
+      "outsideFrame": 0,
+      "unrouted": 0,
+      "requirements": [
+        {
+          "requirement": "Ширина платы",
+          "expected": 48,
+          "actual": 48,
+          "pass": true
+        },
+        {
+          "requirement": "Высота платы",
+          "expected": 34,
+          "actual": 34,
+          "pass": true
+        },
+        {
+          "requirement": "Слои платы",
+          "expected": 4,
+          "actual": 4,
+          "pass": true
+        },
+        {
+          "requirement": "Минимальный зазор",
+          "expected": 0.25,
+          "actual": 0.25,
+          "pass": true
+        },
+        {
+          "requirement": "Зона запрета 1",
+          "expected": {
+            "layer": "TopCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          },
+          "actual": {
+            "layer": "TopCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Зона запрета 2",
+          "expected": {
+            "layer": "BottomCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          },
+          "actual": {
+            "layer": "BottomCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R1",
+          "expected": {
+            "x": 9,
+            "y": 10,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 9,
+            "y": 10
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R2",
+          "expected": {
+            "x": 39,
+            "y": 10,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 39,
+            "y": 10
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R3",
+          "expected": {
+            "x": 9,
+            "y": 24,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 9,
+            "y": 24
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R4",
+          "expected": {
+            "x": 39,
+            "y": 24,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 39,
+            "y": 24
+          },
+          "pass": true
+        }
+      ],
+      "revision": 23,
+      "errors": 0,
+      "warnings": 8,
+      "blockers": []
+    },
+    "canRestoreVerified": true,
+    "pcb": {
+      "outline": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 48,
+          "y": 0
+        },
+        {
+          "x": 48,
+          "y": 34
+        },
+        {
+          "x": 0,
+          "y": 34
+        }
+      ],
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "pads": [
+        {
+          "ref": "R1",
+          "number": "1",
+          "x": 8.05,
+          "y": 10,
+          "layer": "TopCopper",
+          "net": "BUS_A",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R1",
+          "number": "2",
+          "x": 9.95,
+          "y": 10,
+          "layer": "TopCopper",
+          "net": "",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R2",
+          "number": "1",
+          "x": 38.05,
+          "y": 10,
+          "layer": "TopCopper",
+          "net": "BUS_A",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R2",
+          "number": "2",
+          "x": 39.95,
+          "y": 10,
+          "layer": "TopCopper",
+          "net": "",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R3",
+          "number": "1",
+          "x": 8.05,
+          "y": 24,
+          "layer": "TopCopper",
+          "net": "BUS_B",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R3",
+          "number": "2",
+          "x": 9.95,
+          "y": 24,
+          "layer": "TopCopper",
+          "net": "",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R4",
+          "number": "1",
+          "x": 38.05,
+          "y": 24,
+          "layer": "TopCopper",
+          "net": "BUS_B",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R4",
+          "number": "2",
+          "x": 39.95,
+          "y": 24,
+          "layer": "TopCopper",
+          "net": "",
+          "width": 1.05,
+          "height": 1.35
+        }
+      ],
+      "rules": {
+        "gostAccuracyClass": 4,
+        "clearanceTraceToTrace": 0.25,
+        "clearanceTraceToPad": 0.25,
+        "clearancePadToPad": 0.25,
+        "clearanceViaToAny": 0.25,
+        "clearanceHoleToHole": 0.2,
+        "clearanceCopperToBoard": 0.25,
+        "minTraceWidth": 0.15,
+        "defaultTraceWidth": 0.2,
+        "maxTraceWidth": 10,
+        "minViaOuter": 0.6,
+        "minViaHole": 0.3,
+        "minAnnularRing": 0.05,
+        "minSilkWidth": 0.12,
+        "silkToPadClearance": 0.12,
+        "diffPairMaxLengthMismatch": 0.15,
+        "realTimeDrc": true,
+        "checkUnroutedNets": true,
+        "checkSilkOverPads": true
+      },
+      "layers": [
+        {
+          "id": "TopCopper",
+          "name": "Верхний (Top)",
+          "kind": "Signal",
+          "routingDirection": "Horizontal",
+          "color": "#FF3030",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "Inner1",
+          "name": "Внутренний 1 (GND)",
+          "kind": "Plane",
+          "routingDirection": "Any",
+          "color": "#FFAA00",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "Inner2",
+          "name": "Внутренний 2 (PWR)",
+          "kind": "Plane",
+          "routingDirection": "Any",
+          "color": "#00CCCC",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "BottomCopper",
+          "name": "Нижний (Bottom)",
+          "kind": "Signal",
+          "routingDirection": "Vertical",
+          "color": "#3078FF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "TopSilk",
+          "name": "Шелкография Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#FFFFFF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "BottomSilk",
+          "name": "Шелкография Низ",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#AA88FF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "TopMask",
+          "name": "Маска Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#9933AA",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "BottomMask",
+          "name": "Маска Низ",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#662288",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "TopPaste",
+          "name": "Паста Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#999999",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "BottomPaste",
+          "name": "Паста Низ",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#777777",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "TopAssembly",
+          "name": "Сборочный Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#FFCC00",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "Courtyard",
+          "name": "Контур установки (Courtyard)",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#808080",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "BoardOutline",
+          "name": "Контур платы",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#CC44FF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "Keepout",
+          "name": "Запрет (Keepout)",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#FF0088",
+          "visible": true,
+          "enabled": true
+        }
+      ],
+      "components": [
+        {
+          "id": "pcbcomp_79zag64_6qg4",
+          "refDes": "R1",
+          "value": "ЧИП_2012М (0805)",
+          "x": 9,
+          "y": 10,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "BUS_A"
+          }
+        },
+        {
+          "id": "pcbcomp_zzj1bcs_6qg4",
+          "refDes": "R2",
+          "value": "ЧИП_2012М (0805)",
+          "x": 39,
+          "y": 10,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "BUS_A"
+          }
+        },
+        {
+          "id": "pcbcomp_9s42kzu_6qg5",
+          "refDes": "R3",
+          "value": "ЧИП_2012М (0805)",
+          "x": 9,
+          "y": 24,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "BUS_B"
+          }
+        },
+        {
+          "id": "pcbcomp_61w3ejx_6qg5",
+          "refDes": "R4",
+          "value": "ЧИП_2012М (0805)",
+          "x": 39,
+          "y": 24,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "BUS_B"
+          }
+        }
+      ],
+      "traces": [
+        {
+          "id": "trace_9b8w2rd_727r",
+          "netName": "BUS_A",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 38.05,
+              "y": 10
+            },
+            {
+              "x": 34,
+              "y": 10
+            },
+            {
+              "x": 34,
+              "y": 8.5
+            }
+          ]
+        },
+        {
+          "id": "trace_7g7v6a6_727t",
+          "netName": "BUS_B",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 38.05,
+              "y": 24
+            },
+            {
+              "x": 34,
+              "y": 24
+            },
+            {
+              "x": 34,
+              "y": 26
+            }
+          ]
+        },
+        {
+          "id": "trace_zv9hu4w_87ym",
+          "netName": "BUS_A",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 8.05,
+              "y": 10
+            },
+            {
+              "x": 6.5,
+              "y": 10
+            },
+            {
+              "x": 6.5,
+              "y": 8.5
+            },
+            {
+              "x": 14,
+              "y": 8.5
+            }
+          ]
+        },
+        {
+          "id": "trace_0fs3doc_87yn",
+          "netName": "BUS_A",
+          "layer": "Inner1",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 14,
+              "y": 8.5
+            },
+            {
+              "x": 34,
+              "y": 8.5
+            }
+          ]
+        },
+        {
+          "id": "trace_6w0jffz_87yn",
+          "netName": "BUS_B",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 8.05,
+              "y": 24
+            },
+            {
+              "x": 6.5,
+              "y": 24
+            },
+            {
+              "x": 6.5,
+              "y": 26
+            },
+            {
+              "x": 14,
+              "y": 26
+            }
+          ]
+        },
+        {
+          "id": "trace_quej8jh_87yo",
+          "netName": "BUS_B",
+          "layer": "Inner2",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 14,
+              "y": 26
+            },
+            {
+              "x": 34,
+              "y": 26
+            }
+          ]
+        }
+      ],
+      "vias": [
+        {
+          "id": "via_iozhb2x_6zsm",
+          "x": 14,
+          "y": 8.5,
+          "netName": "BUS_A",
+          "outerDiameter": 0.8,
+          "holeDiameter": 0.4,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_7rawx4c_6zsm",
+          "x": 34,
+          "y": 8.5,
+          "netName": "BUS_A",
+          "outerDiameter": 0.8,
+          "holeDiameter": 0.4,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_nbt5gbv_6zsn",
+          "x": 14,
+          "y": 26,
+          "netName": "BUS_B",
+          "outerDiameter": 0.8,
+          "holeDiameter": 0.4,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_peofks3_6zsn",
+          "x": 34,
+          "y": 26,
+          "netName": "BUS_B",
+          "outerDiameter": 0.8,
+          "holeDiameter": 0.4,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        }
+      ],
+      "cutouts": [],
+      "keepouts": [
+        {
+          "id": "keepout_g15yyqv_6t1h",
+          "layer": "TopCopper",
+          "kind": "RouteKeepout",
+          "points": [
+            {
+              "x": 20,
+              "y": 3
+            },
+            {
+              "x": 28,
+              "y": 3
+            },
+            {
+              "x": 28,
+              "y": 31
+            },
+            {
+              "x": 20,
+              "y": 31
+            }
+          ]
+        },
+        {
+          "id": "keepout_wwgs37i_6t1h",
+          "layer": "BottomCopper",
+          "kind": "RouteKeepout",
+          "points": [
+            {
+              "x": 20,
+              "y": 3
+            },
+            {
+              "x": 28,
+              "y": 3
+            },
+            {
+              "x": 28,
+              "y": 31
+            },
+            {
+              "x": 20,
+              "y": 31
+            }
+          ]
+        }
+      ],
+      "pours": []
+    }
+  },
+  "independent": {
+    "drc": [
+      {
+        "id": "drc_1",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_79zag64_6qg4_pcbcomp_79zag64_6qg4_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 8.05,
+        "y": 10,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_79zag64_6qg4",
+          "pcbcomp_79zag64_6qg4"
+        ]
+      },
+      {
+        "id": "drc_2",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_79zag64_6qg4_pcbcomp_79zag64_6qg4_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.95,
+        "y": 10,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_79zag64_6qg4",
+          "pcbcomp_79zag64_6qg4"
+        ]
+      },
+      {
+        "id": "drc_3",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_zzj1bcs_6qg4_pcbcomp_zzj1bcs_6qg4_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 38.05,
+        "y": 10,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_zzj1bcs_6qg4",
+          "pcbcomp_zzj1bcs_6qg4"
+        ]
+      },
+      {
+        "id": "drc_4",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_zzj1bcs_6qg4_pcbcomp_zzj1bcs_6qg4_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 39.95,
+        "y": 10,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_zzj1bcs_6qg4",
+          "pcbcomp_zzj1bcs_6qg4"
+        ]
+      },
+      {
+        "id": "drc_5",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_9s42kzu_6qg5_pcbcomp_9s42kzu_6qg5_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 8.05,
+        "y": 24,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_9s42kzu_6qg5",
+          "pcbcomp_9s42kzu_6qg5"
+        ]
+      },
+      {
+        "id": "drc_6",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_9s42kzu_6qg5_pcbcomp_9s42kzu_6qg5_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.95,
+        "y": 24,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_9s42kzu_6qg5",
+          "pcbcomp_9s42kzu_6qg5"
+        ]
+      },
+      {
+        "id": "drc_7",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_61w3ejx_6qg5_pcbcomp_61w3ejx_6qg5_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 38.05,
+        "y": 24,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_61w3ejx_6qg5",
+          "pcbcomp_61w3ejx_6qg5"
+        ]
+      },
+      {
+        "id": "drc_8",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_61w3ejx_6qg5_pcbcomp_61w3ejx_6qg5_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 39.95,
+        "y": 24,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_61w3ejx_6qg5",
+          "pcbcomp_61w3ejx_6qg5"
+        ]
+      }
+    ],
+    "ratlines": [],
+    "finalCheck": {
+      "erc": [],
+      "drc": [
+        {
+          "id": "drc_1",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_79zag64_6qg4_pcbcomp_79zag64_6qg4_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 8.05,
+          "y": 10,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_79zag64_6qg4",
+            "pcbcomp_79zag64_6qg4"
+          ]
+        },
+        {
+          "id": "drc_2",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_79zag64_6qg4_pcbcomp_79zag64_6qg4_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 9.95,
+          "y": 10,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_79zag64_6qg4",
+            "pcbcomp_79zag64_6qg4"
+          ]
+        },
+        {
+          "id": "drc_3",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_zzj1bcs_6qg4_pcbcomp_zzj1bcs_6qg4_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 38.05,
+          "y": 10,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R2.1 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_zzj1bcs_6qg4",
+            "pcbcomp_zzj1bcs_6qg4"
+          ]
+        },
+        {
+          "id": "drc_4",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_zzj1bcs_6qg4_pcbcomp_zzj1bcs_6qg4_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 39.95,
+          "y": 10,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R2.2 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_zzj1bcs_6qg4",
+            "pcbcomp_zzj1bcs_6qg4"
+          ]
+        },
+        {
+          "id": "drc_5",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_9s42kzu_6qg5_pcbcomp_9s42kzu_6qg5_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 8.05,
+          "y": 24,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R3.1 (зазор 0.02 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_9s42kzu_6qg5",
+            "pcbcomp_9s42kzu_6qg5"
+          ]
+        },
+        {
+          "id": "drc_6",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_9s42kzu_6qg5_pcbcomp_9s42kzu_6qg5_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 9.95,
+          "y": 24,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R3.2 (зазор 0.02 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_9s42kzu_6qg5",
+            "pcbcomp_9s42kzu_6qg5"
+          ]
+        },
+        {
+          "id": "drc_7",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_61w3ejx_6qg5_pcbcomp_61w3ejx_6qg5_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 38.05,
+          "y": 24,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R4.1 (зазор 0.02 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_61w3ejx_6qg5",
+            "pcbcomp_61w3ejx_6qg5"
+          ]
+        },
+        {
+          "id": "drc_8",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_61w3ejx_6qg5_pcbcomp_61w3ejx_6qg5_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 39.95,
+          "y": 24,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R4.2 (зазор 0.02 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_61w3ejx_6qg5",
+            "pcbcomp_61w3ejx_6qg5"
+          ]
+        }
+      ],
+      "layout": [],
+      "labelIssues": [],
+      "nets": [],
+      "unrouted": 0,
+      "unfilledPours": [],
+      "pcbGeometry": [],
+      "geometryWarnings": [],
+      "targetIssues": [],
+      "requirements": [
+        {
+          "requirement": "Ширина платы",
+          "expected": 48,
+          "actual": 48,
+          "pass": true
+        },
+        {
+          "requirement": "Высота платы",
+          "expected": 34,
+          "actual": 34,
+          "pass": true
+        },
+        {
+          "requirement": "Слои платы",
+          "expected": 4,
+          "actual": 4,
+          "pass": true
+        },
+        {
+          "requirement": "Минимальный зазор",
+          "expected": 0.25,
+          "actual": 0.25,
+          "pass": true
+        },
+        {
+          "requirement": "Зона запрета 1",
+          "expected": {
+            "layer": "TopCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          },
+          "actual": {
+            "layer": "TopCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Зона запрета 2",
+          "expected": {
+            "layer": "BottomCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          },
+          "actual": {
+            "layer": "BottomCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R1",
+          "expected": {
+            "x": 9,
+            "y": 10,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 9,
+            "y": 10
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R2",
+          "expected": {
+            "x": 39,
+            "y": 10,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 39,
+            "y": 10
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R3",
+          "expected": {
+            "x": 9,
+            "y": 24,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 9,
+            "y": 24
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R4",
+          "expected": {
+            "x": 39,
+            "y": 24,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 39,
+            "y": 24
+          },
+          "pass": true
+        }
+      ],
+      "revision": 23,
+      "blockers": []
+    }
+  },
+  "draft": {
+    "plan": "Задание 03-inner-layers: только плата (схемы быть не должно). Плата 48x34, 4 слоя, clearance 0.25, контур прямоугольник. R1..R4 — библиотечные резисторы 0805, Top, angle 0, позиции R1(9,10) R2(39,10) R3(9,24) R4(39,24), закрепить. Сети: BUS_A=R1.1+R2.1, BUS_B=R3.1+R4.1; площадки 2 без сети. RouteKeepout TopCopper и BottomCopper: прямоугольник (20,3)-(28,31). Требование: переход BUS_A через x=24 на Inner1, BUS_B на Inner2, по два сквозных via вне площадок. Других корпусов/цепей/зон/заливок не добавлять. Проверить DRC/ERC, unrouted, геометрию, затем снимки и finish.",
+    "targets": {
+      "documents": "pcb",
+      "designation": "03-inner-layers",
+      "board": {
+        "width": 48,
+        "height": 34,
+        "layers": 4,
+        "clearance": 0.25,
+        "keepouts": [
+          {
+            "layer": "TopCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          },
+          {
+            "layer": "BottomCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          }
+        ],
+        "positions": [
+          {
+            "ref": "R1",
+            "x": 9,
+            "y": 10,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R2",
+            "x": 39,
+            "y": 10,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R3",
+            "x": 9,
+            "y": 24,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R4",
+            "x": 39,
+            "y": 24,
+            "tolerance": 0.1
+          }
+        ]
+      }
+    },
+    "checks": {
+      "erc": 0,
+      "drc": 8,
+      "outsideFrame": 0,
+      "unrouted": 0,
+      "requirements": [
+        {
+          "requirement": "Ширина платы",
+          "expected": 48,
+          "actual": 48,
+          "pass": true
+        },
+        {
+          "requirement": "Высота платы",
+          "expected": 34,
+          "actual": 34,
+          "pass": true
+        },
+        {
+          "requirement": "Слои платы",
+          "expected": 4,
+          "actual": 4,
+          "pass": true
+        },
+        {
+          "requirement": "Минимальный зазор",
+          "expected": 0.25,
+          "actual": 0.25,
+          "pass": true
+        },
+        {
+          "requirement": "Зона запрета 1",
+          "expected": {
+            "layer": "TopCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          },
+          "actual": {
+            "layer": "TopCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Зона запрета 2",
+          "expected": {
+            "layer": "BottomCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          },
+          "actual": {
+            "layer": "BottomCopper",
+            "kind": "RouteKeepout",
+            "points": [
+              {
+                "x": 20,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 3
+              },
+              {
+                "x": 28,
+                "y": 31
+              },
+              {
+                "x": 20,
+                "y": 31
+              }
+            ]
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R1",
+          "expected": {
+            "x": 9,
+            "y": 10,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 9,
+            "y": 10
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R2",
+          "expected": {
+            "x": 39,
+            "y": 10,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 39,
+            "y": 10
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R3",
+          "expected": {
+            "x": 9,
+            "y": 24,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 9,
+            "y": 24
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R4",
+          "expected": {
+            "x": 39,
+            "y": 24,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 39,
+            "y": 24
+          },
+          "pass": true
+        }
+      ],
+      "revision": 23,
+      "errors": 0,
+      "warnings": 8,
+      "blockers": []
+    },
+    "report": {
+      "summary": "Итог: плата 03-inner-layers (ревизия 23), схема отсутствует — как и требовалось.\n\nДокументы: «Печатная плата» 48×34 мм, 4 слоя (Top/Inner1/Inner2/Bottom), зазор 0.25 мм, контур прямоугольник (0,0)-(48,34). Состав: только R1–R4 (библиотечный Р1-12-0,125 / ЧИП 2012М 0805, PAT_CHIP_2012M), Top, angle 0, закреплены, координаты R1(9,10), R2(39,10), R3(9,24), R4(39,24) — с допуском 0.1. Лишних корпусов, цепей, зон и заливок нет.\n\nСети и геометрия: BUS_A = R1.1+R2.1; BUS_B = R3.1+R4.1; площадки 2 всех резисторов оставлены без сети и не замкнуты. Зоны RouteKeepout TopCopper и BottomCopper (20,3)-(28,31) заданы точно по ТЗ.\n\nРазводка: BUS_A — Top от R2.1 → via (34;8.5) сквозное → Inner1 по y=8.5 через x=24 → via (14;8.5) → Top → R1.1; BUS_B — Top от R4.1 → via (34;26) → Inner2 по y=26 через x=24 → via (14;26) → Top → R3.1. Все четыре via сквозные (0.8/0.4 мм), вне площадок; переходы выполнены именно на Inner1 и Inner2, слои Top/Bottom в коридоре 20…28 мм свободны от меди, как требует keepout.\n\nПроверки последней ревизии: ERC — 0 ошибок; DRC — 0 ошибок, 8 предупреждений; неразведённых связей 0; незалитых полигонов нет (заливки не задавались); targetIssues/blockers отсутствуют, все требования ТЗ (габариты, слои, зазор, обе зоны запрета, 4 позиции с допуском) — pass; comparison inSync (документ один — плата).\n\nПредупреждения DRC: восемь DRC-SILK-PAD — шелкография библиотечного корпуса ЧИП 2012М (линии y=±0.775) подходит к КП на 0.02–0.03 мм при норме 0.12 мм: R1.1, R1.2, R2.1, R2.2, R3.1, R3.2, R4.1, R4.2. Это свойство стандартного посадочного места 0805 из библиотеки, а не ошибка разводки; правила DRC не ослаблялись.\n\nСнимок PNG проверен визуально: контур, keepout-коридор, точки via, трассы на Top/Inner1/Inner2 и считываемые R1–R4 соответствуют замыслу; подписи не наложены, соединения на месте.",
+      "limitations": "Остаточные дефекты: 8 предупреждений DRC-SILK-PAD (перекрытие/недостаточный зазор шелкографии корпуса к КП R1–R4) — неустранимы без отступления от библиотечного посадочного места 0805, поэтому оставлены с пояснением. Внутренние слои в этом проекте не заливались (ТЗ запрещает заливки), поэтому Inner1/Inner2 используются как сигнальные трассы. Свободные площадки 2 намеренно без сети, маркеры no-connect на плате не ставились. Электрические характеристики (сопротивление, токи) не моделировались — задание чисто топологическое; проверки редактора и снимки не подтверждают готовность к производству.",
+      "status": "complete"
+    }
+  },
+  "images": [
+    {
+      "file": "final-1.png",
+      "label": "Печатная плата",
+      "revision": 23
+    }
+  ]
+}

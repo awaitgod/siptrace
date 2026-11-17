@@ -1,0 +1,1072 @@
+{
+  "id": "08-custom-header",
+  "model": "deepseek-v4.1-flash-1017",
+  "status": "unfinished",
+  "error": "Error: Модель трижды ответила без команд.",
+  "durationMs": 311860,
+  "checkCount": 0,
+  "actual": {
+    "plan": "Задача 08-custom-header «Учебный разъём с развязкой»: схема Э3 + связанная плата.\nДокументы: обе (schematic + pcb). Обозначение «СТРЕСС.260008 Э3», лист «Интерфейс» A4_L Form1.\nНets: VIN=XT1.1,XT2.1,C1.1; GND=XT1.4,XT2.4,C1.2; A_IN=XT1.2,R1.1; A_OUT=R1.2,XT2.2; B_IN=XT1.3,R2.1; B_OUT=R2.2,XT2.3.\nЗначения: R1=R2=100 Ом, C1=100 нФ. R/C — библиотечные 0805.\nXT1/XT2 — одно учебное УГО (контакты 1 VIN,2 A,3 B,4 GND, все Passive) и одно проектное THT посадочное место: площадки центры x=-3.81,-1.27,1.27,3.81, y=0, круглые Ø1.8, сверло 0.9, тело 10x4x5 мм.\nПлата: 54x36 мм, 2 слоя, зазор 0.25 мм; контур (0,0)-(54,0)-(54,36)-(0,36). XT1 (9,18) Top 90°; XT2 (45,18) Top 270°; оба закреплены (locked), допуск 0.1 мм.\nБез других корпусов, цepей, зон и заливок. Площадки без указанной сети — без сети.\nПорядо: set_targets → библиотека R/C → define_component/pattern для XT → схема → check → create_board → размещение/закрепление → разводка → refill/check → finalize → finish.",
+    "targets": {
+      "documents": "both",
+      "schematicNets": {
+        "VIN": [
+          {
+            "ref": "XT1",
+            "pin": "1"
+          },
+          {
+            "ref": "XT2",
+            "pin": "1"
+          },
+          {
+            "ref": "C1",
+            "pin": "1"
+          }
+        ],
+        "GND": [
+          {
+            "ref": "XT1",
+            "pin": "4"
+          },
+          {
+            "ref": "XT2",
+            "pin": "4"
+          },
+          {
+            "ref": "C1",
+            "pin": "2"
+          }
+        ],
+        "A_IN": [
+          {
+            "ref": "XT1",
+            "pin": "2"
+          },
+          {
+            "ref": "R1",
+            "pin": "1"
+          }
+        ],
+        "A_OUT": [
+          {
+            "ref": "R1",
+            "pin": "2"
+          },
+          {
+            "ref": "XT2",
+            "pin": "2"
+          }
+        ],
+        "B_IN": [
+          {
+            "ref": "XT1",
+            "pin": "3"
+          },
+          {
+            "ref": "R2",
+            "pin": "1"
+          }
+        ],
+        "B_OUT": [
+          {
+            "ref": "R2",
+            "pin": "2"
+          },
+          {
+            "ref": "XT2",
+            "pin": "3"
+          }
+        ]
+      },
+      "boardNets": {
+        "VIN": [
+          {
+            "ref": "XT1",
+            "pin": "1"
+          },
+          {
+            "ref": "XT2",
+            "pin": "1"
+          },
+          {
+            "ref": "C1",
+            "pin": "1"
+          }
+        ],
+        "GND": [
+          {
+            "ref": "XT1",
+            "pin": "4"
+          },
+          {
+            "ref": "XT2",
+            "pin": "4"
+          },
+          {
+            "ref": "C1",
+            "pin": "2"
+          }
+        ],
+        "A_IN": [
+          {
+            "ref": "XT1",
+            "pin": "2"
+          },
+          {
+            "ref": "R1",
+            "pin": "1"
+          }
+        ],
+        "A_OUT": [
+          {
+            "ref": "R1",
+            "pin": "2"
+          },
+          {
+            "ref": "XT2",
+            "pin": "2"
+          }
+        ],
+        "B_IN": [
+          {
+            "ref": "XT1",
+            "pin": "3"
+          },
+          {
+            "ref": "R2",
+            "pin": "1"
+          }
+        ],
+        "B_OUT": [
+          {
+            "ref": "R2",
+            "pin": "2"
+          },
+          {
+            "ref": "XT2",
+            "pin": "3"
+          }
+        ]
+      },
+      "schematicRefs": [
+        "XT1",
+        "XT2",
+        "R1",
+        "R2",
+        "C1"
+      ],
+      "boardRefs": [
+        "XT1",
+        "XT2",
+        "R1",
+        "R2",
+        "C1"
+      ],
+      "designation": "СТРЕСС.260008 Э3",
+      "sheets": [
+        {
+          "name": "Интерфейс",
+          "format": "A4_L",
+          "form": "Form1"
+        }
+      ],
+      "values": {
+        "R1": "100 Ом",
+        "R2": "100 Ом",
+        "C1": "100 нФ"
+      },
+      "board": {
+        "width": 54,
+        "height": 36,
+        "layers": 2,
+        "clearance": 0.25,
+        "positions": [
+          {
+            "ref": "XT1",
+            "x": 9,
+            "y": 18,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "XT2",
+            "x": 45,
+            "y": 18,
+            "tolerance": 0.1
+          }
+        ]
+      }
+    },
+    "revision": 9,
+    "canRestoreVerified": false,
+    "sheets": [
+      {
+        "id": "sheet_1",
+        "name": "Интерфейс",
+        "format": "A4_L",
+        "frame": {
+          "left": 20,
+          "top": 5,
+          "right": 292,
+          "bottom": 205,
+          "width": 272,
+          "height": 200
+        },
+        "components": 5
+      }
+    ]
+  },
+  "independent": {
+    "erc": [
+      {
+        "id": "erc_1",
+        "severity": "Warning",
+        "sheetId": "sheet_1",
+        "x": 40,
+        "y": 102.5,
+        "code": "ERC-UNCON",
+        "message": "Висячий неподключённый вывод XT1.1.",
+        "objectId": "comp_os56swn_961v"
+      },
+      {
+        "id": "erc_2",
+        "severity": "Warning",
+        "sheetId": "sheet_1",
+        "x": 40,
+        "y": 107.5,
+        "code": "ERC-UNCON",
+        "message": "Висячий неподключённый вывод XT1.2.",
+        "objectId": "comp_os56swn_961v"
+      },
+      {
+        "id": "erc_3",
+        "severity": "Warning",
+        "sheetId": "sheet_1",
+        "x": 40,
+        "y": 112.5,
+        "code": "ERC-UNCON",
+        "message": "Висячий неподключённый вывод XT1.3.",
+        "objectId": "comp_os56swn_961v"
+      },
+      {
+        "id": "erc_4",
+        "severity": "Warning",
+        "sheetId": "sheet_1",
+        "x": 40,
+        "y": 117.5,
+        "code": "ERC-UNCON",
+        "message": "Висячий неподключённый вывод XT1.4.",
+        "objectId": "comp_os56swn_961v"
+      },
+      {
+        "id": "erc_5",
+        "severity": "Warning",
+        "sheetId": "sheet_1",
+        "x": 210,
+        "y": 102.5,
+        "code": "ERC-UNCON",
+        "message": "Висячий неподключённый вывод XT2.1.",
+        "objectId": "comp_0yamoer_961v"
+      },
+      {
+        "id": "erc_6",
+        "severity": "Warning",
+        "sheetId": "sheet_1",
+        "x": 210,
+        "y": 107.5,
+        "code": "ERC-UNCON",
+        "message": "Висячий неподключённый вывод XT2.2.",
+        "objectId": "comp_0yamoer_961v"
+      },
+      {
+        "id": "erc_7",
+        "severity": "Warning",
+        "sheetId": "sheet_1",
+        "x": 210,
+        "y": 112.5,
+        "code": "ERC-UNCON",
+        "message": "Висячий неподключённый вывод XT2.3.",
+        "objectId": "comp_0yamoer_961v"
+      },
+      {
+        "id": "erc_8",
+        "severity": "Warning",
+        "sheetId": "sheet_1",
+        "x": 210,
+        "y": 117.5,
+        "code": "ERC-UNCON",
+        "message": "Висячий неподключённый вывод XT2.4.",
+        "objectId": "comp_0yamoer_961v"
+      },
+      {
+        "id": "erc_9",
+        "severity": "Warning",
+        "sheetId": "sheet_1",
+        "x": 130,
+        "y": 70,
+        "code": "ERC-UNCON",
+        "message": "Висячий неподключённый вывод R1.1.",
+        "objectId": "comp_1w3z319_961v"
+      },
+      {
+        "id": "erc_10",
+        "severity": "Warning",
+        "sheetId": "sheet_1",
+        "x": 150,
+        "y": 70,
+        "code": "ERC-UNCON",
+        "message": "Висячий неподключённый вывод R1.2.",
+        "objectId": "comp_1w3z319_961v"
+      },
+      {
+        "id": "erc_11",
+        "severity": "Warning",
+        "sheetId": "sheet_1",
+        "x": 130,
+        "y": 150,
+        "code": "ERC-UNCON",
+        "message": "Висячий неподключённый вывод R2.1.",
+        "objectId": "comp_epkm0u8_961w"
+      },
+      {
+        "id": "erc_12",
+        "severity": "Warning",
+        "sheetId": "sheet_1",
+        "x": 150,
+        "y": 150,
+        "code": "ERC-UNCON",
+        "message": "Висячий неподключённый вывод R2.2.",
+        "objectId": "comp_epkm0u8_961w"
+      },
+      {
+        "id": "erc_13",
+        "severity": "Warning",
+        "sheetId": "sheet_1",
+        "x": 180,
+        "y": 40,
+        "code": "ERC-UNCON",
+        "message": "Висячий неподключённый вывод C1.1.",
+        "objectId": "comp_rdy8cvf_961w"
+      },
+      {
+        "id": "erc_14",
+        "severity": "Warning",
+        "sheetId": "sheet_1",
+        "x": 190,
+        "y": 40,
+        "code": "ERC-UNCON",
+        "message": "Висячий неподключённый вывод C1.2.",
+        "objectId": "comp_rdy8cvf_961w"
+      }
+    ],
+    "nets": [
+      {
+        "name": "Net_1",
+        "pins": [
+          "XT1.1"
+        ],
+        "wires": []
+      },
+      {
+        "name": "Net_2",
+        "pins": [
+          "XT1.2"
+        ],
+        "wires": []
+      },
+      {
+        "name": "Net_3",
+        "pins": [
+          "XT1.3"
+        ],
+        "wires": []
+      },
+      {
+        "name": "Net_4",
+        "pins": [
+          "XT1.4"
+        ],
+        "wires": []
+      },
+      {
+        "name": "Net_5",
+        "pins": [
+          "XT2.1"
+        ],
+        "wires": []
+      },
+      {
+        "name": "Net_6",
+        "pins": [
+          "XT2.2"
+        ],
+        "wires": []
+      },
+      {
+        "name": "Net_7",
+        "pins": [
+          "XT2.3"
+        ],
+        "wires": []
+      },
+      {
+        "name": "Net_8",
+        "pins": [
+          "XT2.4"
+        ],
+        "wires": []
+      },
+      {
+        "name": "Net_9",
+        "pins": [
+          "R1.1"
+        ],
+        "wires": []
+      },
+      {
+        "name": "Net_10",
+        "pins": [
+          "R1.2"
+        ],
+        "wires": []
+      },
+      {
+        "name": "Net_11",
+        "pins": [
+          "R2.1"
+        ],
+        "wires": []
+      },
+      {
+        "name": "Net_12",
+        "pins": [
+          "R2.2"
+        ],
+        "wires": []
+      },
+      {
+        "name": "Net_13",
+        "pins": [
+          "C1.1"
+        ],
+        "wires": []
+      },
+      {
+        "name": "Net_14",
+        "pins": [
+          "C1.2"
+        ],
+        "wires": []
+      }
+    ],
+    "finalCheck": {
+      "erc": [
+        {
+          "id": "erc_1",
+          "severity": "Warning",
+          "sheetId": "sheet_1",
+          "x": 40,
+          "y": 102.5,
+          "code": "ERC-UNCON",
+          "message": "Висячий неподключённый вывод XT1.1.",
+          "objectId": "comp_os56swn_961v"
+        },
+        {
+          "id": "erc_2",
+          "severity": "Warning",
+          "sheetId": "sheet_1",
+          "x": 40,
+          "y": 107.5,
+          "code": "ERC-UNCON",
+          "message": "Висячий неподключённый вывод XT1.2.",
+          "objectId": "comp_os56swn_961v"
+        },
+        {
+          "id": "erc_3",
+          "severity": "Warning",
+          "sheetId": "sheet_1",
+          "x": 40,
+          "y": 112.5,
+          "code": "ERC-UNCON",
+          "message": "Висячий неподключённый вывод XT1.3.",
+          "objectId": "comp_os56swn_961v"
+        },
+        {
+          "id": "erc_4",
+          "severity": "Warning",
+          "sheetId": "sheet_1",
+          "x": 40,
+          "y": 117.5,
+          "code": "ERC-UNCON",
+          "message": "Висячий неподключённый вывод XT1.4.",
+          "objectId": "comp_os56swn_961v"
+        },
+        {
+          "id": "erc_5",
+          "severity": "Warning",
+          "sheetId": "sheet_1",
+          "x": 210,
+          "y": 102.5,
+          "code": "ERC-UNCON",
+          "message": "Висячий неподключённый вывод XT2.1.",
+          "objectId": "comp_0yamoer_961v"
+        },
+        {
+          "id": "erc_6",
+          "severity": "Warning",
+          "sheetId": "sheet_1",
+          "x": 210,
+          "y": 107.5,
+          "code": "ERC-UNCON",
+          "message": "Висячий неподключённый вывод XT2.2.",
+          "objectId": "comp_0yamoer_961v"
+        },
+        {
+          "id": "erc_7",
+          "severity": "Warning",
+          "sheetId": "sheet_1",
+          "x": 210,
+          "y": 112.5,
+          "code": "ERC-UNCON",
+          "message": "Висячий неподключённый вывод XT2.3.",
+          "objectId": "comp_0yamoer_961v"
+        },
+        {
+          "id": "erc_8",
+          "severity": "Warning",
+          "sheetId": "sheet_1",
+          "x": 210,
+          "y": 117.5,
+          "code": "ERC-UNCON",
+          "message": "Висячий неподключённый вывод XT2.4.",
+          "objectId": "comp_0yamoer_961v"
+        },
+        {
+          "id": "erc_9",
+          "severity": "Warning",
+          "sheetId": "sheet_1",
+          "x": 130,
+          "y": 70,
+          "code": "ERC-UNCON",
+          "message": "Висячий неподключённый вывод R1.1.",
+          "objectId": "comp_1w3z319_961v"
+        },
+        {
+          "id": "erc_10",
+          "severity": "Warning",
+          "sheetId": "sheet_1",
+          "x": 150,
+          "y": 70,
+          "code": "ERC-UNCON",
+          "message": "Висячий неподключённый вывод R1.2.",
+          "objectId": "comp_1w3z319_961v"
+        },
+        {
+          "id": "erc_11",
+          "severity": "Warning",
+          "sheetId": "sheet_1",
+          "x": 130,
+          "y": 150,
+          "code": "ERC-UNCON",
+          "message": "Висячий неподключённый вывод R2.1.",
+          "objectId": "comp_epkm0u8_961w"
+        },
+        {
+          "id": "erc_12",
+          "severity": "Warning",
+          "sheetId": "sheet_1",
+          "x": 150,
+          "y": 150,
+          "code": "ERC-UNCON",
+          "message": "Висячий неподключённый вывод R2.2.",
+          "objectId": "comp_epkm0u8_961w"
+        },
+        {
+          "id": "erc_13",
+          "severity": "Warning",
+          "sheetId": "sheet_1",
+          "x": 180,
+          "y": 40,
+          "code": "ERC-UNCON",
+          "message": "Висячий неподключённый вывод C1.1.",
+          "objectId": "comp_rdy8cvf_961w"
+        },
+        {
+          "id": "erc_14",
+          "severity": "Warning",
+          "sheetId": "sheet_1",
+          "x": 190,
+          "y": 40,
+          "code": "ERC-UNCON",
+          "message": "Висячий неподключённый вывод C1.2.",
+          "objectId": "comp_rdy8cvf_961w"
+        }
+      ],
+      "drc": [],
+      "layout": [],
+      "labelIssues": [],
+      "nets": [
+        {
+          "name": "Net_1",
+          "pins": [
+            "XT1.1"
+          ],
+          "wires": []
+        },
+        {
+          "name": "Net_2",
+          "pins": [
+            "XT1.2"
+          ],
+          "wires": []
+        },
+        {
+          "name": "Net_3",
+          "pins": [
+            "XT1.3"
+          ],
+          "wires": []
+        },
+        {
+          "name": "Net_4",
+          "pins": [
+            "XT1.4"
+          ],
+          "wires": []
+        },
+        {
+          "name": "Net_5",
+          "pins": [
+            "XT2.1"
+          ],
+          "wires": []
+        },
+        {
+          "name": "Net_6",
+          "pins": [
+            "XT2.2"
+          ],
+          "wires": []
+        },
+        {
+          "name": "Net_7",
+          "pins": [
+            "XT2.3"
+          ],
+          "wires": []
+        },
+        {
+          "name": "Net_8",
+          "pins": [
+            "XT2.4"
+          ],
+          "wires": []
+        },
+        {
+          "name": "Net_9",
+          "pins": [
+            "R1.1"
+          ],
+          "wires": []
+        },
+        {
+          "name": "Net_10",
+          "pins": [
+            "R1.2"
+          ],
+          "wires": []
+        },
+        {
+          "name": "Net_11",
+          "pins": [
+            "R2.1"
+          ],
+          "wires": []
+        },
+        {
+          "name": "Net_12",
+          "pins": [
+            "R2.2"
+          ],
+          "wires": []
+        },
+        {
+          "name": "Net_13",
+          "pins": [
+            "C1.1"
+          ],
+          "wires": []
+        },
+        {
+          "name": "Net_14",
+          "pins": [
+            "C1.2"
+          ],
+          "wires": []
+        }
+      ],
+      "unfilledPours": [],
+      "pcbGeometry": [],
+      "geometryWarnings": [],
+      "targetIssues": [
+        "Отсутствует обязательная плата.",
+        "Схема: цепь VIN ожидает [C1.1, XT1.1, XT2.1], получено нет цепи",
+        "Схема: цепь GND ожидает [C1.2, XT1.4, XT2.4], получено нет цепи",
+        "Схема: цепь A_IN ожидает [R1.1, XT1.2], получено нет цепи",
+        "Схема: цепь A_OUT ожидает [R1.2, XT2.2], получено нет цепи",
+        "Схема: цепь B_IN ожидает [R2.1, XT1.3], получено нет цепи",
+        "Схема: цепь B_OUT ожидает [R2.2, XT2.3], получено нет цепи",
+        "Плата: отсутствует XT1",
+        "Плата: отсутствует XT2",
+        "Плата: отсутствует R1",
+        "Плата: отсутствует R2",
+        "Плата: отсутствует C1",
+        "Плата: цепь VIN ожидает [C1.1, XT1.1, XT2.1], получено нет цепи",
+        "Плата: цепь GND ожидает [C1.2, XT1.4, XT2.4], получено нет цепи",
+        "Плата: цепь A_IN ожидает [R1.1, XT1.2], получено нет цепи",
+        "Плата: цепь A_OUT ожидает [R1.2, XT2.2], получено нет цепи",
+        "Плата: цепь B_IN ожидает [R2.1, XT1.3], получено нет цепи",
+        "Плата: цепь B_OUT ожидает [R2.2, XT2.3], получено нет цепи",
+        "Ширина платы: ожидалось 54, получено null",
+        "Высота платы: ожидалось 36, получено null",
+        "Слои платы: ожидалось 2, получено null",
+        "Минимальный зазор: ожидалось 0.25, получено null",
+        "Положение XT1: ожидалось {\"x\":9,\"y\":18,\"tolerance\":0.1}, получено null",
+        "Положение XT2: ожидалось {\"x\":45,\"y\":18,\"tolerance\":0.1}, получено null"
+      ],
+      "requirements": [
+        {
+          "requirement": "Обозначение листа 1",
+          "expected": "СТРЕСС.260008 Э3",
+          "actual": "СТРЕСС.260008 Э3",
+          "pass": true
+        },
+        {
+          "requirement": "Номер листа 1",
+          "expected": 1,
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "requirement": "Всего листов",
+          "expected": 1,
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "requirement": "Число листов",
+          "expected": 1,
+          "actual": 1,
+          "pass": true
+        },
+        {
+          "requirement": "Название листа 1",
+          "expected": "Интерфейс",
+          "actual": "Интерфейс",
+          "pass": true
+        },
+        {
+          "requirement": "Формат листа 1",
+          "expected": "A4_L",
+          "actual": "A4_L",
+          "pass": true
+        },
+        {
+          "requirement": "Форма листа 1",
+          "expected": "Form1",
+          "actual": "Form1",
+          "pass": true
+        },
+        {
+          "requirement": "Номинал R1",
+          "expected": "100 Ом",
+          "actual": "100 Ом",
+          "pass": true
+        },
+        {
+          "requirement": "Номинал R2",
+          "expected": "100 Ом",
+          "actual": "100 Ом",
+          "pass": true
+        },
+        {
+          "requirement": "Номинал C1",
+          "expected": "100 нФ",
+          "actual": "100 нФ",
+          "pass": true
+        },
+        {
+          "requirement": "Ширина платы",
+          "expected": 54,
+          "actual": null,
+          "pass": false
+        },
+        {
+          "requirement": "Высота платы",
+          "expected": 36,
+          "actual": null,
+          "pass": false
+        },
+        {
+          "requirement": "Слои платы",
+          "expected": 2,
+          "actual": null,
+          "pass": false
+        },
+        {
+          "requirement": "Минимальный зазор",
+          "expected": 0.25,
+          "actual": null,
+          "pass": false
+        },
+        {
+          "requirement": "Положение XT1",
+          "expected": {
+            "x": 9,
+            "y": 18,
+            "tolerance": 0.1
+          },
+          "actual": null,
+          "pass": false
+        },
+        {
+          "requirement": "Положение XT2",
+          "expected": {
+            "x": 45,
+            "y": 18,
+            "tolerance": 0.1
+          },
+          "actual": null,
+          "pass": false
+        }
+      ],
+      "revision": 9,
+      "blockers": [
+        "Отсутствует обязательная плата.",
+        "Схема: цепь VIN ожидает [C1.1, XT1.1, XT2.1], получено нет цепи",
+        "Схема: цепь GND ожидает [C1.2, XT1.4, XT2.4], получено нет цепи",
+        "Схема: цепь A_IN ожидает [R1.1, XT1.2], получено нет цепи",
+        "Схема: цепь A_OUT ожидает [R1.2, XT2.2], получено нет цепи",
+        "Схема: цепь B_IN ожидает [R2.1, XT1.3], получено нет цепи",
+        "Схема: цепь B_OUT ожидает [R2.2, XT2.3], получено нет цепи",
+        "Плата: отсутствует XT1",
+        "Плата: отсутствует XT2",
+        "Плата: отсутствует R1",
+        "Плата: отсутствует R2",
+        "Плата: отсутствует C1",
+        "Плата: цепь VIN ожидает [C1.1, XT1.1, XT2.1], получено нет цепи",
+        "Плата: цепь GND ожидает [C1.2, XT1.4, XT2.4], получено нет цепи",
+        "Плата: цепь A_IN ожидает [R1.1, XT1.2], получено нет цепи",
+        "Плата: цепь A_OUT ожидает [R1.2, XT2.2], получено нет цепи",
+        "Плата: цепь B_IN ожидает [R2.1, XT1.3], получено нет цепи",
+        "Плата: цепь B_OUT ожидает [R2.2, XT2.3], получено нет цепи",
+        "Ширина платы: ожидалось 54, получено null",
+        "Высота платы: ожидалось 36, получено null",
+        "Слои платы: ожидалось 2, получено null",
+        "Минимальный зазор: ожидалось 0.25, получено null",
+        "Положение XT1: ожидалось {\"x\":9,\"y\":18,\"tolerance\":0.1}, получено null",
+        "Положение XT2: ожидалось {\"x\":45,\"y\":18,\"tolerance\":0.1}, получено null"
+      ]
+    }
+  },
+  "draft": {
+    "plan": "Задача 08-custom-header «Учебный разъём с развязкой»: схема Э3 + связанная плата.\nДокументы: обе (schematic + pcb). Обозначение «СТРЕСС.260008 Э3», лист «Интерфейс» A4_L Form1.\nНets: VIN=XT1.1,XT2.1,C1.1; GND=XT1.4,XT2.4,C1.2; A_IN=XT1.2,R1.1; A_OUT=R1.2,XT2.2; B_IN=XT1.3,R2.1; B_OUT=R2.2,XT2.3.\nЗначения: R1=R2=100 Ом, C1=100 нФ. R/C — библиотечные 0805.\nXT1/XT2 — одно учебное УГО (контакты 1 VIN,2 A,3 B,4 GND, все Passive) и одно проектное THT посадочное место: площадки центры x=-3.81,-1.27,1.27,3.81, y=0, круглые Ø1.8, сверло 0.9, тело 10x4x5 мм.\nПлата: 54x36 мм, 2 слоя, зазор 0.25 мм; контур (0,0)-(54,0)-(54,36)-(0,36). XT1 (9,18) Top 90°; XT2 (45,18) Top 270°; оба закреплены (locked), допуск 0.1 мм.\nБез других корпусов, цepей, зон и заливок. Площадки без указанной сети — без сети.\nПорядо: set_targets → библиотека R/C → define_component/pattern для XT → схема → check → create_board → размещение/закрепление → разводка → refill/check → finalize → finish.",
+    "targets": {
+      "documents": "both",
+      "schematicNets": {
+        "VIN": [
+          {
+            "ref": "XT1",
+            "pin": "1"
+          },
+          {
+            "ref": "XT2",
+            "pin": "1"
+          },
+          {
+            "ref": "C1",
+            "pin": "1"
+          }
+        ],
+        "GND": [
+          {
+            "ref": "XT1",
+            "pin": "4"
+          },
+          {
+            "ref": "XT2",
+            "pin": "4"
+          },
+          {
+            "ref": "C1",
+            "pin": "2"
+          }
+        ],
+        "A_IN": [
+          {
+            "ref": "XT1",
+            "pin": "2"
+          },
+          {
+            "ref": "R1",
+            "pin": "1"
+          }
+        ],
+        "A_OUT": [
+          {
+            "ref": "R1",
+            "pin": "2"
+          },
+          {
+            "ref": "XT2",
+            "pin": "2"
+          }
+        ],
+        "B_IN": [
+          {
+            "ref": "XT1",
+            "pin": "3"
+          },
+          {
+            "ref": "R2",
+            "pin": "1"
+          }
+        ],
+        "B_OUT": [
+          {
+            "ref": "R2",
+            "pin": "2"
+          },
+          {
+            "ref": "XT2",
+            "pin": "3"
+          }
+        ]
+      },
+      "boardNets": {
+        "VIN": [
+          {
+            "ref": "XT1",
+            "pin": "1"
+          },
+          {
+            "ref": "XT2",
+            "pin": "1"
+          },
+          {
+            "ref": "C1",
+            "pin": "1"
+          }
+        ],
+        "GND": [
+          {
+            "ref": "XT1",
+            "pin": "4"
+          },
+          {
+            "ref": "XT2",
+            "pin": "4"
+          },
+          {
+            "ref": "C1",
+            "pin": "2"
+          }
+        ],
+        "A_IN": [
+          {
+            "ref": "XT1",
+            "pin": "2"
+          },
+          {
+            "ref": "R1",
+            "pin": "1"
+          }
+        ],
+        "A_OUT": [
+          {
+            "ref": "R1",
+            "pin": "2"
+          },
+          {
+            "ref": "XT2",
+            "pin": "2"
+          }
+        ],
+        "B_IN": [
+          {
+            "ref": "XT1",
+            "pin": "3"
+          },
+          {
+            "ref": "R2",
+            "pin": "1"
+          }
+        ],
+        "B_OUT": [
+          {
+            "ref": "R2",
+            "pin": "2"
+          },
+          {
+            "ref": "XT2",
+            "pin": "3"
+          }
+        ]
+      },
+      "schematicRefs": [
+        "XT1",
+        "XT2",
+        "R1",
+        "R2",
+        "C1"
+      ],
+      "boardRefs": [
+        "XT1",
+        "XT2",
+        "R1",
+        "R2",
+        "C1"
+      ],
+      "designation": "СТРЕСС.260008 Э3",
+      "sheets": [
+        {
+          "name": "Интерфейс",
+          "format": "A4_L",
+          "form": "Form1"
+        }
+      ],
+      "values": {
+        "R1": "100 Ом",
+        "R2": "100 Ом",
+        "C1": "100 нФ"
+      },
+      "board": {
+        "width": 54,
+        "height": 36,
+        "layers": 2,
+        "clearance": 0.25,
+        "positions": [
+          {
+            "ref": "XT1",
+            "x": 9,
+            "y": 18,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "XT2",
+            "x": 45,
+            "y": 18,
+            "tolerance": 0.1
+          }
+        ]
+      }
+    }
+  },
+  "images": [
+    {
+      "file": "final-1.png",
+      "label": "Интерфейс",
+      "revision": 9
+    }
+  ]
+}

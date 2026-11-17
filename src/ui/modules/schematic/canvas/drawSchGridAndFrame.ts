@@ -45,7 +45,7 @@ export function drawSchGridAndFrame(
   for (const t of tbGeom.texts) {
     ctx.save();
     ctx.fillStyle = palette.frameColor;
-    ctx.font = `${t.italic ? 'italic ' : ''}${t.bold ? 'bold ' : ''}${t.sizeMm}px "Segoe UI", Arial`;
+    ctx.font = `${t.italic ? 'italic ' : ''}${t.bold ? 'bold ' : ''}${t.sizeMm}px "OpenGost", Arial`;
     ctx.textAlign = t.align;
     ctx.textBaseline = 'middle';
     if (t.rotateDeg) {

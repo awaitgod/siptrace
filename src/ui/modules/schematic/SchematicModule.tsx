@@ -12,7 +12,7 @@ import { GostConversionReport, importCadSchematic, serializeSchematic } from '..
 import { clearSavedFileHandle, exportTextFile, nativeCadFilename, pickCadFile, saveTextFile } from '../../../core/utils/fileIo';
 import { GostConversionDialog } from '../../components/GostConversionDialog';
 import { NewProjectDialog } from '../../components/NewProjectDialog';
-import { convertSchematicToPcb } from '../../../engines/netlist';
+import { convertSchematicToPcb } from '../../../engines/netlist/schematicToPcbConverter';
 import { runBuiltInSpiceSimulation } from '../../../engines/spice';
 import { generateGostBom } from '../../../gost/gostBom';
 import { GOST_COMPONENT_LIBRARIES, findComponentById } from '../../../gost/libraries/gostComponents';
@@ -221,7 +221,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
             setStatusMessage(`Ошибка открытия файла: ${(err as Error).message}`);
         }
     }, [confirmDiscardIfDirty, replaceProject]);
-    const handleExportTextFile = useCallback(async (filename: string, content: string, ext: string, desc = 'Файл SIPTrace') => {
+    const handleExportTextFile = useCallback(async (filename: string, content: string | Uint8Array<ArrayBuffer>, ext: string, desc = 'Файл SIPTrace') => {
         try {
             const result = await exportTextFile(filename, content, ext, desc);
             if (!result) {
@@ -557,7 +557,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
       <SchematicToolbar onCopy={onCopy} onPaste={onPaste} canPaste={!!getClipboard()} selectionCount={selectedIds.length} hotkeys={hotkeys} project={project} activeSheet={activeSheet} historyLength={history.length} redoLength={redoStack.length} selectedCompIds={selectedCompIds} clipboardComps={clipboardComps} setClipboardComps={setClipboardComps} zoomPercent={zoomPercent} setZoomByPercent={setZoomByPercent} tool={tool} setTool={setTool} setWireDraftPts={setWireDraftPts} setShapeStartPt={setShapeStartPt} commitProject={commitProject} updateActiveSheet={updateActiveSheet} handleNewProject={handleNewProject} handleOpenFile={handleOpenFile} handleSaveFile={() => handleSaveFile(false)} setShowTitleDialog={setShowTitleDialog} setShowBomDialog={setShowBomDialog} handleUndo={handleUndo} handleRedo={handleRedo} zoomToFit={zoomToFit} setShowFindDialog={setShowFindDialog} handleRunErc={handleRunErc} handleRunSpice={() => handleRunSpice('Transient')} handleConvertToPcb={handleConvertToPcb}/>
 
       <div className="dt-workspace">
-        <SchematicLeftSidebar allLibraries={allLibraries} selectedLibId={selectedLibId} setSelectedLibId={setSelectedLibId} selectedLibCompId={selectedLibCompId} setSelectedLibCompId={setSelectedLibCompId} selectedPartIndex={selectedPartIndex} setSelectedPartIndex={setSelectedPartIndex} placeExpanded={placeExpanded} setPlaceExpanded={setPlaceExpanded} toolsExpanded={toolsExpanded} setToolsExpanded={setToolsExpanded} sortLibsAlpha={sortLibsAlpha} setSortLibsAlpha={setSortLibsAlpha} searchCompQuery={searchCompQuery} setSearchCompQuery={setSearchCompQuery} displayedLibComps={displayedLibComps} previewComponentDef={previewComponentDef} previewPatternDef={previewPatternDef} netPortStyle={netPortStyle} setNetPortStyle={setNetPortStyle} netPortLabel={netPortLabel} setNetPortLabel={setNetPortLabel} autoPowerCheck={autoPowerCheck} setAutoPowerCheck={setAutoPowerCheck} setTool={setTool} setStatusMessage={setStatusMessage}/>
+        <SchematicLeftSidebar colorScheme={settings.colorScheme} allLibraries={allLibraries} selectedLibId={selectedLibId} setSelectedLibId={setSelectedLibId} selectedLibCompId={selectedLibCompId} setSelectedLibCompId={setSelectedLibCompId} selectedPartIndex={selectedPartIndex} setSelectedPartIndex={setSelectedPartIndex} placeExpanded={placeExpanded} setPlaceExpanded={setPlaceExpanded} toolsExpanded={toolsExpanded} setToolsExpanded={setToolsExpanded} sortLibsAlpha={sortLibsAlpha} setSortLibsAlpha={setSortLibsAlpha} searchCompQuery={searchCompQuery} setSearchCompQuery={setSearchCompQuery} displayedLibComps={displayedLibComps} previewComponentDef={previewComponentDef} previewPatternDef={previewPatternDef} netPortStyle={netPortStyle} setNetPortStyle={setNetPortStyle} netPortLabel={netPortLabel} setNetPortLabel={setNetPortLabel} autoPowerCheck={autoPowerCheck} setAutoPowerCheck={setAutoPowerCheck} setTool={setTool} setStatusMessage={setStatusMessage}/>
 
         <SchematicPanelSplitter side="left" width={panelWidths.left} onResize={width => setPanelWidths(p => ({ ...p, left: width }))}/>
         <div className="dt-center-col">
@@ -643,3 +643,4 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
       {conversionReport && (<GostConversionDialog report={conversionReport} onClose={() => setConversionReport(null)}/>)}
     </div>);
 };
+

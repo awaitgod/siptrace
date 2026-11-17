@@ -37,7 +37,7 @@ export function drawSchComponentsAndOverlays(p: DrawSchComponentsParams): void {
             ctx.fillStyle = '#CC0000';
             ctx.lineWidth = .5;
             ctx.strokeRect(comp.x - 5, comp.y - 4, 10, 8);
-            ctx.font = '2.5px Arial';
+            ctx.font = '2.5px OpenGost';
             ctx.fillText(`? ${comp.refDes}: ${comp.componentDefId}`, comp.x - 5, comp.y - 5);
             ctx.restore();
             continue;
@@ -50,7 +50,7 @@ export function drawSchComponentsAndOverlays(p: DrawSchComponentsParams): void {
         if (comp.showRefDes && comp.refDes && !comp.refDes.startsWith('#')) {
             ctx.save();
             ctx.fillStyle = isSelected ? (palette.scheme==='dark'?'#FFFF66':'#005BBB') : palette.textColor;
-            ctx.font = `3px "Segoe UI", Arial`;
+            ctx.font = `3px "OpenGost", Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const suffix = def.parts.length > 1 ? `.${comp.partIndex}` : '';
@@ -62,7 +62,7 @@ export function drawSchComponentsAndOverlays(p: DrawSchComponentsParams): void {
         if (comp.showValue && comp.value) {
             ctx.save();
             ctx.fillStyle = comp.doNotMount ? '#FF5555' : palette.valColor;
-            ctx.font = `2.6px "Segoe UI", Arial`;
+            ctx.font = `2.6px "OpenGost", Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.translate(comp.x + comp.valueOffset.x, comp.y + comp.valueOffset.y);

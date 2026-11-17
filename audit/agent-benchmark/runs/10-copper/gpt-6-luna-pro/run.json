@@ -1,0 +1,41 @@
+{
+  "test": {
+    "id": "10-copper",
+    "name": "Плата с полигоном земли",
+    "type": "pcb",
+    "task": "Создай только двухслойную плату «Полигон GND» 42×30 мм с двумя библиотечными корпусами 0805 R1 и R2. Обе площадки 1 — SIG, обе площадки 2 — GND. Разведи SIG, добавь полигон GND на верхнем слое внутри контура с зазором не меньше 0,25 мм, пересчитай заливку и проверь связность обеих цепей. Если для GND требуется дополнительная дорожка, сделай её явно."
+  },
+  "model": "gpt-6-luna-pro",
+  "error": "Error: Ошибка AITUNNEL (HTTP 400). Проверьте доступность модели и поддержку инструментов.",
+  "durationMs": 2272,
+  "requests": [
+    {
+      "http": 400,
+      "id": "chat-034zJFkglwO2mQzKW46fj6",
+      "msApi": 2267,
+      "imageCount": 0,
+      "apiError": "{ \"error\": { \"message\": \"Invalid schema for function 'read_library': '^[\\\\\\\\p{L}\\\\\\\\p{N}_.#-]+$' is not a 'regex'.\", \"type\": \"invalid_request_error\", \"param\": \"tools[2].parameters\", \"code\": \"invalid_function_parameters\" }\n}"
+    }
+  ],
+  "events": [
+    {
+      "ms": 0,
+      "kind": "step",
+      "step": "Запрос к модели 1/50"
+    },
+    {
+      "ms": 2268,
+      "kind": "api",
+      "http": 400,
+      "id": "chat-034zJFkglwO2mQzKW46fj6",
+      "msApi": 2267,
+      "imageCount": 0,
+      "apiError": "{ \"error\": { \"message\": \"Invalid schema for function 'read_library': '^[\\\\\\\\p{L}\\\\\\\\p{N}_.#-]+$' is not a 'regex'.\", \"type\": \"invalid_request_error\", \"param\": \"tools[2].parameters\", \"code\": \"invalid_function_parameters\" }\n}"
+    }
+  ],
+  "independent": {},
+  "captures": [],
+  "draft": {
+    "plan": ""
+  }
+}

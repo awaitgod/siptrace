@@ -62,14 +62,14 @@ export const SchematicToolbar: React.FC<SchematicToolbarProps> = (p) => (<div cl
     <button className="dt-tb-btn" title={`Приблизить (${p.hotkeys.zoomIn})`} onClick={() => p.setZoomByPercent(Math.round(p.zoomPercent * 1.25))}><DipIcon name="zoomIn"/></button>
     <button className="dt-tb-btn" title={`Отдалить (${p.hotkeys.zoomOut})`} onClick={() => p.setZoomByPercent(Math.max(15, Math.round(p.zoomPercent / 1.25)))}><DipIcon name="zoomOut"/></button>
     <button className={`dt-tb-btn ${p.tool === 'zoomBox' ? 'active' : ''}`} title="Рамка приближения" onClick={() => { p.setShapeStartPt(null); p.setTool('zoomBox'); }}><DipIcon name="zoomBox"/></button>
-    <select className="dt-tb-select" style={{ width: 62 }} value={SCHEMATIC_ZOOM_OPTIONS.includes(p.zoomPercent) ? p.zoomPercent : 'custom'} onChange={(e) => {
+    <select className="dt-tb-select" style={{ width: 76 }} value={SCHEMATIC_ZOOM_OPTIONS.includes(p.zoomPercent) ? p.zoomPercent : 'custom'} onChange={(e) => {
         if (e.target.value !== 'custom')
             p.setZoomByPercent(Number(e.target.value));
     }}>
       {!SCHEMATIC_ZOOM_OPTIONS.includes(p.zoomPercent) && <option value="custom">{p.zoomPercent}%</option>}
       {SCHEMATIC_ZOOM_OPTIONS.map((z) => (<option key={z} value={z}>{z}%</option>))}
     </select>
-    <select className="dt-tb-select" style={{ width: 68 }} value={p.project.gridSize} onChange={(e) => p.commitProject((prev) => ({ ...prev, gridSize: parseFloat(e.target.value) }), false)}>
+    <select className="dt-tb-select" style={{ width: 82 }} value={p.project.gridSize} onChange={(e) => p.commitProject((prev) => ({ ...prev, gridSize: parseFloat(e.target.value) }), false)}>
       {STANDARD_GRID_STEPS_MM.map((g) => (<option key={g} value={g}>{formatGridValue(g, p.project.units)}</option>))}
     </select>
     <div className="dt-tb-sep"/>

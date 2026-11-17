@@ -1,5 +1,5 @@
 import { SchematicProject } from '../../core/types';
-import { extractSchematicNetlist } from '../netlist';
+import { extractSchematicNetlist } from '../netlist/netlistExtractor';
 import { parseMetricValue } from './metricParser';
 
 function parseSpicePowerRail(net: string): number | null {
@@ -88,3 +88,4 @@ export function exportSpiceNetlist(sch: SchematicProject): string {
   lines.push('.end');
   return lines.join('\n');
 }
+

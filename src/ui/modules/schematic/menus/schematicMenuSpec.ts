@@ -3,6 +3,7 @@ import { ComponentDef, PlacedComponent, SchematicProject, SchematicSheet, Units 
 import { AppSettings, openAppModule, saveSettings } from '../../../../core/store';
 import { renumberSchematicComponents } from '../../../../engines/erc';
 import { exportDipTraceAsciiSchematic } from '../../../../engines/importers';
+import { encodeDipTraceSchematicAscii } from '../../../../engines/importers/diptrace/asciiEncoding';
 import { exportDipTraceAsciiNetlist } from '../../../../engines/netlist';
 import { exportSpiceNetlist } from '../../../../engines/spice';
 import { TopMenuSpec } from '../../../components/MenuBar';
@@ -48,7 +49,7 @@ export interface CreateSchematicTopMenusParams {
     handleUpdatePcbFromSchematic: () => void;
     handleRunErc: () => void;
     handleRunSpice: () => void;
-    handleExportTextFile: (filename: string, content: string, ext: string, desc?: string) => void;
+    handleExportTextFile: (filename: string, content: string | Uint8Array<ArrayBuffer>, ext: string, desc?: string) => void;
     setShowTitleDialog: (v: boolean) => void;
     setShowBomDialog: (v: boolean) => void;
     setShowFindDialog: (v: boolean) => void;
@@ -61,7 +62,14 @@ export interface CreateSchematicTopMenusParams {
 }
 /** Builds the exact DipTrace Russian top menu specification for Schematic Capture. */
 export function createSchematicTopMenus(p: CreateSchematicTopMenusParams): TopMenuSpec[] {
-    const exportAsc = () => p.handleExportTextFile(`${p.project.projectName}.asc`, exportDipTraceAsciiSchematic(p.project), 'asc', 'DipTrace ASCII Schematic');
+    const exportAsc = () => {
+        try {
+            const content = encodeDipTraceSchematicAscii(exportDipTraceAsciiSchematic(p.project));
+            p.handleExportTextFile(`${p.project.projectName}.asc`, content, 'asc', 'DipTrace ASCII Schematic');
+        } catch (error) {
+            p.setStatusMessage(`Не удалось экспортировать схему в DipTrace ASCII: ${(error as Error).message}`);
+        }
+    };
     return [
         {
             id: 'file',

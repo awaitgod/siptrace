@@ -73,7 +73,7 @@ function getSaveFilePicker(): ShowSaveFilePickerFn | undefined {
   return (window as Window & { showSaveFilePicker?: ShowSaveFilePickerFn }).showSaveFilePicker?.bind(window);
 }
 
-async function writeTextToHandle(handle: FileSystemFileHandleLike, content: string): Promise<string> {
+async function writeTextToHandle(handle: FileSystemFileHandleLike, content: string | Uint8Array<ArrayBuffer>): Promise<string> {
   const writable = await handle.createWritable();
   await writable.write(content);
   await writable.close();
@@ -83,12 +83,13 @@ async function writeTextToHandle(handle: FileSystemFileHandleLike, content: stri
 /** Prompts for an export destination without changing the project's remembered save handle. */
 export async function exportTextFile(
   filename: string,
-  content: string,
+  content: string | Uint8Array<ArrayBuffer>,
   extension: string,
   description: string
 ): Promise<{ method: 'saved' | 'download'; name: string } | null> {
   if (isTauri()) {
-    const path = await invoke<string | null>('export_text_file', { filename, content, extension, description });
+    const payload = typeof content === 'string' ? { content } : { bytes: Array.from(content) };
+    const path = await invoke<string | null>('export_text_file', { filename, ...payload, extension, description });
     return path === null ? null : { method: 'saved', name: path };
   }
 
@@ -110,7 +111,7 @@ export async function exportTextFile(
     }
   }
 
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const blob = new Blob([content], { type: typeof content === 'string' ? 'text/plain;charset=utf-8' : 'application/octet-stream' });
   return { method: 'download', name: triggerBlobDownload(filename, blob) };
 }
 

@@ -1,0 +1,511 @@
+{
+  "version": "1.0",
+  "filePath": "",
+  "projectName": "RC_FNL",
+  "units": "mm",
+  "gridSize": 2.5,
+  "origin": {
+    "x": 0,
+    "y": 0
+  },
+  "sheets": [
+    {
+      "id": "sheet_1",
+      "name": "Лист 1",
+      "format": "A4_L",
+      "titleBlock": {
+        "enabled": true,
+        "form": "Form1",
+        "showZones": true,
+        "showCornerStamp26": false,
+        "designation": "ТЕСТ.000002",
+        "name": "RC ФНЧ",
+        "subName": "Схема электрическая принципиальная",
+        "organization": "",
+        "litera": "",
+        "mass": "—",
+        "scale": "1:1",
+        "sheetNumber": 1,
+        "totalSheets": 1,
+        "developer": "",
+        "checker": "",
+        "techControl": "",
+        "normControl": "",
+        "approver": "",
+        "date": "17.11.2026",
+        "documentCode": "Э3"
+      },
+      "components": [
+        {
+          "id": "comp_t0lnywj_etol",
+          "componentDefId": "COMP_R_R1_12_0805",
+          "libraryId": "Резисторы (ГОСТ 2.728)",
+          "refDes": "R1",
+          "instanceId": "pkg_da5hqsx_etol",
+          "value": "1 кОм",
+          "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "partIndex": 1,
+          "x": 110,
+          "y": 80,
+          "angle": 0,
+          "flipX": false,
+          "flipY": false,
+          "patternId": "PAT_CHIP_2012M",
+          "refDesOffset": {
+            "x": 0,
+            "y": 0
+          },
+          "valueOffset": {
+            "x": 0,
+            "y": 0
+          },
+          "showRefDes": true,
+          "showValue": true
+        },
+        {
+          "id": "comp_2y49czn_etol",
+          "componentDefId": "COMP_C_K10_17V_0805",
+          "libraryId": "Конденсаторы (ГОСТ 2.728)",
+          "refDes": "C1",
+          "instanceId": "pkg_o1ddm36_etol",
+          "value": "100 нФ",
+          "typeName": "К10-17в (ЧИП 2012М/0805)",
+          "partIndex": 1,
+          "x": 140,
+          "y": 100,
+          "angle": 90,
+          "flipX": false,
+          "flipY": false,
+          "patternId": "PAT_CHIP_2012M",
+          "refDesOffset": {
+            "x": 0,
+            "y": 0
+          },
+          "valueOffset": {
+            "x": 0,
+            "y": 0
+          },
+          "showRefDes": true,
+          "showValue": true
+        }
+      ],
+      "wires": [
+        {
+          "id": "wire_0jc6xid_ey28",
+          "points": [
+            {
+              "x": 100,
+              "y": 80
+            },
+            {
+              "x": 85,
+              "y": 80
+            }
+          ],
+          "netName": "IN"
+        },
+        {
+          "id": "wire_fcts5oz_ey29",
+          "points": [
+            {
+              "x": 120,
+              "y": 80
+            },
+            {
+              "x": 140,
+              "y": 80
+            },
+            {
+              "x": 140,
+              "y": 95
+            }
+          ],
+          "netName": "OUT"
+        },
+        {
+          "id": "wire_x25so0f_ez73",
+          "points": [
+            {
+              "x": 140,
+              "y": 95
+            },
+            {
+              "x": 160,
+              "y": 95
+            }
+          ],
+          "netName": "OUT"
+        },
+        {
+          "id": "wire_1hf5coj_ez73",
+          "points": [
+            {
+              "x": 140,
+              "y": 105
+            },
+            {
+              "x": 140,
+              "y": 120
+            }
+          ],
+          "netName": "GND"
+        }
+      ],
+      "buses": [],
+      "busTaps": [],
+      "junctions": [],
+      "netPorts": [
+        {
+          "id": "port_wjbwsfd_ey28",
+          "x": 85,
+          "y": 80,
+          "angle": 0,
+          "netName": "IN",
+          "style": "PortLeft"
+        },
+        {
+          "id": "port_jnrgv5y_ez73",
+          "x": 160,
+          "y": 95,
+          "angle": 0,
+          "netName": "OUT",
+          "style": "PortRight"
+        },
+        {
+          "id": "port_fe1lb62_ez73",
+          "x": 140,
+          "y": 120,
+          "angle": 0,
+          "netName": "GND",
+          "style": "Ground"
+        }
+      ],
+      "diffPairs": [],
+      "hierarchyBlocks": [],
+      "shapes": [
+        {
+          "text": "RC ФНЧ, 1-й порядок, пассивный",
+          "x": 30,
+          "y": 20,
+          "size": 3,
+          "id": "text_xgvmqow_f1or",
+          "type": "text"
+        },
+        {
+          "text": "R1, C1 — ЧИП 2012М (0805); C1 неполярный",
+          "x": 30,
+          "y": 150,
+          "size": 2.5,
+          "id": "text_kpbjwml_f4iy",
+          "type": "text",
+          "angle": 0
+        },
+        {
+          "text": "GND — общий провод, опорный узел источника сигнала",
+          "x": 30,
+          "y": 158,
+          "size": 2.5,
+          "id": "text_2ujr40m_f4iy",
+          "type": "text",
+          "angle": 0
+        },
+        {
+          "text": "fср = 1/(2*3,142*R1*C1) = 1/(6,283*1кОм*100нФ) = 1592 Гц",
+          "x": 30,
+          "y": 46,
+          "size": 2.5,
+          "id": "text_pfeyk7y_g6sj",
+          "type": "text",
+          "angle": 0
+        },
+        {
+          "text": "тау = R1*C1 = 100 мкс; спад 20 дБ/дек, fгр по -3 дБ",
+          "x": 30,
+          "y": 54,
+          "size": 2.5,
+          "id": "text_pg3u3kf_g6sj",
+          "type": "text",
+          "angle": 0
+        },
+        {
+          "text": "Условия: Rн >> R1, Cн << C1",
+          "x": 30,
+          "y": 62,
+          "size": 2.5,
+          "id": "text_1l5k823_g6sj",
+          "type": "text",
+          "angle": 0
+        },
+        {
+          "text": "100 нФ",
+          "x": 146,
+          "y": 100,
+          "size": 2,
+          "id": "text_ma5172g_gj82",
+          "type": "text"
+        },
+        {
+          "text": "R1",
+          "x": 104,
+          "y": 73,
+          "size": 2.5,
+          "id": "text_27819a6_gya0",
+          "type": "text"
+        },
+        {
+          "text": "C1",
+          "x": 146,
+          "y": 88,
+          "size": 2.5,
+          "id": "text_nxpu8op_gya0",
+          "type": "text"
+        },
+        {
+          "text": "GND",
+          "x": 146,
+          "y": 124,
+          "size": 2.5,
+          "id": "text_vibl2x1_gya0",
+          "type": "text"
+        }
+      ]
+    }
+  ],
+  "activeSheetId": "sheet_1",
+  "netClasses": [
+    {
+      "id": "nc_default",
+      "name": "Сигнальные",
+      "traceWidth": 0.25,
+      "minWidth": 0.15,
+      "maxWidth": 5,
+      "clearance": 0.2,
+      "viaOuterDiameter": 0.7,
+      "viaHoleDiameter": 0.35
+    }
+  ],
+  "netClassAssignments": {},
+  "customComponentDefs": {
+    "COMP_R_R1_12_0805": {
+      "id": "COMP_R_R1_12_0805",
+      "name": "Р1-12-0,125 (ЧИП 2012М/0805)",
+      "library": "Резисторы (ГОСТ 2.728)",
+      "refDesPrefix": "R",
+      "defaultValue": "10к",
+      "gostStandard": "АЛЯР.434110.005 ТУ",
+      "description": "Резистор чип для поверхностного монтажа Р1-12 (2012М / 0805)",
+      "manufacturer": "АО «НПО Эркон»",
+      "patternId": "PAT_CHIP_2012M",
+      "spiceModel": {
+        "prefix": "R",
+        "params": {
+          "R": 10000
+        }
+      },
+      "parts": [
+        {
+          "partIndex": 1,
+          "name": "Part 1",
+          "primitives": [
+            {
+              "type": "rect",
+              "x": -5,
+              "y": -2,
+              "w": 10,
+              "h": 4,
+              "width": 0.35
+            }
+          ],
+          "pins": [
+            {
+              "id": "pin_1",
+              "number": "1",
+              "name": "1",
+              "x": -10,
+              "y": 0,
+              "length": 5,
+              "orientation": 0,
+              "electricalType": "Passive",
+              "style": "Line",
+              "showName": false,
+              "showNumber": false,
+              "padMapping": "1"
+            },
+            {
+              "id": "pin_2",
+              "number": "2",
+              "name": "2",
+              "x": 10,
+              "y": 0,
+              "length": 5,
+              "orientation": 180,
+              "electricalType": "Passive",
+              "style": "Line",
+              "showName": false,
+              "showNumber": false,
+              "padMapping": "2"
+            }
+          ]
+        }
+      ]
+    },
+    "COMP_C_K10_17V_0805": {
+      "id": "COMP_C_K10_17V_0805",
+      "name": "К10-17в (ЧИП 2012М/0805)",
+      "library": "Конденсаторы (ГОСТ 2.728)",
+      "refDesPrefix": "C",
+      "defaultValue": "0,1 мкФ",
+      "gostStandard": "ОЖ0.460.172 ТУ",
+      "description": "Конденсатор керамический многослойный ЧИП К10-17в (2012М)",
+      "manufacturer": "ОАО «Кулон»",
+      "patternId": "PAT_CHIP_2012M",
+      "spiceModel": {
+        "prefix": "C",
+        "params": {
+          "C": 1e-7
+        }
+      },
+      "parts": [
+        {
+          "partIndex": 1,
+          "name": "Part 1",
+          "primitives": [
+            {
+              "type": "line",
+              "x1": -1,
+              "y1": -4,
+              "x2": -1,
+              "y2": 4,
+              "width": 0.4
+            },
+            {
+              "type": "line",
+              "x1": 1,
+              "y1": -4,
+              "x2": 1,
+              "y2": 4,
+              "width": 0.4
+            }
+          ],
+          "pins": [
+            {
+              "id": "pin_1",
+              "number": "1",
+              "name": "1",
+              "x": -5,
+              "y": 0,
+              "length": 4,
+              "orientation": 0,
+              "electricalType": "Passive",
+              "style": "Line",
+              "showName": false,
+              "showNumber": false,
+              "padMapping": "1"
+            },
+            {
+              "id": "pin_2",
+              "number": "2",
+              "name": "2",
+              "x": 5,
+              "y": 0,
+              "length": 4,
+              "orientation": 180,
+              "electricalType": "Passive",
+              "style": "Line",
+              "showName": false,
+              "showNumber": false,
+              "padMapping": "2"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "customPatternDefs": {
+    "PAT_CHIP_2012M": {
+      "id": "PAT_CHIP_2012M",
+      "name": "ЧИП_2012М (0805)",
+      "library": "Корпуса пассивных ЭРЭ (ГОСТ)",
+      "gostName": "Р1-12-2012М / К10-17в-2012",
+      "ipcName": "ЧИП_2012М (0805)",
+      "description": "Метрический ЧИП-корпус 2.0 × 1.25 мм (Р1-12, К10-17)",
+      "pads": [
+        {
+          "id": "pad_1",
+          "number": "1",
+          "type": "SMD",
+          "shape": "RoundedRect",
+          "x": -0.95,
+          "y": 0,
+          "width": 1.05,
+          "height": 1.35,
+          "cornerRadius": 0.08,
+          "layer": "Top"
+        },
+        {
+          "id": "pad_2",
+          "number": "2",
+          "type": "SMD",
+          "shape": "RoundedRect",
+          "x": 0.95,
+          "y": 0,
+          "width": 1.05,
+          "height": 1.35,
+          "cornerRadius": 0.08,
+          "layer": "Top"
+        }
+      ],
+      "graphics": [
+        {
+          "type": "line",
+          "layer": "TopSilk",
+          "x1": -0.9,
+          "y1": -0.775,
+          "x2": 0.9,
+          "y2": -0.775,
+          "width": 0.15
+        },
+        {
+          "type": "line",
+          "layer": "TopSilk",
+          "x1": -0.9,
+          "y1": 0.775,
+          "x2": 0.9,
+          "y2": 0.775,
+          "width": 0.15
+        },
+        {
+          "type": "rect",
+          "layer": "TopAssembly",
+          "x": -1,
+          "y": -0.625,
+          "w": 2,
+          "h": 1.25,
+          "width": 0.1
+        },
+        {
+          "type": "rect",
+          "layer": "Courtyard",
+          "x": -1.7750000000000001,
+          "y": -1.375,
+          "w": 3.5500000000000003,
+          "h": 2.75,
+          "width": 0.1
+        }
+      ],
+      "courtyard": {
+        "width": 3.5500000000000003,
+        "height": 2.75
+      },
+      "model3d": {
+        "shape": "ChipSMD",
+        "bodyWidth": 1.25,
+        "bodyLength": 2,
+        "bodyHeight": 0.6,
+        "color": "#b88958",
+        "pinCount": 2,
+        "pitch": 1.9
+      }
+    }
+  }
+}

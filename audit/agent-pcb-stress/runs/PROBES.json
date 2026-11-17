@@ -1,0 +1,2740 @@
+[
+  {
+    "case": "02-mirrored-crossbar",
+    "test": "auto_route с чистой разводкой",
+    "initial": 4,
+    "report": {
+      "routedConnections": 4,
+      "failedConnections": 0,
+      "addedTraces": 8,
+      "addedVias": 4,
+      "durationMs": 61
+    },
+    "ratlines": [],
+    "drc": [
+      {
+        "id": "drc_1",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_356da93_87nq_pcbcomp_356da93_87nq_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_356da93_87nq",
+          "pcbcomp_356da93_87nq"
+        ]
+      },
+      {
+        "id": "drc_2",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_356da93_87nq_pcbcomp_356da93_87nq_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 10.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_356da93_87nq",
+          "pcbcomp_356da93_87nq"
+        ]
+      },
+      {
+        "id": "drc_3",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_432r3bl_87nr_pcbcomp_432r3bl_87nr_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 10.95,
+        "y": 21,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_432r3bl_87nr",
+          "pcbcomp_432r3bl_87nr"
+        ]
+      },
+      {
+        "id": "drc_4",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_432r3bl_87nr_pcbcomp_432r3bl_87nr_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.05,
+        "y": 21,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_432r3bl_87nr",
+          "pcbcomp_432r3bl_87nr"
+        ]
+      },
+      {
+        "id": "drc_5",
+        "signature": "DRC-SILK-PAD::BottomSilk::silk_pcbcomp_wj7co8r_87nr_pcbcomp_wj7co8r_87nr_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "BottomSilk",
+        "x": 36,
+        "y": 9.95,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_wj7co8r_87nr",
+          "pcbcomp_wj7co8r_87nr"
+        ]
+      },
+      {
+        "id": "drc_6",
+        "signature": "DRC-SILK-PAD::BottomSilk::silk_pcbcomp_wj7co8r_87nr_pcbcomp_wj7co8r_87nr_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "BottomSilk",
+        "x": 36,
+        "y": 8.05,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_wj7co8r_87nr",
+          "pcbcomp_wj7co8r_87nr"
+        ]
+      },
+      {
+        "id": "drc_7",
+        "signature": "DRC-SILK-PAD::BottomSilk::silk_pcbcomp_blywor1_87nr_pcbcomp_blywor1_87nr_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "BottomSilk",
+        "x": 36,
+        "y": 20.05,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_blywor1_87nr",
+          "pcbcomp_blywor1_87nr"
+        ]
+      },
+      {
+        "id": "drc_8",
+        "signature": "DRC-SILK-PAD::BottomSilk::silk_pcbcomp_blywor1_87nr_pcbcomp_blywor1_87nr_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "BottomSilk",
+        "x": 36,
+        "y": 21.95,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_blywor1_87nr",
+          "pcbcomp_blywor1_87nr"
+        ]
+      }
+    ],
+    "layerUse": {
+      "B": [
+        "BottomCopper",
+        "TopCopper"
+      ],
+      "D": [
+        "BottomCopper",
+        "TopCopper"
+      ],
+      "C": [
+        "BottomCopper",
+        "TopCopper"
+      ],
+      "A": [
+        "BottomCopper",
+        "TopCopper"
+      ]
+    },
+    "widths": {
+      "B": [
+        0.25
+      ],
+      "D": [
+        0.25
+      ],
+      "C": [
+        0.25
+      ],
+      "A": [
+        0.25
+      ]
+    },
+    "boardFile": "probe-01.gostpcb"
+  },
+  {
+    "case": "03-inner-layers",
+    "test": "auto_route с чистой разводкой",
+    "initial": 2,
+    "report": {
+      "routedConnections": 2,
+      "failedConnections": 0,
+      "addedTraces": 2,
+      "addedVias": 0,
+      "durationMs": 24
+    },
+    "ratlines": [],
+    "drc": [
+      {
+        "id": "drc_1",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_79zag64_6qg4_pcbcomp_79zag64_6qg4_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 8.05,
+        "y": 10,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_79zag64_6qg4",
+          "pcbcomp_79zag64_6qg4"
+        ]
+      },
+      {
+        "id": "drc_2",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_79zag64_6qg4_pcbcomp_79zag64_6qg4_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.95,
+        "y": 10,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_79zag64_6qg4",
+          "pcbcomp_79zag64_6qg4"
+        ]
+      },
+      {
+        "id": "drc_3",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_zzj1bcs_6qg4_pcbcomp_zzj1bcs_6qg4_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 38.05,
+        "y": 10,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_zzj1bcs_6qg4",
+          "pcbcomp_zzj1bcs_6qg4"
+        ]
+      },
+      {
+        "id": "drc_4",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_zzj1bcs_6qg4_pcbcomp_zzj1bcs_6qg4_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 39.95,
+        "y": 10,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_zzj1bcs_6qg4",
+          "pcbcomp_zzj1bcs_6qg4"
+        ]
+      },
+      {
+        "id": "drc_5",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_9s42kzu_6qg5_pcbcomp_9s42kzu_6qg5_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 8.05,
+        "y": 24,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_9s42kzu_6qg5",
+          "pcbcomp_9s42kzu_6qg5"
+        ]
+      },
+      {
+        "id": "drc_6",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_9s42kzu_6qg5_pcbcomp_9s42kzu_6qg5_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.95,
+        "y": 24,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_9s42kzu_6qg5",
+          "pcbcomp_9s42kzu_6qg5"
+        ]
+      },
+      {
+        "id": "drc_7",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_61w3ejx_6qg5_pcbcomp_61w3ejx_6qg5_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 38.05,
+        "y": 24,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_61w3ejx_6qg5",
+          "pcbcomp_61w3ejx_6qg5"
+        ]
+      },
+      {
+        "id": "drc_8",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_61w3ejx_6qg5_pcbcomp_61w3ejx_6qg5_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 39.95,
+        "y": 24,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_61w3ejx_6qg5",
+          "pcbcomp_61w3ejx_6qg5"
+        ]
+      }
+    ],
+    "layerUse": {
+      "BUS_A": [
+        "TopCopper"
+      ],
+      "BUS_B": [
+        "TopCopper"
+      ]
+    },
+    "widths": {
+      "BUS_A": [
+        0.2
+      ],
+      "BUS_B": [
+        0.2
+      ]
+    },
+    "boardFile": "probe-02.gostpcb"
+  },
+  {
+    "case": "04-slalom",
+    "test": "auto_route с чистой разводкой",
+    "initial": 8,
+    "report": {
+      "routedConnections": 8,
+      "failedConnections": 0,
+      "addedTraces": 12,
+      "addedVias": 4,
+      "durationMs": 175
+    },
+    "ratlines": [],
+    "drc": [
+      {
+        "id": "drc_1",
+        "signature": "DRC-KEEPOUT::TopCopper::ko_keepout_8o72611_6w52_tr_8ujudsm_f2t0",
+        "waived": false,
+        "severity": "Error",
+        "layer": "TopCopper",
+        "x": 25,
+        "y": 28,
+        "code": "DRC-KEEPOUT",
+        "message": "Дорожка «SIG_B» пересекает зону запрета трассировки.",
+        "objectIds": [
+          "tr_8ujudsm_f2t0",
+          "keepout_8o72611_6w52"
+        ]
+      },
+      {
+        "id": "drc_2",
+        "signature": "DRC-KEEPOUT::All::ko_keepout_8o72611_6w52_via_eydwrou_f2r2",
+        "waived": false,
+        "severity": "Error",
+        "layer": "All",
+        "x": 25.2,
+        "y": 9.2,
+        "code": "DRC-KEEPOUT",
+        "message": "Переходное отверстие (RET) пересекает зону запрета Keepout.",
+        "objectIds": [
+          "via_eydwrou_f2r2",
+          "keepout_8o72611_6w52"
+        ]
+      },
+      {
+        "id": "drc_3",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_u7ddhg1_6s0z_pcbcomp_u7ddhg1_6s0z_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 7.05,
+        "y": 8,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_u7ddhg1_6s0z",
+          "pcbcomp_u7ddhg1_6s0z"
+        ]
+      },
+      {
+        "id": "drc_4",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_u7ddhg1_6s0z_pcbcomp_u7ddhg1_6s0z_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 8.95,
+        "y": 8,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_u7ddhg1_6s0z",
+          "pcbcomp_u7ddhg1_6s0z"
+        ]
+      },
+      {
+        "id": "drc_5",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_4sbhmdm_6s0z_pcbcomp_4sbhmdm_6s0z_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 7.05,
+        "y": 20,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_4sbhmdm_6s0z",
+          "pcbcomp_4sbhmdm_6s0z"
+        ]
+      },
+      {
+        "id": "drc_6",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_4sbhmdm_6s0z_pcbcomp_4sbhmdm_6s0z_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 8.95,
+        "y": 20,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_4sbhmdm_6s0z",
+          "pcbcomp_4sbhmdm_6s0z"
+        ]
+      },
+      {
+        "id": "drc_7",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_2bl04hb_6s10_pcbcomp_2bl04hb_6s10_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 7.05,
+        "y": 32,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_2bl04hb_6s10",
+          "pcbcomp_2bl04hb_6s10"
+        ]
+      },
+      {
+        "id": "drc_8",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_2bl04hb_6s10_pcbcomp_2bl04hb_6s10_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 8.95,
+        "y": 32,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_2bl04hb_6s10",
+          "pcbcomp_2bl04hb_6s10"
+        ]
+      },
+      {
+        "id": "drc_9",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_md2hsu8_6s10_pcbcomp_md2hsu8_6s10_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 53.05,
+        "y": 8,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_md2hsu8_6s10",
+          "pcbcomp_md2hsu8_6s10"
+        ]
+      },
+      {
+        "id": "drc_10",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_md2hsu8_6s10_pcbcomp_md2hsu8_6s10_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 54.95,
+        "y": 8,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_md2hsu8_6s10",
+          "pcbcomp_md2hsu8_6s10"
+        ]
+      },
+      {
+        "id": "drc_11",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_t2kh4u2_6s10_pcbcomp_t2kh4u2_6s10_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 53.05,
+        "y": 20,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_t2kh4u2_6s10",
+          "pcbcomp_t2kh4u2_6s10"
+        ]
+      },
+      {
+        "id": "drc_12",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_t2kh4u2_6s10_pcbcomp_t2kh4u2_6s10_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 54.95,
+        "y": 20,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_t2kh4u2_6s10",
+          "pcbcomp_t2kh4u2_6s10"
+        ]
+      },
+      {
+        "id": "drc_13",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_iegxty9_6s11_pcbcomp_iegxty9_6s11_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 53.05,
+        "y": 32,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_iegxty9_6s11",
+          "pcbcomp_iegxty9_6s11"
+        ]
+      },
+      {
+        "id": "drc_14",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_iegxty9_6s11_pcbcomp_iegxty9_6s11_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 54.95,
+        "y": 32,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_iegxty9_6s11",
+          "pcbcomp_iegxty9_6s11"
+        ]
+      }
+    ],
+    "layerUse": {
+      "RET": [
+        "BottomCopper",
+        "TopCopper"
+      ],
+      "SIG_A": [
+        "TopCopper"
+      ],
+      "SIG_B": [
+        "BottomCopper",
+        "TopCopper"
+      ],
+      "SIG_C": [
+        "TopCopper"
+      ]
+    },
+    "widths": {
+      "RET": [
+        0.3
+      ],
+      "SIG_A": [
+        0.3
+      ],
+      "SIG_B": [
+        0.3
+      ],
+      "SIG_C": [
+        0.3
+      ]
+    },
+    "boardFile": "probe-03.gostpcb"
+  },
+  {
+    "case": "05-cutout",
+    "test": "auto_route с чистой разводкой",
+    "initial": 6,
+    "report": {
+      "routedConnections": 6,
+      "failedConnections": 0,
+      "addedTraces": 14,
+      "addedVias": 8,
+      "durationMs": 53
+    },
+    "ratlines": [],
+    "drc": [
+      {
+        "id": "drc_1",
+        "signature": "DRC-EDGE::TopCopper::tr_pmgaxan_f2vy_edge",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopCopper",
+        "x": 40.8,
+        "y": 36,
+        "code": "DRC-EDGE",
+        "message": "Проводник «RETURN» ближе 0.25 мм к краю платы.",
+        "objectIds": [
+          "tr_pmgaxan_f2vy"
+        ]
+      },
+      {
+        "id": "drc_2",
+        "signature": "DRC-EDGE::BottomCopper::tr_7tgvt8z_f2vy_edge",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "BottomCopper",
+        "x": 40.8,
+        "y": 11.2,
+        "code": "DRC-EDGE",
+        "message": "Проводник «RETURN» ближе 0.25 мм к краю платы.",
+        "objectIds": [
+          "tr_7tgvt8z_f2vy"
+        ]
+      },
+      {
+        "id": "drc_3",
+        "signature": "DRC-EDGE::All::via_via_61er3fg_f2vy_edge",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "All",
+        "x": 40.8,
+        "y": 36,
+        "code": "DRC-EDGE",
+        "message": "Переходное отверстие (RETURN) ближе 0.25 мм к краю платы.",
+        "objectIds": [
+          "via_61er3fg_f2vy"
+        ]
+      },
+      {
+        "id": "drc_4",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_wexys3g_7aq3_pcbcomp_wexys3g_7aq3_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 7.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_wexys3g_7aq3",
+          "pcbcomp_wexys3g_7aq3"
+        ]
+      },
+      {
+        "id": "drc_5",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_wexys3g_7aq3_pcbcomp_wexys3g_7aq3_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 8.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_wexys3g_7aq3",
+          "pcbcomp_wexys3g_7aq3"
+        ]
+      },
+      {
+        "id": "drc_6",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_idd3ued_7aq3_pcbcomp_idd3ued_7aq3_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 49.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_idd3ued_7aq3",
+          "pcbcomp_idd3ued_7aq3"
+        ]
+      },
+      {
+        "id": "drc_7",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_idd3ued_7aq3_pcbcomp_idd3ued_7aq3_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 50.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_idd3ued_7aq3",
+          "pcbcomp_idd3ued_7aq3"
+        ]
+      },
+      {
+        "id": "drc_8",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_hka4fzj_7aq3_pcbcomp_hka4fzj_7aq3_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 7.05,
+        "y": 35,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_hka4fzj_7aq3",
+          "pcbcomp_hka4fzj_7aq3"
+        ]
+      },
+      {
+        "id": "drc_9",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_hka4fzj_7aq3_pcbcomp_hka4fzj_7aq3_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 8.95,
+        "y": 35,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_hka4fzj_7aq3",
+          "pcbcomp_hka4fzj_7aq3"
+        ]
+      },
+      {
+        "id": "drc_10",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_it5n4e5_7aq3_pcbcomp_it5n4e5_7aq3_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 33.05,
+        "y": 36,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_it5n4e5_7aq3",
+          "pcbcomp_it5n4e5_7aq3"
+        ]
+      },
+      {
+        "id": "drc_11",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_it5n4e5_7aq3_pcbcomp_it5n4e5_7aq3_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 34.95,
+        "y": 36,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_it5n4e5_7aq3",
+          "pcbcomp_it5n4e5_7aq3"
+        ]
+      }
+    ],
+    "layerUse": {
+      "SENSE": [
+        "BottomCopper",
+        "TopCopper"
+      ],
+      "RETURN": [
+        "BottomCopper",
+        "TopCopper"
+      ]
+    },
+    "widths": {
+      "SENSE": [
+        0.35
+      ],
+      "RETURN": [
+        0.35
+      ]
+    },
+    "boardFile": "probe-04.gostpcb"
+  },
+  {
+    "case": "09-dense-ladder",
+    "test": "auto_route с чистой разводкой",
+    "initial": 17,
+    "report": {
+      "routedConnections": 17,
+      "failedConnections": 0,
+      "addedTraces": 23,
+      "addedVias": 6,
+      "durationMs": 29
+    },
+    "ratlines": [],
+    "drc": [
+      {
+        "id": "drc_1",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_nq9ken2_7djt_pcbcomp_nq9ken2_7djt_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 5.05,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_nq9ken2_7djt",
+          "pcbcomp_nq9ken2_7djt"
+        ]
+      },
+      {
+        "id": "drc_2",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_nq9ken2_7djt_pcbcomp_nq9ken2_7djt_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 6.95,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_nq9ken2_7djt",
+          "pcbcomp_nq9ken2_7djt"
+        ]
+      },
+      {
+        "id": "drc_3",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_giy7c0v_7djt_pcbcomp_giy7c0v_7djt_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 12.05,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_giy7c0v_7djt",
+          "pcbcomp_giy7c0v_7djt"
+        ]
+      },
+      {
+        "id": "drc_4",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_giy7c0v_7djt_pcbcomp_giy7c0v_7djt_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 13.95,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_giy7c0v_7djt",
+          "pcbcomp_giy7c0v_7djt"
+        ]
+      },
+      {
+        "id": "drc_5",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_vpuonqx_7djt_pcbcomp_vpuonqx_7djt_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 19.05,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_vpuonqx_7djt",
+          "pcbcomp_vpuonqx_7djt"
+        ]
+      },
+      {
+        "id": "drc_6",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_vpuonqx_7djt_pcbcomp_vpuonqx_7djt_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 20.95,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_vpuonqx_7djt",
+          "pcbcomp_vpuonqx_7djt"
+        ]
+      },
+      {
+        "id": "drc_7",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_120b7z1_7dju_pcbcomp_120b7z1_7dju_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 26.05,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_120b7z1_7dju",
+          "pcbcomp_120b7z1_7dju"
+        ]
+      },
+      {
+        "id": "drc_8",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_120b7z1_7dju_pcbcomp_120b7z1_7dju_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 27.95,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_120b7z1_7dju",
+          "pcbcomp_120b7z1_7dju"
+        ]
+      },
+      {
+        "id": "drc_9",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_6j3v0lg_7dju_pcbcomp_6j3v0lg_7dju_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 5.05,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_6j3v0lg_7dju",
+          "pcbcomp_6j3v0lg_7dju"
+        ]
+      },
+      {
+        "id": "drc_10",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_6j3v0lg_7dju_pcbcomp_6j3v0lg_7dju_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 6.95,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_6j3v0lg_7dju",
+          "pcbcomp_6j3v0lg_7dju"
+        ]
+      },
+      {
+        "id": "drc_11",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_h4e1yzx_7dju_pcbcomp_h4e1yzx_7dju_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 12.05,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_h4e1yzx_7dju",
+          "pcbcomp_h4e1yzx_7dju"
+        ]
+      },
+      {
+        "id": "drc_12",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_h4e1yzx_7dju_pcbcomp_h4e1yzx_7dju_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 13.95,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_h4e1yzx_7dju",
+          "pcbcomp_h4e1yzx_7dju"
+        ]
+      },
+      {
+        "id": "drc_13",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_kuheyap_7djv_pcbcomp_kuheyap_7djv_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 19.05,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R7.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_kuheyap_7djv",
+          "pcbcomp_kuheyap_7djv"
+        ]
+      },
+      {
+        "id": "drc_14",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_kuheyap_7djv_pcbcomp_kuheyap_7djv_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 20.95,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R7.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_kuheyap_7djv",
+          "pcbcomp_kuheyap_7djv"
+        ]
+      },
+      {
+        "id": "drc_15",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_xrx8wkm_7djv_pcbcomp_xrx8wkm_7djv_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 26.05,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R8.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_xrx8wkm_7djv",
+          "pcbcomp_xrx8wkm_7djv"
+        ]
+      },
+      {
+        "id": "drc_16",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_xrx8wkm_7djv_pcbcomp_xrx8wkm_7djv_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 27.95,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R8.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_xrx8wkm_7djv",
+          "pcbcomp_xrx8wkm_7djv"
+        ]
+      },
+      {
+        "id": "drc_17",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_m0dxcda_7djv_pcbcomp_m0dxcda_7djv_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 5.05,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R9.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_m0dxcda_7djv",
+          "pcbcomp_m0dxcda_7djv"
+        ]
+      },
+      {
+        "id": "drc_18",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_m0dxcda_7djv_pcbcomp_m0dxcda_7djv_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 6.95,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R9.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_m0dxcda_7djv",
+          "pcbcomp_m0dxcda_7djv"
+        ]
+      },
+      {
+        "id": "drc_19",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_xcopjbk_7djw_pcbcomp_xcopjbk_7djw_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 12.05,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R10.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_xcopjbk_7djw",
+          "pcbcomp_xcopjbk_7djw"
+        ]
+      },
+      {
+        "id": "drc_20",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_xcopjbk_7djw_pcbcomp_xcopjbk_7djw_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 13.95,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R10.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_xcopjbk_7djw",
+          "pcbcomp_xcopjbk_7djw"
+        ]
+      },
+      {
+        "id": "drc_21",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_rjrgiji_7djw_pcbcomp_rjrgiji_7djw_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 19.05,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R11.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_rjrgiji_7djw",
+          "pcbcomp_rjrgiji_7djw"
+        ]
+      },
+      {
+        "id": "drc_22",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_rjrgiji_7djw_pcbcomp_rjrgiji_7djw_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 20.95,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R11.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_rjrgiji_7djw",
+          "pcbcomp_rjrgiji_7djw"
+        ]
+      },
+      {
+        "id": "drc_23",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_id4gp5l_7djw_pcbcomp_id4gp5l_7djw_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 26.05,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R12.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_id4gp5l_7djw",
+          "pcbcomp_id4gp5l_7djw"
+        ]
+      },
+      {
+        "id": "drc_24",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_id4gp5l_7djw_pcbcomp_id4gp5l_7djw_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 27.95,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R12.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_id4gp5l_7djw",
+          "pcbcomp_id4gp5l_7djw"
+        ]
+      }
+    ],
+    "layerUse": {
+      "ROW1": [
+        "TopCopper"
+      ],
+      "COL1": [
+        "TopCopper"
+      ],
+      "COL2": [
+        "TopCopper"
+      ],
+      "COL3": [
+        "TopCopper"
+      ],
+      "COL4": [
+        "TopCopper"
+      ],
+      "ROW2": [
+        "BottomCopper",
+        "TopCopper"
+      ],
+      "ROW3": [
+        "TopCopper"
+      ]
+    },
+    "widths": {
+      "ROW1": [
+        0.3
+      ],
+      "COL1": [
+        0.3
+      ],
+      "COL2": [
+        0.3
+      ],
+      "COL3": [
+        0.3
+      ],
+      "COL4": [
+        0.3
+      ],
+      "ROW2": [
+        0.3
+      ],
+      "ROW3": [
+        0.3
+      ]
+    },
+    "boardFile": "probe-05.gostpcb"
+  },
+  {
+    "case": "10-trace-classes",
+    "test": "auto_route с чистой разводкой",
+    "initial": 8,
+    "report": {
+      "routedConnections": 8,
+      "failedConnections": 0,
+      "addedTraces": 8,
+      "addedVias": 0,
+      "durationMs": 8
+    },
+    "ratlines": [],
+    "drc": [
+      {
+        "id": "drc_1",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_7q19its_710q_pcbcomp_7q19its_710q_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.05,
+        "y": 8,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_7q19its_710q",
+          "pcbcomp_7q19its_710q"
+        ]
+      },
+      {
+        "id": "drc_2",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_7q19its_710q_pcbcomp_7q19its_710q_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 10.95,
+        "y": 8,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_7q19its_710q",
+          "pcbcomp_7q19its_710q"
+        ]
+      },
+      {
+        "id": "drc_3",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_21d4gis_710q_pcbcomp_21d4gis_710q_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 29.95,
+        "y": 8,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_21d4gis_710q",
+          "pcbcomp_21d4gis_710q"
+        ]
+      },
+      {
+        "id": "drc_4",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_21d4gis_710q_pcbcomp_21d4gis_710q_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 28.05,
+        "y": 8,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_21d4gis_710q",
+          "pcbcomp_21d4gis_710q"
+        ]
+      },
+      {
+        "id": "drc_5",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_8tswz34_75lz_pcbcomp_8tswz34_75lz_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 47.05,
+        "y": 8,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_8tswz34_75lz",
+          "pcbcomp_8tswz34_75lz"
+        ]
+      },
+      {
+        "id": "drc_6",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_8tswz34_75lz_pcbcomp_8tswz34_75lz_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 48.95,
+        "y": 8,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_8tswz34_75lz",
+          "pcbcomp_8tswz34_75lz"
+        ]
+      },
+      {
+        "id": "drc_7",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_fdp88rd_75lz_pcbcomp_fdp88rd_75lz_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.05,
+        "y": 25,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_fdp88rd_75lz",
+          "pcbcomp_fdp88rd_75lz"
+        ]
+      },
+      {
+        "id": "drc_8",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_fdp88rd_75lz_pcbcomp_fdp88rd_75lz_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 10.95,
+        "y": 25,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_fdp88rd_75lz",
+          "pcbcomp_fdp88rd_75lz"
+        ]
+      },
+      {
+        "id": "drc_9",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_5rxnonw_75lz_pcbcomp_5rxnonw_75lz_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 28.05,
+        "y": 25,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_5rxnonw_75lz",
+          "pcbcomp_5rxnonw_75lz"
+        ]
+      },
+      {
+        "id": "drc_10",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_5rxnonw_75lz_pcbcomp_5rxnonw_75lz_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 29.95,
+        "y": 25,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_5rxnonw_75lz",
+          "pcbcomp_5rxnonw_75lz"
+        ]
+      },
+      {
+        "id": "drc_11",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_zw24sk1_75m0_pcbcomp_zw24sk1_75m0_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 47.05,
+        "y": 25,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_zw24sk1_75m0",
+          "pcbcomp_zw24sk1_75m0"
+        ]
+      },
+      {
+        "id": "drc_12",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_zw24sk1_75m0_pcbcomp_zw24sk1_75m0_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 48.95,
+        "y": 25,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_zw24sk1_75m0",
+          "pcbcomp_zw24sk1_75m0"
+        ]
+      }
+    ],
+    "layerUse": {
+      "SUPPLY": [
+        "TopCopper"
+      ],
+      "RETURN": [
+        "TopCopper"
+      ],
+      "SENSE": [
+        "TopCopper"
+      ],
+      "REF": [
+        "TopCopper"
+      ]
+    },
+    "widths": {
+      "SUPPLY": [
+        0.3
+      ],
+      "RETURN": [
+        0.3
+      ],
+      "SENSE": [
+        0.3
+      ],
+      "REF": [
+        0.3
+      ]
+    },
+    "boardFile": "probe-06.gostpcb"
+  },
+  {
+    "case": "05-cutout",
+    "test": "Контрольная трасса через (25,20) внутри выреза",
+    "args": {
+      "from": {
+        "ref": "R1",
+        "pin": "1"
+      },
+      "to": {
+        "ref": "R4",
+        "pin": "1"
+      },
+      "net": "SENSE",
+      "layer": "TopCopper",
+      "width": 0.35,
+      "waypoints": [
+        {
+          "x": 7.05,
+          "y": 20
+        },
+        {
+          "x": 25,
+          "y": 20
+        },
+        {
+          "x": 33.05,
+          "y": 20
+        }
+      ]
+    },
+    "report": {
+      "id": "trace_yu8cpsu_f2xb"
+    },
+    "ratlines": [
+      {
+        "netName": "SENSE",
+        "from": {
+          "x": 7.05,
+          "y": 9
+        },
+        "to": {
+          "x": 7.05,
+          "y": 35
+        },
+        "fromLabel": "R1.1",
+        "toLabel": "R3.1"
+      },
+      {
+        "netName": "SENSE",
+        "from": {
+          "x": 33.05,
+          "y": 36
+        },
+        "to": {
+          "x": 49.05,
+          "y": 9
+        },
+        "fromLabel": "R4.1",
+        "toLabel": "R2.1"
+      },
+      {
+        "netName": "RETURN",
+        "from": {
+          "x": 8.95,
+          "y": 9
+        },
+        "to": {
+          "x": 8.95,
+          "y": 35
+        },
+        "fromLabel": "R1.2",
+        "toLabel": "R3.2"
+      },
+      {
+        "netName": "RETURN",
+        "from": {
+          "x": 8.95,
+          "y": 35
+        },
+        "to": {
+          "x": 34.95,
+          "y": 36
+        },
+        "fromLabel": "R3.2",
+        "toLabel": "R4.2"
+      },
+      {
+        "netName": "RETURN",
+        "from": {
+          "x": 34.95,
+          "y": 36
+        },
+        "to": {
+          "x": 50.95,
+          "y": 9
+        },
+        "fromLabel": "R4.2",
+        "toLabel": "R2.2"
+      }
+    ],
+    "drc": [
+      {
+        "id": "drc_1",
+        "signature": "DRC-UNROUTED::All::SENSE_R1.1_R3.1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "All",
+        "x": 7.05,
+        "y": 22,
+        "code": "DRC-UNROUTED",
+        "message": "Неразведённая связь цепи «SENSE»: R1.1 ↔ R3.1",
+        "objectIds": []
+      },
+      {
+        "id": "drc_2",
+        "signature": "DRC-UNROUTED::All::SENSE_R4.1_R2.1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "All",
+        "x": 41.05,
+        "y": 22.5,
+        "code": "DRC-UNROUTED",
+        "message": "Неразведённая связь цепи «SENSE»: R4.1 ↔ R2.1",
+        "objectIds": []
+      },
+      {
+        "id": "drc_3",
+        "signature": "DRC-UNROUTED::All::RETURN_R1.2_R3.2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "All",
+        "x": 8.95,
+        "y": 22,
+        "code": "DRC-UNROUTED",
+        "message": "Неразведённая связь цепи «RETURN»: R1.2 ↔ R3.2",
+        "objectIds": []
+      },
+      {
+        "id": "drc_4",
+        "signature": "DRC-UNROUTED::All::RETURN_R3.2_R4.2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "All",
+        "x": 21.950000000000003,
+        "y": 35.5,
+        "code": "DRC-UNROUTED",
+        "message": "Неразведённая связь цепи «RETURN»: R3.2 ↔ R4.2",
+        "objectIds": []
+      },
+      {
+        "id": "drc_5",
+        "signature": "DRC-UNROUTED::All::RETURN_R4.2_R2.2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "All",
+        "x": 42.95,
+        "y": 22.5,
+        "code": "DRC-UNROUTED",
+        "message": "Неразведённая связь цепи «RETURN»: R4.2 ↔ R2.2",
+        "objectIds": []
+      },
+      {
+        "id": "drc_6",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_wexys3g_7aq3_pcbcomp_wexys3g_7aq3_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 7.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_wexys3g_7aq3",
+          "pcbcomp_wexys3g_7aq3"
+        ]
+      },
+      {
+        "id": "drc_7",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_wexys3g_7aq3_pcbcomp_wexys3g_7aq3_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 8.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_wexys3g_7aq3",
+          "pcbcomp_wexys3g_7aq3"
+        ]
+      },
+      {
+        "id": "drc_8",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_idd3ued_7aq3_pcbcomp_idd3ued_7aq3_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 49.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_idd3ued_7aq3",
+          "pcbcomp_idd3ued_7aq3"
+        ]
+      },
+      {
+        "id": "drc_9",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_idd3ued_7aq3_pcbcomp_idd3ued_7aq3_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 50.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_idd3ued_7aq3",
+          "pcbcomp_idd3ued_7aq3"
+        ]
+      },
+      {
+        "id": "drc_10",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_hka4fzj_7aq3_pcbcomp_hka4fzj_7aq3_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 7.05,
+        "y": 35,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_hka4fzj_7aq3",
+          "pcbcomp_hka4fzj_7aq3"
+        ]
+      },
+      {
+        "id": "drc_11",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_hka4fzj_7aq3_pcbcomp_hka4fzj_7aq3_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 8.95,
+        "y": 35,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_hka4fzj_7aq3",
+          "pcbcomp_hka4fzj_7aq3"
+        ]
+      },
+      {
+        "id": "drc_12",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_it5n4e5_7aq3_pcbcomp_it5n4e5_7aq3_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 33.05,
+        "y": 36,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_it5n4e5_7aq3",
+          "pcbcomp_it5n4e5_7aq3"
+        ]
+      },
+      {
+        "id": "drc_13",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_it5n4e5_7aq3_pcbcomp_it5n4e5_7aq3_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 34.95,
+        "y": 36,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_it5n4e5_7aq3",
+          "pcbcomp_it5n4e5_7aq3"
+        ]
+      }
+    ],
+    "layerUse": {
+      "SENSE": [
+        "TopCopper"
+      ]
+    },
+    "widths": {
+      "SENSE": [
+        0.35
+      ]
+    },
+    "boardFile": "probe-07.gostpcb"
+  },
+  {
+    "case": "06-split-pours",
+    "test": "Растровая заливка с заданным clearance",
+    "clearance": 0.3,
+    "ratlines": [],
+    "drc": [
+      {
+        "id": "drc_1",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_erw381l_6rc9_pcbcomp_erw381l_6rc9_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_erw381l_6rc9",
+          "pcbcomp_erw381l_6rc9"
+        ]
+      },
+      {
+        "id": "drc_2",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_erw381l_6rc9_pcbcomp_erw381l_6rc9_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 10.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_erw381l_6rc9",
+          "pcbcomp_erw381l_6rc9"
+        ]
+      },
+      {
+        "id": "drc_3",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_0pe4n56_6sqq_pcbcomp_0pe4n56_6sqq_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 18.05,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_0pe4n56_6sqq",
+          "pcbcomp_0pe4n56_6sqq"
+        ]
+      },
+      {
+        "id": "drc_4",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_0pe4n56_6sqq_pcbcomp_0pe4n56_6sqq_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 19.95,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_0pe4n56_6sqq",
+          "pcbcomp_0pe4n56_6sqq"
+        ]
+      },
+      {
+        "id": "drc_5",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_3chetrv_6sqq_pcbcomp_3chetrv_6sqq_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.05,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_3chetrv_6sqq",
+          "pcbcomp_3chetrv_6sqq"
+        ]
+      },
+      {
+        "id": "drc_6",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_3chetrv_6sqq_pcbcomp_3chetrv_6sqq_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 10.95,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_3chetrv_6sqq",
+          "pcbcomp_3chetrv_6sqq"
+        ]
+      },
+      {
+        "id": "drc_7",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_2ee1ku6_6u1e_pcbcomp_2ee1ku6_6u1e_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 45.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_2ee1ku6_6u1e",
+          "pcbcomp_2ee1ku6_6u1e"
+        ]
+      },
+      {
+        "id": "drc_8",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_2ee1ku6_6u1e_pcbcomp_2ee1ku6_6u1e_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 46.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_2ee1ku6_6u1e",
+          "pcbcomp_2ee1ku6_6u1e"
+        ]
+      },
+      {
+        "id": "drc_9",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_jd90n8x_6u1e_pcbcomp_jd90n8x_6u1e_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 36.05,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_jd90n8x_6u1e",
+          "pcbcomp_jd90n8x_6u1e"
+        ]
+      },
+      {
+        "id": "drc_10",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_jd90n8x_6u1e_pcbcomp_jd90n8x_6u1e_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 37.95,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_jd90n8x_6u1e",
+          "pcbcomp_jd90n8x_6u1e"
+        ]
+      },
+      {
+        "id": "drc_11",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_z3i67qf_6vgr_pcbcomp_z3i67qf_6vgr_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 45.05,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_z3i67qf_6vgr",
+          "pcbcomp_z3i67qf_6vgr"
+        ]
+      },
+      {
+        "id": "drc_12",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_z3i67qf_6vgr_pcbcomp_z3i67qf_6vgr_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 46.95,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_z3i67qf_6vgr",
+          "pcbcomp_z3i67qf_6vgr"
+        ]
+      }
+    ],
+    "layerUse": {
+      "SIG_A": [
+        "TopCopper"
+      ],
+      "SIG_D": [
+        "TopCopper"
+      ]
+    },
+    "widths": {
+      "SIG_A": [
+        0.3
+      ],
+      "SIG_D": [
+        0.3
+      ]
+    },
+    "boardFile": "probe-08.gostpcb"
+  },
+  {
+    "case": "06-split-pours",
+    "test": "Растровая заливка с заданным clearance",
+    "clearance": 0.35,
+    "ratlines": [],
+    "drc": [
+      {
+        "id": "drc_1",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_erw381l_6rc9_pcbcomp_erw381l_6rc9_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_erw381l_6rc9",
+          "pcbcomp_erw381l_6rc9"
+        ]
+      },
+      {
+        "id": "drc_2",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_erw381l_6rc9_pcbcomp_erw381l_6rc9_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 10.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_erw381l_6rc9",
+          "pcbcomp_erw381l_6rc9"
+        ]
+      },
+      {
+        "id": "drc_3",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_0pe4n56_6sqq_pcbcomp_0pe4n56_6sqq_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 18.05,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_0pe4n56_6sqq",
+          "pcbcomp_0pe4n56_6sqq"
+        ]
+      },
+      {
+        "id": "drc_4",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_0pe4n56_6sqq_pcbcomp_0pe4n56_6sqq_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 19.95,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_0pe4n56_6sqq",
+          "pcbcomp_0pe4n56_6sqq"
+        ]
+      },
+      {
+        "id": "drc_5",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_3chetrv_6sqq_pcbcomp_3chetrv_6sqq_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.05,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_3chetrv_6sqq",
+          "pcbcomp_3chetrv_6sqq"
+        ]
+      },
+      {
+        "id": "drc_6",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_3chetrv_6sqq_pcbcomp_3chetrv_6sqq_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 10.95,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_3chetrv_6sqq",
+          "pcbcomp_3chetrv_6sqq"
+        ]
+      },
+      {
+        "id": "drc_7",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_2ee1ku6_6u1e_pcbcomp_2ee1ku6_6u1e_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 45.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_2ee1ku6_6u1e",
+          "pcbcomp_2ee1ku6_6u1e"
+        ]
+      },
+      {
+        "id": "drc_8",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_2ee1ku6_6u1e_pcbcomp_2ee1ku6_6u1e_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 46.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_2ee1ku6_6u1e",
+          "pcbcomp_2ee1ku6_6u1e"
+        ]
+      },
+      {
+        "id": "drc_9",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_jd90n8x_6u1e_pcbcomp_jd90n8x_6u1e_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 36.05,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_jd90n8x_6u1e",
+          "pcbcomp_jd90n8x_6u1e"
+        ]
+      },
+      {
+        "id": "drc_10",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_jd90n8x_6u1e_pcbcomp_jd90n8x_6u1e_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 37.95,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_jd90n8x_6u1e",
+          "pcbcomp_jd90n8x_6u1e"
+        ]
+      },
+      {
+        "id": "drc_11",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_z3i67qf_6vgr_pcbcomp_z3i67qf_6vgr_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 45.05,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_z3i67qf_6vgr",
+          "pcbcomp_z3i67qf_6vgr"
+        ]
+      },
+      {
+        "id": "drc_12",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_z3i67qf_6vgr_pcbcomp_z3i67qf_6vgr_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 46.95,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_z3i67qf_6vgr",
+          "pcbcomp_z3i67qf_6vgr"
+        ]
+      }
+    ],
+    "layerUse": {
+      "SIG_A": [
+        "TopCopper"
+      ],
+      "SIG_D": [
+        "TopCopper"
+      ]
+    },
+    "widths": {
+      "SIG_A": [
+        0.3
+      ],
+      "SIG_D": [
+        0.3
+      ]
+    },
+    "boardFile": "probe-09.gostpcb"
+  },
+  {
+    "case": "06-split-pours",
+    "test": "Растровая заливка с заданным clearance",
+    "clearance": 0.4,
+    "ratlines": [],
+    "drc": [
+      {
+        "id": "drc_1",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_erw381l_6rc9_pcbcomp_erw381l_6rc9_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_erw381l_6rc9",
+          "pcbcomp_erw381l_6rc9"
+        ]
+      },
+      {
+        "id": "drc_2",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_erw381l_6rc9_pcbcomp_erw381l_6rc9_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 10.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_erw381l_6rc9",
+          "pcbcomp_erw381l_6rc9"
+        ]
+      },
+      {
+        "id": "drc_3",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_0pe4n56_6sqq_pcbcomp_0pe4n56_6sqq_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 18.05,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_0pe4n56_6sqq",
+          "pcbcomp_0pe4n56_6sqq"
+        ]
+      },
+      {
+        "id": "drc_4",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_0pe4n56_6sqq_pcbcomp_0pe4n56_6sqq_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 19.95,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_0pe4n56_6sqq",
+          "pcbcomp_0pe4n56_6sqq"
+        ]
+      },
+      {
+        "id": "drc_5",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_3chetrv_6sqq_pcbcomp_3chetrv_6sqq_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.05,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_3chetrv_6sqq",
+          "pcbcomp_3chetrv_6sqq"
+        ]
+      },
+      {
+        "id": "drc_6",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_3chetrv_6sqq_pcbcomp_3chetrv_6sqq_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 10.95,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_3chetrv_6sqq",
+          "pcbcomp_3chetrv_6sqq"
+        ]
+      },
+      {
+        "id": "drc_7",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_2ee1ku6_6u1e_pcbcomp_2ee1ku6_6u1e_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 45.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_2ee1ku6_6u1e",
+          "pcbcomp_2ee1ku6_6u1e"
+        ]
+      },
+      {
+        "id": "drc_8",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_2ee1ku6_6u1e_pcbcomp_2ee1ku6_6u1e_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 46.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_2ee1ku6_6u1e",
+          "pcbcomp_2ee1ku6_6u1e"
+        ]
+      },
+      {
+        "id": "drc_9",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_jd90n8x_6u1e_pcbcomp_jd90n8x_6u1e_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 36.05,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_jd90n8x_6u1e",
+          "pcbcomp_jd90n8x_6u1e"
+        ]
+      },
+      {
+        "id": "drc_10",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_jd90n8x_6u1e_pcbcomp_jd90n8x_6u1e_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 37.95,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_jd90n8x_6u1e",
+          "pcbcomp_jd90n8x_6u1e"
+        ]
+      },
+      {
+        "id": "drc_11",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_z3i67qf_6vgr_pcbcomp_z3i67qf_6vgr_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 45.05,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_z3i67qf_6vgr",
+          "pcbcomp_z3i67qf_6vgr"
+        ]
+      },
+      {
+        "id": "drc_12",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_z3i67qf_6vgr_pcbcomp_z3i67qf_6vgr_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 46.95,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_z3i67qf_6vgr",
+          "pcbcomp_z3i67qf_6vgr"
+        ]
+      }
+    ],
+    "layerUse": {
+      "SIG_A": [
+        "TopCopper"
+      ],
+      "SIG_D": [
+        "TopCopper"
+      ]
+    },
+    "widths": {
+      "SIG_A": [
+        0.3
+      ],
+      "SIG_D": [
+        0.3
+      ]
+    },
+    "boardFile": "probe-10.gostpcb"
+  },
+  {
+    "case": "06-split-pours",
+    "test": "Растровая заливка с заданным clearance",
+    "clearance": 0.45,
+    "ratlines": [],
+    "drc": [
+      {
+        "id": "drc_1",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_erw381l_6rc9_pcbcomp_erw381l_6rc9_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_erw381l_6rc9",
+          "pcbcomp_erw381l_6rc9"
+        ]
+      },
+      {
+        "id": "drc_2",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_erw381l_6rc9_pcbcomp_erw381l_6rc9_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 10.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_erw381l_6rc9",
+          "pcbcomp_erw381l_6rc9"
+        ]
+      },
+      {
+        "id": "drc_3",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_0pe4n56_6sqq_pcbcomp_0pe4n56_6sqq_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 18.05,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_0pe4n56_6sqq",
+          "pcbcomp_0pe4n56_6sqq"
+        ]
+      },
+      {
+        "id": "drc_4",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_0pe4n56_6sqq_pcbcomp_0pe4n56_6sqq_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 19.95,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_0pe4n56_6sqq",
+          "pcbcomp_0pe4n56_6sqq"
+        ]
+      },
+      {
+        "id": "drc_5",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_3chetrv_6sqq_pcbcomp_3chetrv_6sqq_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.05,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_3chetrv_6sqq",
+          "pcbcomp_3chetrv_6sqq"
+        ]
+      },
+      {
+        "id": "drc_6",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_3chetrv_6sqq_pcbcomp_3chetrv_6sqq_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 10.95,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_3chetrv_6sqq",
+          "pcbcomp_3chetrv_6sqq"
+        ]
+      },
+      {
+        "id": "drc_7",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_2ee1ku6_6u1e_pcbcomp_2ee1ku6_6u1e_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 45.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_2ee1ku6_6u1e",
+          "pcbcomp_2ee1ku6_6u1e"
+        ]
+      },
+      {
+        "id": "drc_8",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_2ee1ku6_6u1e_pcbcomp_2ee1ku6_6u1e_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 46.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_2ee1ku6_6u1e",
+          "pcbcomp_2ee1ku6_6u1e"
+        ]
+      },
+      {
+        "id": "drc_9",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_jd90n8x_6u1e_pcbcomp_jd90n8x_6u1e_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 36.05,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_jd90n8x_6u1e",
+          "pcbcomp_jd90n8x_6u1e"
+        ]
+      },
+      {
+        "id": "drc_10",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_jd90n8x_6u1e_pcbcomp_jd90n8x_6u1e_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 37.95,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_jd90n8x_6u1e",
+          "pcbcomp_jd90n8x_6u1e"
+        ]
+      },
+      {
+        "id": "drc_11",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_z3i67qf_6vgr_pcbcomp_z3i67qf_6vgr_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 45.05,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_z3i67qf_6vgr",
+          "pcbcomp_z3i67qf_6vgr"
+        ]
+      },
+      {
+        "id": "drc_12",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_z3i67qf_6vgr_pcbcomp_z3i67qf_6vgr_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 46.95,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_z3i67qf_6vgr",
+          "pcbcomp_z3i67qf_6vgr"
+        ]
+      }
+    ],
+    "layerUse": {
+      "SIG_A": [
+        "TopCopper"
+      ],
+      "SIG_D": [
+        "TopCopper"
+      ]
+    },
+    "widths": {
+      "SIG_A": [
+        0.3
+      ],
+      "SIG_D": [
+        0.3
+      ]
+    },
+    "boardFile": "probe-11.gostpcb"
+  },
+  {
+    "case": "06-split-pours",
+    "test": "Растровая заливка с заданным clearance",
+    "clearance": 0.5,
+    "ratlines": [],
+    "drc": [
+      {
+        "id": "drc_1",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_erw381l_6rc9_pcbcomp_erw381l_6rc9_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_erw381l_6rc9",
+          "pcbcomp_erw381l_6rc9"
+        ]
+      },
+      {
+        "id": "drc_2",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_erw381l_6rc9_pcbcomp_erw381l_6rc9_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 10.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_erw381l_6rc9",
+          "pcbcomp_erw381l_6rc9"
+        ]
+      },
+      {
+        "id": "drc_3",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_0pe4n56_6sqq_pcbcomp_0pe4n56_6sqq_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 18.05,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_0pe4n56_6sqq",
+          "pcbcomp_0pe4n56_6sqq"
+        ]
+      },
+      {
+        "id": "drc_4",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_0pe4n56_6sqq_pcbcomp_0pe4n56_6sqq_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 19.95,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_0pe4n56_6sqq",
+          "pcbcomp_0pe4n56_6sqq"
+        ]
+      },
+      {
+        "id": "drc_5",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_3chetrv_6sqq_pcbcomp_3chetrv_6sqq_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 9.05,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_3chetrv_6sqq",
+          "pcbcomp_3chetrv_6sqq"
+        ]
+      },
+      {
+        "id": "drc_6",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_3chetrv_6sqq_pcbcomp_3chetrv_6sqq_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 10.95,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_3chetrv_6sqq",
+          "pcbcomp_3chetrv_6sqq"
+        ]
+      },
+      {
+        "id": "drc_7",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_2ee1ku6_6u1e_pcbcomp_2ee1ku6_6u1e_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 45.05,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_2ee1ku6_6u1e",
+          "pcbcomp_2ee1ku6_6u1e"
+        ]
+      },
+      {
+        "id": "drc_8",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_2ee1ku6_6u1e_pcbcomp_2ee1ku6_6u1e_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 46.95,
+        "y": 9,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_2ee1ku6_6u1e",
+          "pcbcomp_2ee1ku6_6u1e"
+        ]
+      },
+      {
+        "id": "drc_9",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_jd90n8x_6u1e_pcbcomp_jd90n8x_6u1e_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 36.05,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_jd90n8x_6u1e",
+          "pcbcomp_jd90n8x_6u1e"
+        ]
+      },
+      {
+        "id": "drc_10",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_jd90n8x_6u1e_pcbcomp_jd90n8x_6u1e_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 37.95,
+        "y": 17,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_jd90n8x_6u1e",
+          "pcbcomp_jd90n8x_6u1e"
+        ]
+      },
+      {
+        "id": "drc_11",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_z3i67qf_6vgr_pcbcomp_z3i67qf_6vgr_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 45.05,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_z3i67qf_6vgr",
+          "pcbcomp_z3i67qf_6vgr"
+        ]
+      },
+      {
+        "id": "drc_12",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_z3i67qf_6vgr_pcbcomp_z3i67qf_6vgr_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 46.95,
+        "y": 29,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_z3i67qf_6vgr",
+          "pcbcomp_z3i67qf_6vgr"
+        ]
+      }
+    ],
+    "layerUse": {
+      "SIG_A": [
+        "TopCopper"
+      ],
+      "SIG_D": [
+        "TopCopper"
+      ]
+    },
+    "widths": {
+      "SIG_A": [
+        0.3
+      ],
+      "SIG_D": [
+        0.3
+      ]
+    },
+    "boardFile": "probe-12.gostpcb"
+  }
+]

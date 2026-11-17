@@ -1,5 +1,5 @@
 import { SchematicProject, SpiceSimResult } from '../../core/types';
-import { extractSchematicNetlist } from '../netlist';
+import { extractSchematicNetlist } from '../netlist/netlistExtractor';
 import { Complex, solveComplexSystem } from './complexSolver';
 import { solveLinearSystem } from './linearSolver';
 import { parseMetricValue } from './metricParser';
@@ -320,3 +320,4 @@ export function runBuiltInSpiceSimulation(
     spiceNetlist: netlistText
   };
 }
+

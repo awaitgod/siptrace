@@ -1,0 +1,41 @@
+{
+  "test": {
+    "id": "05-two-sheets",
+    "name": "Межлистовое соединение",
+    "type": "schematic",
+    "task": "Создай двухлистовую схему «Межлистовой сигнал», ТЕСТ.000005 Э3. Первый лист «Источник», Form1, R1=1 кОм между IN и LINK. Второй «Нагрузка», Form2a, R2=2 кОм между LINK и GND. На обоих листах используй одинаковое имя LINK, добейся электрической связи в извлечённой сети. Сделай отдельный PNG каждого листа. Плата не нужна."
+  },
+  "model": "gpt-6-luna-pro",
+  "error": "Error: Ошибка AITUNNEL (HTTP 400). Проверьте доступность модели и поддержку инструментов.",
+  "durationMs": 2100,
+  "requests": [
+    {
+      "http": 400,
+      "id": "chat-034zJFkZwmnmSNkPsezx5A",
+      "msApi": 2097,
+      "imageCount": 0,
+      "apiError": "{ \"error\": { \"message\": \"Invalid schema for function 'read_library': '^[\\\\\\\\p{L}\\\\\\\\p{N}_.#-]+$' is not a 'regex'.\", \"type\": \"invalid_request_error\", \"param\": \"tools[2].parameters\", \"code\": \"invalid_function_parameters\" }\n}"
+    }
+  ],
+  "events": [
+    {
+      "ms": 0,
+      "kind": "step",
+      "step": "Запрос к модели 1/50"
+    },
+    {
+      "ms": 2098,
+      "kind": "api",
+      "http": 400,
+      "id": "chat-034zJFkZwmnmSNkPsezx5A",
+      "msApi": 2097,
+      "imageCount": 0,
+      "apiError": "{ \"error\": { \"message\": \"Invalid schema for function 'read_library': '^[\\\\\\\\p{L}\\\\\\\\p{N}_.#-]+$' is not a 'regex'.\", \"type\": \"invalid_request_error\", \"param\": \"tools[2].parameters\", \"code\": \"invalid_function_parameters\" }\n}"
+    }
+  ],
+  "independent": {},
+  "captures": [],
+  "draft": {
+    "plan": ""
+  }
+}

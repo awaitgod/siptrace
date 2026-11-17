@@ -147,9 +147,10 @@ export const MenuDropdownList: React.FC<{
   );
 };
 
-export const MenuBar: React.FC<{ menus: TopMenuSpec[]; onBrandClick?: () => void }> = ({
+export const MenuBar: React.FC<{ menus: TopMenuSpec[]; onBrandClick?: () => void; brand?: React.ReactNode }> = ({
   menus,
-  onBrandClick
+  onBrandClick,
+  brand: customBrand
 }) => {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
@@ -170,6 +171,7 @@ export const MenuBar: React.FC<{ menus: TopMenuSpec[]; onBrandClick?: () => void
 
   const activeMenu = menus.find((m) => m.id === openMenuId);
   const logoSrc = `${import.meta.env?.BASE_URL ?? './'}logo.svg`;
+  const brand = customBrand === undefined ? <><img src={logoSrc} alt="" width={14} height={14} /><span>SIPTrace</span></> : customBrand;
 
   return (
     <div className="dt-menubar" ref={barRef} onKeyDown={(e) => {
@@ -241,15 +243,11 @@ export const MenuBar: React.FC<{ menus: TopMenuSpec[]; onBrandClick?: () => void
           </div>
         );
       })}
-      <button
-        type="button"
-        className={`dt-menubar-brand ${onBrandClick ? 'clickable' : ''}`}
-        title={onBrandClick ? 'Стартовое окно SIPTrace' : 'SIPTrace'}
-        onClick={onBrandClick}
-      >
-        <img src={logoSrc} alt="SIPTrace" width={14} height={14} />
-        <span>SIPTrace</span>
-      </button>
+      {brand && (onBrandClick ? (
+        <button type="button" className="dt-menubar-brand clickable" title="Стартовое окно SIPTrace" onClick={onBrandClick}>
+          {brand}
+        </button>
+      ) : <span className="dt-menubar-brand">{brand}</span>)}
     </div>
   );
 };

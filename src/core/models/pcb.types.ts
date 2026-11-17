@@ -71,6 +71,8 @@ export interface PcbVia {
   startLayer: 'TopCopper' | 'Inner1' | 'Inner2' | 'BottomCopper';
   endLayer: 'TopCopper' | 'Inner1' | 'Inner2' | 'BottomCopper';
   viaStyle: 'Through' | 'Blind' | 'Buried' | 'Micro';
+  /** Explicitly permitted same-net via-in-pad process for this hole. */
+  viaInPad?: boolean;
   locked?: boolean;
 }
 

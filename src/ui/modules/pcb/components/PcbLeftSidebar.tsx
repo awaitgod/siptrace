@@ -45,11 +45,11 @@ export const PcbLeftSidebar: React.FC<PcbLeftSidebarProps> = (p) => {
         </div>
       ))}
     </div>
-    <div style={{ padding: '2px 4px', background: '#e8e8e8', borderBottom: '1px solid #bdbdbd' }}>
+    <div className="dt-sidebar-actions">
       <button
         type="button"
         className="dt-btn"
-        style={{ width: '100%', fontSize: 11, height: 22 }}
+        style={{ width: '100%' }}
         data-testid="pcb-cadlib-btn"
         onClick={() => setShowCadLibManager(true)}
       >
@@ -73,7 +73,7 @@ export const PcbLeftSidebar: React.FC<PcbLeftSidebarProps> = (p) => {
       ))}
     </div>
 
-    <div style={{ padding: '4px 6px', background: '#f0f0f0', borderTop: '1px solid #c0c0c0', display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div className="dt-sidebar-tools dt-pcb-quick-settings">
       <div style={{ fontSize: 11, fontWeight: 600 }}>Класс точности: ГОСТ Кл.{p.pcb.designRules.gostAccuracyClass}</div>
       <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span>Дорожка, мм:</span>

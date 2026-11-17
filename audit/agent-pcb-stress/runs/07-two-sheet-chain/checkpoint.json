@@ -1,0 +1,1618 @@
+{
+  "documents": {
+    "schematic": {
+      "version": "1.0",
+      "filePath": "",
+      "projectName": "СТРЕСС.260007 Э3",
+      "units": "mm",
+      "gridSize": 2.5,
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "sheets": [
+        {
+          "id": "sheet_1",
+          "name": "Вход",
+          "format": "A4_L",
+          "titleBlock": {
+            "enabled": true,
+            "form": "Form1",
+            "showZones": true,
+            "showCornerStamp26": true,
+            "designation": "СТРЕСС.260007 Э3",
+            "name": "Цепочка резисторная двухлистовая",
+            "subName": "Схема электрическая принципиальная",
+            "organization": "",
+            "litera": "",
+            "mass": "—",
+            "scale": "—",
+            "sheetNumber": 1,
+            "totalSheets": 2,
+            "developer": "",
+            "checker": "",
+            "techControl": "",
+            "normControl": "",
+            "approver": "",
+            "date": "17.11.2026",
+            "documentCode": "Э3"
+          },
+          "components": [
+            {
+              "id": "comp_y321mj3_7bzh",
+              "componentDefId": "COMP_R_R1_12_0805",
+              "libraryId": "Резисторы (ГОСТ 2.728)",
+              "refDes": "R1",
+              "instanceId": "pkg_ycoqwiv_7bzh",
+              "value": "1 кОм",
+              "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 50,
+              "y": 60,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -6
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 6
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            },
+            {
+              "id": "comp_10w966i_7bzh",
+              "componentDefId": "COMP_R_R1_12_0805",
+              "libraryId": "Резисторы (ГОСТ 2.728)",
+              "refDes": "R2",
+              "instanceId": "pkg_337ulpl_7bzh",
+              "value": "1 кОм",
+              "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 80,
+              "y": 60,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -6
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 6
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            },
+            {
+              "id": "comp_rihmmku_7bzi",
+              "componentDefId": "COMP_R_R1_12_0805",
+              "libraryId": "Резисторы (ГОСТ 2.728)",
+              "refDes": "R3",
+              "instanceId": "pkg_1ovn48m_7bzi",
+              "value": "1 кОм",
+              "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 110,
+              "y": 60,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -6
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 6
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            }
+          ],
+          "wires": [
+            {
+              "id": "wire_3gn9ljy_7grc",
+              "points": [
+                {
+                  "x": 60,
+                  "y": 60
+                },
+                {
+                  "x": 70,
+                  "y": 60
+                }
+              ],
+              "netName": "N1"
+            },
+            {
+              "id": "wire_mi9vle8_7grd",
+              "points": [
+                {
+                  "x": 90,
+                  "y": 60
+                },
+                {
+                  "x": 100,
+                  "y": 60
+                }
+              ],
+              "netName": "N2"
+            },
+            {
+              "id": "wire_sgy5awg_7ims",
+              "points": [
+                {
+                  "x": 120,
+                  "y": 60
+                },
+                {
+                  "x": 140,
+                  "y": 60
+                }
+              ],
+              "netName": "LINK"
+            },
+            {
+              "id": "wire_ugjr0np_7imu",
+              "points": [
+                {
+                  "x": 40,
+                  "y": 60
+                },
+                {
+                  "x": 20,
+                  "y": 60
+                }
+              ],
+              "netName": "IN"
+            }
+          ],
+          "buses": [],
+          "busTaps": [],
+          "junctions": [],
+          "netPorts": [
+            {
+              "id": "port_3lo04sh_7ims",
+              "x": 140,
+              "y": 60,
+              "angle": 0,
+              "netName": "LINK",
+              "style": "OffPageOut"
+            },
+            {
+              "id": "port_jd9o1m8_7imu",
+              "x": 20,
+              "y": 60,
+              "angle": 0,
+              "netName": "IN",
+              "style": "PortLeft"
+            }
+          ],
+          "diffPairs": [],
+          "hierarchyBlocks": [],
+          "shapes": []
+        },
+        {
+          "id": "sheet_0hdn9mm_74kv",
+          "name": "Выход",
+          "format": "A4_L",
+          "titleBlock": {
+            "enabled": true,
+            "form": "Form2a",
+            "showZones": true,
+            "showCornerStamp26": true,
+            "designation": "СТРЕСС.260007 Э3",
+            "name": "Цепочка резисторная двухлистовая",
+            "subName": "Схема электрическая принципиальная",
+            "organization": "",
+            "litera": "",
+            "mass": "—",
+            "scale": "—",
+            "sheetNumber": 2,
+            "totalSheets": 2,
+            "developer": "",
+            "checker": "",
+            "techControl": "",
+            "normControl": "",
+            "approver": "",
+            "date": "17.11.2026",
+            "documentCode": "Э3"
+          },
+          "components": [
+            {
+              "id": "comp_llscrzi_7drk",
+              "componentDefId": "COMP_R_R1_12_0805",
+              "libraryId": "Резисторы (ГОСТ 2.728)",
+              "refDes": "R4",
+              "instanceId": "pkg_kpgqze2_7drk",
+              "value": "1 кОм",
+              "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 50,
+              "y": 60,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -6
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 6
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            },
+            {
+              "id": "comp_sg693xi_7drl",
+              "componentDefId": "COMP_R_R1_12_0805",
+              "libraryId": "Резисторы (ГОСТ 2.728)",
+              "refDes": "R5",
+              "instanceId": "pkg_o02t74f_7drl",
+              "value": "1 кОм",
+              "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 80,
+              "y": 60,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -6
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 6
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            },
+            {
+              "id": "comp_zegmm3t_7drl",
+              "componentDefId": "COMP_R_R1_12_0805",
+              "libraryId": "Резисторы (ГОСТ 2.728)",
+              "refDes": "R6",
+              "instanceId": "pkg_kbszxw0_7drl",
+              "value": "1 кОм",
+              "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 110,
+              "y": 60,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -6
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 6
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            }
+          ],
+          "wires": [
+            {
+              "id": "wire_x8xwkz4_7kfu",
+              "points": [
+                {
+                  "x": 40,
+                  "y": 60
+                },
+                {
+                  "x": 20,
+                  "y": 60
+                }
+              ],
+              "netName": "LINK"
+            },
+            {
+              "id": "wire_tyb23pg_7kfx",
+              "points": [
+                {
+                  "x": 60,
+                  "y": 60
+                },
+                {
+                  "x": 70,
+                  "y": 60
+                }
+              ],
+              "netName": "N4"
+            },
+            {
+              "id": "wire_p9rtp9z_7kfx",
+              "points": [
+                {
+                  "x": 90,
+                  "y": 60
+                },
+                {
+                  "x": 100,
+                  "y": 60
+                }
+              ],
+              "netName": "N5"
+            },
+            {
+              "id": "wire_2edqfps_7kfy",
+              "points": [
+                {
+                  "x": 120,
+                  "y": 60
+                },
+                {
+                  "x": 140,
+                  "y": 60
+                }
+              ],
+              "netName": "OUT"
+            }
+          ],
+          "buses": [],
+          "busTaps": [],
+          "junctions": [],
+          "netPorts": [
+            {
+              "id": "port_82b1d4q_7kfu",
+              "x": 20,
+              "y": 60,
+              "angle": 0,
+              "netName": "LINK",
+              "style": "OffPageIn"
+            },
+            {
+              "id": "port_a4vk224_7kfy",
+              "x": 140,
+              "y": 60,
+              "angle": 0,
+              "netName": "OUT",
+              "style": "PortRight"
+            }
+          ],
+          "diffPairs": [],
+          "hierarchyBlocks": [],
+          "shapes": []
+        }
+      ],
+      "activeSheetId": "sheet_1",
+      "netClasses": [
+        {
+          "id": "nc_default",
+          "name": "Сигнальные",
+          "traceWidth": 0.25,
+          "minWidth": 0.15,
+          "maxWidth": 5,
+          "clearance": 0.2,
+          "viaOuterDiameter": 0.7,
+          "viaHoleDiameter": 0.35
+        }
+      ],
+      "netClassAssignments": {},
+      "customComponentDefs": {
+        "COMP_R_R1_12_0805": {
+          "id": "COMP_R_R1_12_0805",
+          "name": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "library": "Резисторы (ГОСТ 2.728)",
+          "refDesPrefix": "R",
+          "defaultValue": "10к",
+          "gostStandard": "АЛЯР.434110.005 ТУ",
+          "description": "Резистор чип для поверхностного монтажа Р1-12 (2012М / 0805)",
+          "manufacturer": "АО «НПО Эркон»",
+          "patternId": "PAT_CHIP_2012M",
+          "spiceModel": {
+            "prefix": "R",
+            "params": {
+              "R": 10000
+            }
+          },
+          "parts": [
+            {
+              "partIndex": 1,
+              "name": "Part 1",
+              "primitives": [
+                {
+                  "type": "rect",
+                  "x": -5,
+                  "y": -2,
+                  "w": 10,
+                  "h": 4,
+                  "width": 0.35
+                }
+              ],
+              "pins": [
+                {
+                  "id": "pin_1",
+                  "number": "1",
+                  "name": "1",
+                  "x": -10,
+                  "y": 0,
+                  "length": 5,
+                  "orientation": 0,
+                  "electricalType": "Passive",
+                  "style": "Line",
+                  "showName": false,
+                  "showNumber": false,
+                  "padMapping": "1"
+                },
+                {
+                  "id": "pin_2",
+                  "number": "2",
+                  "name": "2",
+                  "x": 10,
+                  "y": 0,
+                  "length": 5,
+                  "orientation": 180,
+                  "electricalType": "Passive",
+                  "style": "Line",
+                  "showName": false,
+                  "showNumber": false,
+                  "padMapping": "2"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "customPatternDefs": {
+        "PAT_CHIP_2012M": {
+          "id": "PAT_CHIP_2012M",
+          "name": "ЧИП_2012М (0805)",
+          "library": "Корпуса пассивных ЭРЭ (ГОСТ)",
+          "gostName": "Р1-12-2012М / К10-17в-2012",
+          "ipcName": "ЧИП_2012М (0805)",
+          "description": "Метрический ЧИП-корпус 2.0 × 1.25 мм (Р1-12, К10-17)",
+          "pads": [
+            {
+              "id": "pad_1",
+              "number": "1",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": -0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            },
+            {
+              "id": "pad_2",
+              "number": "2",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": 0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            }
+          ],
+          "graphics": [
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": -0.775,
+              "x2": 0.9,
+              "y2": -0.775,
+              "width": 0.15
+            },
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": 0.775,
+              "x2": 0.9,
+              "y2": 0.775,
+              "width": 0.15
+            },
+            {
+              "type": "rect",
+              "layer": "TopAssembly",
+              "x": -1,
+              "y": -0.625,
+              "w": 2,
+              "h": 1.25,
+              "width": 0.1
+            },
+            {
+              "type": "rect",
+              "layer": "Courtyard",
+              "x": -1.7750000000000001,
+              "y": -1.375,
+              "w": 3.5500000000000003,
+              "h": 2.75,
+              "width": 0.1
+            }
+          ],
+          "courtyard": {
+            "width": 3.5500000000000003,
+            "height": 2.75
+          },
+          "model3d": {
+            "shape": "ChipSMD",
+            "bodyWidth": 1.25,
+            "bodyLength": 2,
+            "bodyHeight": 0.6,
+            "color": "#b88958",
+            "pinCount": 2,
+            "pitch": 1.9
+          }
+        }
+      }
+    },
+    "pcb": {
+      "version": "1.0",
+      "filePath": "",
+      "linkedSchematicPath": "",
+      "projectName": "СТРЕСС.260007 Э3",
+      "units": "mm",
+      "gridSize": 1.25,
+      "boardThickness": 1.6,
+      "soldermaskColor": "#0d5e2e",
+      "silkscreenColor": "#ffffff",
+      "surfaceFinish": "ENIG",
+      "layerCount": 2,
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "boardOutline": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 48,
+          "y": 0
+        },
+        {
+          "x": 48,
+          "y": 32
+        },
+        {
+          "x": 0,
+          "y": 32
+        }
+      ],
+      "cutouts": [],
+      "keepouts": [],
+      "layers": [
+        {
+          "id": "TopCopper",
+          "name": "Верхний (Top)",
+          "kind": "Signal",
+          "routingDirection": "Horizontal",
+          "color": "#FF3030",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "BottomCopper",
+          "name": "Нижний (Bottom)",
+          "kind": "Signal",
+          "routingDirection": "Vertical",
+          "color": "#3078FF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "TopSilk",
+          "name": "Шелкография Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#FFFFFF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "BottomSilk",
+          "name": "Шелкография Низ",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#AA88FF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "TopMask",
+          "name": "Маска Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#9933AA",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "BottomMask",
+          "name": "Маска Низ",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#662288",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "TopPaste",
+          "name": "Паста Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#999999",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "BottomPaste",
+          "name": "Паста Низ",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#777777",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "TopAssembly",
+          "name": "Сборочный Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#FFCC00",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "Courtyard",
+          "name": "Контур установки (Courtyard)",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#808080",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "BoardOutline",
+          "name": "Контур платы",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#CC44FF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "Keepout",
+          "name": "Запрет (Keepout)",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#FF0088",
+          "visible": true,
+          "enabled": true
+        }
+      ],
+      "components": [
+        {
+          "id": "pcbcomp_3hx7t96_7vjr",
+          "refDes": "R1",
+          "value": "1 кОм",
+          "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "patternId": "PAT_CHIP_2012M",
+          "side": "Top",
+          "x": 6,
+          "y": 16,
+          "angle": 0,
+          "locked": true,
+          "showRefDes": true,
+          "showValue": false,
+          "refDesOffset": {
+            "x": 0,
+            "y": -2.875
+          },
+          "pads": [
+            {
+              "id": "pad_1",
+              "number": "1",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": -0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            },
+            {
+              "id": "pad_2",
+              "number": "2",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": 0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            }
+          ],
+          "padNets": {
+            "1": "IN",
+            "2": "N1"
+          },
+          "graphics": [
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": -0.775,
+              "x2": 0.9,
+              "y2": -0.775,
+              "width": 0.15
+            },
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": 0.775,
+              "x2": 0.9,
+              "y2": 0.775,
+              "width": 0.15
+            },
+            {
+              "type": "rect",
+              "layer": "TopAssembly",
+              "x": -1,
+              "y": -0.625,
+              "w": 2,
+              "h": 1.25,
+              "width": 0.1
+            },
+            {
+              "type": "rect",
+              "layer": "Courtyard",
+              "x": -1.7750000000000001,
+              "y": -1.375,
+              "w": 3.5500000000000003,
+              "h": 2.75,
+              "width": 0.1
+            }
+          ],
+          "courtyard": {
+            "width": 3.5500000000000003,
+            "height": 2.75
+          },
+          "model3d": {
+            "shape": "ChipSMD",
+            "bodyWidth": 1.25,
+            "bodyLength": 2,
+            "bodyHeight": 0.6,
+            "color": "#b88958",
+            "pinCount": 2,
+            "pitch": 1.9
+          }
+        },
+        {
+          "id": "pcbcomp_agvgcw4_7vjr",
+          "refDes": "R2",
+          "value": "1 кОм",
+          "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "patternId": "PAT_CHIP_2012M",
+          "side": "Top",
+          "x": 13,
+          "y": 16,
+          "angle": 0,
+          "locked": true,
+          "showRefDes": true,
+          "showValue": false,
+          "refDesOffset": {
+            "x": 0,
+            "y": -2.875
+          },
+          "pads": [
+            {
+              "id": "pad_1",
+              "number": "1",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": -0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            },
+            {
+              "id": "pad_2",
+              "number": "2",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": 0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            }
+          ],
+          "padNets": {
+            "1": "N1",
+            "2": "N2"
+          },
+          "graphics": [
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": -0.775,
+              "x2": 0.9,
+              "y2": -0.775,
+              "width": 0.15
+            },
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": 0.775,
+              "x2": 0.9,
+              "y2": 0.775,
+              "width": 0.15
+            },
+            {
+              "type": "rect",
+              "layer": "TopAssembly",
+              "x": -1,
+              "y": -0.625,
+              "w": 2,
+              "h": 1.25,
+              "width": 0.1
+            },
+            {
+              "type": "rect",
+              "layer": "Courtyard",
+              "x": -1.7750000000000001,
+              "y": -1.375,
+              "w": 3.5500000000000003,
+              "h": 2.75,
+              "width": 0.1
+            }
+          ],
+          "courtyard": {
+            "width": 3.5500000000000003,
+            "height": 2.75
+          },
+          "model3d": {
+            "shape": "ChipSMD",
+            "bodyWidth": 1.25,
+            "bodyLength": 2,
+            "bodyHeight": 0.6,
+            "color": "#b88958",
+            "pinCount": 2,
+            "pitch": 1.9
+          }
+        },
+        {
+          "id": "pcbcomp_xnlzfvp_7vjr",
+          "refDes": "R3",
+          "value": "1 кОм",
+          "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "patternId": "PAT_CHIP_2012M",
+          "side": "Top",
+          "x": 20,
+          "y": 16,
+          "angle": 0,
+          "locked": true,
+          "showRefDes": true,
+          "showValue": false,
+          "refDesOffset": {
+            "x": 0,
+            "y": -2.875
+          },
+          "pads": [
+            {
+              "id": "pad_1",
+              "number": "1",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": -0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            },
+            {
+              "id": "pad_2",
+              "number": "2",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": 0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            }
+          ],
+          "padNets": {
+            "1": "N2",
+            "2": "LINK"
+          },
+          "graphics": [
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": -0.775,
+              "x2": 0.9,
+              "y2": -0.775,
+              "width": 0.15
+            },
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": 0.775,
+              "x2": 0.9,
+              "y2": 0.775,
+              "width": 0.15
+            },
+            {
+              "type": "rect",
+              "layer": "TopAssembly",
+              "x": -1,
+              "y": -0.625,
+              "w": 2,
+              "h": 1.25,
+              "width": 0.1
+            },
+            {
+              "type": "rect",
+              "layer": "Courtyard",
+              "x": -1.7750000000000001,
+              "y": -1.375,
+              "w": 3.5500000000000003,
+              "h": 2.75,
+              "width": 0.1
+            }
+          ],
+          "courtyard": {
+            "width": 3.5500000000000003,
+            "height": 2.75
+          },
+          "model3d": {
+            "shape": "ChipSMD",
+            "bodyWidth": 1.25,
+            "bodyLength": 2,
+            "bodyHeight": 0.6,
+            "color": "#b88958",
+            "pinCount": 2,
+            "pitch": 1.9
+          }
+        },
+        {
+          "id": "pcbcomp_5lq6esm_7vjr",
+          "refDes": "R4",
+          "value": "1 кОм",
+          "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "patternId": "PAT_CHIP_2012M",
+          "side": "Top",
+          "x": 27,
+          "y": 16,
+          "angle": 0,
+          "locked": true,
+          "showRefDes": true,
+          "showValue": false,
+          "refDesOffset": {
+            "x": 0,
+            "y": -2.875
+          },
+          "pads": [
+            {
+              "id": "pad_1",
+              "number": "1",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": -0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            },
+            {
+              "id": "pad_2",
+              "number": "2",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": 0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            }
+          ],
+          "padNets": {
+            "1": "LINK",
+            "2": "N4"
+          },
+          "graphics": [
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": -0.775,
+              "x2": 0.9,
+              "y2": -0.775,
+              "width": 0.15
+            },
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": 0.775,
+              "x2": 0.9,
+              "y2": 0.775,
+              "width": 0.15
+            },
+            {
+              "type": "rect",
+              "layer": "TopAssembly",
+              "x": -1,
+              "y": -0.625,
+              "w": 2,
+              "h": 1.25,
+              "width": 0.1
+            },
+            {
+              "type": "rect",
+              "layer": "Courtyard",
+              "x": -1.7750000000000001,
+              "y": -1.375,
+              "w": 3.5500000000000003,
+              "h": 2.75,
+              "width": 0.1
+            }
+          ],
+          "courtyard": {
+            "width": 3.5500000000000003,
+            "height": 2.75
+          },
+          "model3d": {
+            "shape": "ChipSMD",
+            "bodyWidth": 1.25,
+            "bodyLength": 2,
+            "bodyHeight": 0.6,
+            "color": "#b88958",
+            "pinCount": 2,
+            "pitch": 1.9
+          }
+        },
+        {
+          "id": "pcbcomp_6ju7kqr_7vjr",
+          "refDes": "R5",
+          "value": "1 кОм",
+          "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "patternId": "PAT_CHIP_2012M",
+          "side": "Top",
+          "x": 34,
+          "y": 16,
+          "angle": 0,
+          "locked": true,
+          "showRefDes": true,
+          "showValue": false,
+          "refDesOffset": {
+            "x": 0,
+            "y": -2.875
+          },
+          "pads": [
+            {
+              "id": "pad_1",
+              "number": "1",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": -0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            },
+            {
+              "id": "pad_2",
+              "number": "2",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": 0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            }
+          ],
+          "padNets": {
+            "1": "N4",
+            "2": "N5"
+          },
+          "graphics": [
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": -0.775,
+              "x2": 0.9,
+              "y2": -0.775,
+              "width": 0.15
+            },
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": 0.775,
+              "x2": 0.9,
+              "y2": 0.775,
+              "width": 0.15
+            },
+            {
+              "type": "rect",
+              "layer": "TopAssembly",
+              "x": -1,
+              "y": -0.625,
+              "w": 2,
+              "h": 1.25,
+              "width": 0.1
+            },
+            {
+              "type": "rect",
+              "layer": "Courtyard",
+              "x": -1.7750000000000001,
+              "y": -1.375,
+              "w": 3.5500000000000003,
+              "h": 2.75,
+              "width": 0.1
+            }
+          ],
+          "courtyard": {
+            "width": 3.5500000000000003,
+            "height": 2.75
+          },
+          "model3d": {
+            "shape": "ChipSMD",
+            "bodyWidth": 1.25,
+            "bodyLength": 2,
+            "bodyHeight": 0.6,
+            "color": "#b88958",
+            "pinCount": 2,
+            "pitch": 1.9
+          }
+        },
+        {
+          "id": "pcbcomp_p517pc3_7vjr",
+          "refDes": "R6",
+          "value": "1 кОм",
+          "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "patternId": "PAT_CHIP_2012M",
+          "side": "Top",
+          "x": 41,
+          "y": 16,
+          "angle": 0,
+          "locked": true,
+          "showRefDes": true,
+          "showValue": false,
+          "refDesOffset": {
+            "x": 0,
+            "y": -2.875
+          },
+          "pads": [
+            {
+              "id": "pad_1",
+              "number": "1",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": -0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            },
+            {
+              "id": "pad_2",
+              "number": "2",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": 0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            }
+          ],
+          "padNets": {
+            "1": "N5",
+            "2": "OUT"
+          },
+          "graphics": [
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": -0.775,
+              "x2": 0.9,
+              "y2": -0.775,
+              "width": 0.15
+            },
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": 0.775,
+              "x2": 0.9,
+              "y2": 0.775,
+              "width": 0.15
+            },
+            {
+              "type": "rect",
+              "layer": "TopAssembly",
+              "x": -1,
+              "y": -0.625,
+              "w": 2,
+              "h": 1.25,
+              "width": 0.1
+            },
+            {
+              "type": "rect",
+              "layer": "Courtyard",
+              "x": -1.7750000000000001,
+              "y": -1.375,
+              "w": 3.5500000000000003,
+              "h": 2.75,
+              "width": 0.1
+            }
+          ],
+          "courtyard": {
+            "width": 3.5500000000000003,
+            "height": 2.75
+          },
+          "model3d": {
+            "shape": "ChipSMD",
+            "bodyWidth": 1.25,
+            "bodyLength": 2,
+            "bodyHeight": 0.6,
+            "color": "#b88958",
+            "pinCount": 2,
+            "pitch": 1.9
+          }
+        }
+      ],
+      "traces": [
+        {
+          "id": "trace_7vb3lb4_84og",
+          "netName": "N1",
+          "layer": "TopCopper",
+          "width": 0.25,
+          "points": [
+            {
+              "x": 6.95,
+              "y": 16
+            },
+            {
+              "x": 12.05,
+              "y": 16
+            }
+          ]
+        },
+        {
+          "id": "trace_98bdsi2_84oi",
+          "netName": "N2",
+          "layer": "TopCopper",
+          "width": 0.25,
+          "points": [
+            {
+              "x": 13.95,
+              "y": 16
+            },
+            {
+              "x": 19.05,
+              "y": 16
+            }
+          ]
+        },
+        {
+          "id": "trace_5980rbl_84oj",
+          "netName": "LINK",
+          "layer": "TopCopper",
+          "width": 0.25,
+          "points": [
+            {
+              "x": 20.95,
+              "y": 16
+            },
+            {
+              "x": 26.05,
+              "y": 16
+            }
+          ]
+        },
+        {
+          "id": "trace_tfkrsmw_84ok",
+          "netName": "N4",
+          "layer": "TopCopper",
+          "width": 0.25,
+          "points": [
+            {
+              "x": 27.95,
+              "y": 16
+            },
+            {
+              "x": 33.05,
+              "y": 16
+            }
+          ]
+        },
+        {
+          "id": "trace_05zk4to_84ol",
+          "netName": "N5",
+          "layer": "TopCopper",
+          "width": 0.25,
+          "points": [
+            {
+              "x": 34.95,
+              "y": 16
+            },
+            {
+              "x": 40.05,
+              "y": 16
+            }
+          ]
+        }
+      ],
+      "vias": [],
+      "copperPours": [],
+      "shapes": [],
+      "netClasses": [
+        {
+          "id": "nc_default",
+          "name": "Сигнальные",
+          "traceWidth": 0.25,
+          "minWidth": 0.15,
+          "maxWidth": 5,
+          "clearance": 0.2,
+          "viaOuterDiameter": 0.7,
+          "viaHoleDiameter": 0.35
+        }
+      ],
+      "netClassAssignments": {},
+      "diffPairs": [],
+      "designRules": {
+        "gostAccuracyClass": 4,
+        "clearanceTraceToTrace": 0.25,
+        "clearanceTraceToPad": 0.25,
+        "clearancePadToPad": 0.25,
+        "clearanceViaToAny": 0.25,
+        "clearanceHoleToHole": 0.2,
+        "clearanceCopperToBoard": 0.25,
+        "minTraceWidth": 0.25,
+        "defaultTraceWidth": 0.25,
+        "maxTraceWidth": 10,
+        "minViaOuter": 0.6,
+        "minViaHole": 0.3,
+        "minAnnularRing": 0.05,
+        "minSilkWidth": 0.12,
+        "silkToPadClearance": 0.12,
+        "diffPairMaxLengthMismatch": 0.15,
+        "realTimeDrc": true,
+        "checkUnroutedNets": true,
+        "checkSilkOverPads": true
+      },
+      "teardropsEnabled": false
+    }
+  },
+  "plan": "Задание 07-two-sheet-chain: схема Э3 + плата.\nДокументы: schematic + pcb.\nОбозначение: СТРЕСС.260007 Э3. Листы: \"Вход\" A4_L Form1 (R1–R3), \"Выход\" A4_L Form2a (R4–R6).\nНоминалы: R1..R6 = 1 кОм (все библиотечные резисторы 0805).\nСети: IN=[R1.1] порт Power/named; N1=[R1.2,R2.1]; N2=[R2.2,R3.1]; LINK=[R3.2,R4.1] через OffPageOut(Вход) и OffPageIn(Выход); N4=[R4.2,R5.1]; N5=[R5.2,R6.1]; OUT=[R6.2] named port.\nIN и OUT — именованные порты (PortLeft/PortRight локальны, поэтому для IN/OUT использую OffPage-подобные/локальные порты; фактически IN и OUT — именованные порты, LINK — OffPage).\nПлата: 48×32 мм, 2 слоя, clearance 0.25, контур (0,0)-(48,0)-(48,32)-(0,32) абсолютные координаты.\nКорпуса: 6 шт 0805, без прочих компонентов, зон, заливок.\nРазвести 5 связей: N1,N2,LINK,N4,N5. IN и OUT — по одному выводу (только площадки), не цепи.\nПроверки: check ERC/DRC, unrouted, геометрия; скриншоты листов и платы; compare_requirements; finalize_project.",
+  "targets": {
+    "documents": "both",
+    "designation": "СТРЕСС.260007 Э3",
+    "sheets": [
+      {
+        "name": "Вход",
+        "format": "A4_L",
+        "form": "Form1"
+      },
+      {
+        "name": "Выход",
+        "format": "A4_L",
+        "form": "Form2a"
+      }
+    ],
+    "values": {
+      "R1": "1 кОм",
+      "R2": "1 кОм",
+      "R3": "1 кОм",
+      "R4": "1 кОм",
+      "R5": "1 кОм",
+      "R6": "1 кОм"
+    },
+    "board": {
+      "width": 48,
+      "height": 32,
+      "layers": 2,
+      "clearance": 0.25
+    }
+  },
+  "checks": {
+    "erc": 0,
+    "drc": 12,
+    "outsideFrame": 0,
+    "unrouted": 0,
+    "inSync": true,
+    "requirements": [
+      {
+        "requirement": "Обозначение листа 1",
+        "expected": "СТРЕСС.260007 Э3",
+        "actual": "СТРЕСС.260007 Э3",
+        "pass": true
+      },
+      {
+        "requirement": "Номер листа 1",
+        "expected": 1,
+        "actual": 1,
+        "pass": true
+      },
+      {
+        "requirement": "Всего листов",
+        "expected": 2,
+        "actual": 2,
+        "pass": true
+      },
+      {
+        "requirement": "Обозначение листа 2",
+        "expected": "СТРЕСС.260007 Э3",
+        "actual": "СТРЕСС.260007 Э3",
+        "pass": true
+      },
+      {
+        "requirement": "Номер листа 2",
+        "expected": 2,
+        "actual": 2,
+        "pass": true
+      },
+      {
+        "requirement": "Всего листов",
+        "expected": 2,
+        "actual": 2,
+        "pass": true
+      },
+      {
+        "requirement": "Число листов",
+        "expected": 2,
+        "actual": 2,
+        "pass": true
+      },
+      {
+        "requirement": "Название листа 1",
+        "expected": "Вход",
+        "actual": "Вход",
+        "pass": true
+      },
+      {
+        "requirement": "Формат листа 1",
+        "expected": "A4_L",
+        "actual": "A4_L",
+        "pass": true
+      },
+      {
+        "requirement": "Форма листа 1",
+        "expected": "Form1",
+        "actual": "Form1",
+        "pass": true
+      },
+      {
+        "requirement": "Название листа 2",
+        "expected": "Выход",
+        "actual": "Выход",
+        "pass": true
+      },
+      {
+        "requirement": "Формат листа 2",
+        "expected": "A4_L",
+        "actual": "A4_L",
+        "pass": true
+      },
+      {
+        "requirement": "Форма листа 2",
+        "expected": "Form2a",
+        "actual": "Form2a",
+        "pass": true
+      },
+      {
+        "requirement": "Номинал R1",
+        "expected": "1 кОм",
+        "actual": "1 кОм",
+        "pass": true
+      },
+      {
+        "requirement": "Номинал R2",
+        "expected": "1 кОм",
+        "actual": "1 кОм",
+        "pass": true
+      },
+      {
+        "requirement": "Номинал R3",
+        "expected": "1 кОм",
+        "actual": "1 кОм",
+        "pass": true
+      },
+      {
+        "requirement": "Номинал R4",
+        "expected": "1 кОм",
+        "actual": "1 кОм",
+        "pass": true
+      },
+      {
+        "requirement": "Номинал R5",
+        "expected": "1 кОм",
+        "actual": "1 кОм",
+        "pass": true
+      },
+      {
+        "requirement": "Номинал R6",
+        "expected": "1 кОм",
+        "actual": "1 кОм",
+        "pass": true
+      },
+      {
+        "requirement": "Ширина платы",
+        "expected": 48,
+        "actual": 48,
+        "pass": true
+      },
+      {
+        "requirement": "Высота платы",
+        "expected": 32,
+        "actual": 32,
+        "pass": true
+      },
+      {
+        "requirement": "Слои платы",
+        "expected": 2,
+        "actual": 2,
+        "pass": true
+      },
+      {
+        "requirement": "Минимальный зазор",
+        "expected": 0.25,
+        "actual": 0.25,
+        "pass": true
+      }
+    ],
+    "revision": 31,
+    "errors": 0,
+    "warnings": 12,
+    "blockers": []
+  },
+  "report": {
+    "summary": "Создан и проверен комплект из двух документов по ТЗ 07-two-sheet-chain.\n\nДокументы (ревизия 31):\n1) Схема Э3 «СТРЕСС.260007 Э3», два листа A4_L: «Вход» (Form1, лист 1) — R1–R3; «Выход» (Form2a, лист 2) — R4–R6. Все резисторы библиотечные 0805 (Р1-12-0,125 / ЧИП 2012М), номинал 1 кОм задан в экземплярах. Сети по ТЗ: IN — именованный порт на R1.1; N1 R1.2–R2.1; N2 R2.2–R3.1; LINK R3.2–R4.1 через OffPageOut (лист 1) и OffPageIn (лист 2) с совпадающим именем; N4 R4.2–R5.1; N5 R5.2–R6.1; OUT — именованный порт на R6.2. Лишних выводов, портов и цепей нет.\n2) Плата 48×32 мм, 2 слоя, контур по абсолютным вершинам (0,0)-(48,0)-(48,32)-(0,32) — выполнена через board_outline, так как при синхронизации исходный контур строится от внутреннего начала координат. Шесть корпусов 0805 (R1–R6), назначения площадок сохранены полностью (IN, N1, N2, LINK, N4, N5, OUT), сторон и координаты выбраны в пределах контура, все позиции закреплены (locked). Правила: зазор 0.25 мм, ширина дорожки 0.25 мм.\nРазводка: пять связей N1, N2, LINK, N4, N5 проложены на TopCopper без переходных отверстий, без пересечений и наложений; IN и OUT — одиночные площадки без дорожек (по одному контакту). Заливки, зоны запрета и вырезы по ТЗ не добавлялись.\n\nПроверка последней ревизии (check + finalize_project, ревизия 31):\n- ERC: 0 ошибок (связность LINK между листами подтверждена составом сети LINK = R3.2, R4.1).\n- DRC: 0 ошибок; 12 предупреждений DRC-SILK-PAD (по два на каждый корпус) — шелкография библиотечного корпуса 0805 перекрывает КП R1.1/R1.2 … R6.1/R6.2 с зазором 0.03 мм < 0.12 мм. Это свойство самого библиотечного шаблона (рамка шелкографии вплотную к площадкам), корпуса не изменялись; предупреждения приняты с этим пояснением.\n- Неразведённых связей: 0. Незалитых полигонов: 0. Замечаний по геометрии: 0. labelIssues: 0.\n- Синхронизация схема↔плата: comparison.inSync = true, расхождений по сетям нет.\n- Сверка требований: все 23 пункта pass (обозначение и номера листов, названия/форматы/формы листов, номиналы R1–R6, ширина 48, высота 32, 2 слоя, зазор 0.25).\n- Просмотрены снимки обоих листов и платы: рамки и основные надписи на месте, подписи R1…R6 и номиналы читаемы и не наложены, порты IN/LINK и LINK/OUT читаемы, межлистовой переход оформлен парой OffPageOut/OffPageIn, на плате видны все шесть корпусов и пять дорожек без обрывов.",
+    "limitations": "1) Шелкография библиотечных корпусов 0805 перекрывает собственные контактные площадки — 12 предупреждений DRC-SILK-PAD (R1…R6, по два на корпус). Устранение требует правки библиотечного шаблона корпуса; по ТЗ разрешено с пояснением и не влияет на электрику.\n2) Исходный контур платы после create_board(fromSchematic:true) строился от внутреннего начала координат (10,10)-(58,42), поэтому контур приведён к абсолютным вершинам ТЗ отдельной командой board_outline; вершины соответствуют ТЗ, но смещение начала координат платы в файле не нулевое.\n3) В угловом штампе рамки (верхняя левая надпись обозначения) текст обозначения отрисовывается повёрнутым на 180° на обоих листах — это особенность шаблона рамки, а не содержимого: обозначение и надписи основной надписи выполнены верно. Собственных средств поворота углового штампа в инструментарии нет, поэтому оставлено как есть и зафиксировано здесь.\n4) Проверки редактора, ERC/DRC и снимки не подтверждают работоспособность схемы и не являютсяcertification/готовностью к производству; моделирование цепей не выполнялось (в ТЗ не требовалось).",
+    "status": "complete"
+  }
+}

@@ -270,7 +270,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
 
         <div className="dt-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 8, overflow: 'hidden', flex: 1 }}>
           {/* Top Action Bar */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, paddingBottom: 6, borderBottom: '1px solid #9A9A9A' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, paddingBottom: 6, borderBottom: '1px solid var(--ui-border)' }}>
             <button
               className="dt-btn dt-btn-primary"
               data-testid="cadlib-import-btn"
@@ -308,8 +308,8 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
           {/* Main 3-column layout */}
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(135px, 1fr) minmax(220px, 1.75fr) minmax(150px, 1.1fr)', gap: 10, minHeight: 0, flex: '1 1 390px', overflow: 'auto' }}>
             {/* Left: Library Bundles */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, border: '1px solid #A0A0A0', background: '#FFFFFF', overflowY: 'auto', padding: 4 }}>
-              <div style={{ fontWeight: 'bold', fontSize: 11, padding: '2px 4px', borderBottom: '1px solid #D0D0D0' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, border: '1px solid var(--ui-border)', background: 'var(--ui-surface)', overflowY: 'auto', padding: 4 }}>
+              <div style={{ fontWeight: 'bold', fontSize: 11, padding: '2px 4px', borderBottom: '1px solid var(--ui-border)' }}>
                 Библиотеки ({bundles.length})
               </div>
               <button
@@ -330,8 +330,8 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                     onClick={() => setSelectedBundleId(b.id)}
                     style={{
                       padding: '5px 6px',
-                      border: isActive ? '1px solid #2A5CA8' : '1px solid #D8D8D8',
-                      background: isActive ? '#E6EFFA' : '#FAFAFA',
+                      border: isActive ? '1px solid var(--ui-accent)' : '1px solid var(--ui-border)',
+                      background: isActive ? 'var(--ui-selected)' : 'var(--ui-subtle)',
                       cursor: 'pointer',
                       fontSize: 11,
                       display: 'flex',
@@ -343,11 +343,11 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                       <button className="dt-btn" aria-pressed={isActive} style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} onClick={() => setSelectedBundleId(b.id)} title={b.name}>
                         {b.name}
                       </button>
-                      <span style={{ fontSize: 10, background: b.gostAdapted ? '#DCF0DC' : '#ECECEC', padding: '0 4px', borderRadius: 2 }}>
+                      <span style={{ fontSize: 10, background: 'var(--ui-accent-soft)', padding: '0 4px', borderRadius: 2 }}>
                         {b.gostAdapted ? 'ГОСТ' : 'CAD'}
                       </span>
                     </div>
-                    <div style={{ color: '#555', fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={b.sourceFormat}>
+                    <div style={{ color: 'var(--ui-muted)', fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={b.sourceFormat}>
                       {b.sourceFormat}
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10 }}>
@@ -378,7 +378,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
               })}
 
               {bundles.length === 0 && (
-                <div style={{ fontSize: 11, color: '#666', padding: 8, textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: 'var(--ui-muted)', padding: 8, textAlign: 'center' }}>
                   Внешних библиотек пока нет. Нажмите «+ Импортировать библиотеку CAD...».
                 </div>
               )}
@@ -413,15 +413,15 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                 </button>
               </div>
 
-              <div style={{ flex: 1, overflowY: 'auto', border: '1px solid #A0A0A0', background: '#FFFFFF' }}>
+              <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--ui-border)', background: 'var(--ui-surface)' }}>
                 {activeTab === 'components' ? (
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                     <thead>
-                      <tr style={{ background: '#ECECEC', position: 'sticky', top: 0, textAlign: 'left' }}>
-                        <th style={{ padding: '4px 6px', borderBottom: '1px solid #C0C0C0' }}>Компонент</th>
-                        <th style={{ padding: '4px 6px', borderBottom: '1px solid #C0C0C0' }}>Обозн.</th>
-                        <th style={{ padding: '4px 6px', borderBottom: '1px solid #C0C0C0' }}>Корпус</th>
-                        <th style={{ padding: '4px 6px', borderBottom: '1px solid #C0C0C0' }}>Библиотека</th>
+                      <tr style={{ background: 'var(--ui-subtle)', position: 'sticky', top: 0, textAlign: 'left' }}>
+                        <th style={{ padding: '4px 6px', borderBottom: '1px solid var(--ui-border)' }}>Компонент</th>
+                        <th style={{ padding: '4px 6px', borderBottom: '1px solid var(--ui-border)' }}>Обозн.</th>
+                        <th style={{ padding: '4px 6px', borderBottom: '1px solid var(--ui-border)' }}>Корпус</th>
+                        <th style={{ padding: '4px 6px', borderBottom: '1px solid var(--ui-border)' }}>Библиотека</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -434,18 +434,18 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                             onDoubleClick={() => openComponent(c)}
                             style={{ background: sel ? '#316AC5' : undefined, color: sel ? '#FFFFFF' : undefined, cursor: 'pointer' }}
                           >
-                            <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>
+                            <td style={{ padding: '3px 6px', borderBottom: '1px solid var(--ui-border)' }}>
                               <button type="button" className="cad-library-item" aria-pressed={sel} onClick={() => setSelectedCompId(c.id)}>{c.name}</button>
                             </td>
-                            <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>{c.refDesPrefix}</td>
-                            <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>{c.patternId || '—'}</td>
-                            <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>{c.library}</td>
+                            <td style={{ padding: '3px 6px', borderBottom: '1px solid var(--ui-border)' }}>{c.refDesPrefix}</td>
+                            <td style={{ padding: '3px 6px', borderBottom: '1px solid var(--ui-border)' }}>{c.patternId || '—'}</td>
+                            <td style={{ padding: '3px 6px', borderBottom: '1px solid var(--ui-border)' }}>{c.library}</td>
                           </tr>
                         );
                       })}
                       {filteredComponents.length === 0 && (
                         <tr>
-                          <td colSpan={4} style={{ padding: 14, textAlign: 'center', color: '#777' }}>
+                          <td colSpan={4} style={{ padding: 14, textAlign: 'center', color: 'var(--ui-muted)' }}>
                             Нет компонентов по выбранному фильтру.
                           </td>
                         </tr>
@@ -455,11 +455,11 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                 ) : (
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                     <thead>
-                      <tr style={{ background: '#ECECEC', position: 'sticky', top: 0, textAlign: 'left' }}>
-                        <th style={{ padding: '4px 6px', borderBottom: '1px solid #C0C0C0' }}>Корпус</th>
-                        <th style={{ padding: '4px 6px', borderBottom: '1px solid #C0C0C0' }}>Контактных площадок</th>
-                        <th style={{ padding: '4px 6px', borderBottom: '1px solid #C0C0C0' }}>ГОСТ / Тип</th>
-                        <th style={{ padding: '4px 6px', borderBottom: '1px solid #C0C0C0' }}>Библиотека</th>
+                      <tr style={{ background: 'var(--ui-subtle)', position: 'sticky', top: 0, textAlign: 'left' }}>
+                        <th style={{ padding: '4px 6px', borderBottom: '1px solid var(--ui-border)' }}>Корпус</th>
+                        <th style={{ padding: '4px 6px', borderBottom: '1px solid var(--ui-border)' }}>Контактных площадок</th>
+                        <th style={{ padding: '4px 6px', borderBottom: '1px solid var(--ui-border)' }}>ГОСТ / Тип</th>
+                        <th style={{ padding: '4px 6px', borderBottom: '1px solid var(--ui-border)' }}>Библиотека</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -472,18 +472,18 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                             onDoubleClick={() => openPattern(p)}
                             style={{ background: sel ? '#316AC5' : undefined, color: sel ? '#FFFFFF' : undefined, cursor: 'pointer' }}
                           >
-                            <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>
+                            <td style={{ padding: '3px 6px', borderBottom: '1px solid var(--ui-border)' }}>
                               <button type="button" className="cad-library-item" aria-pressed={sel} onClick={() => setSelectedPatId(p.id)}>{p.name}</button>
                             </td>
-                            <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>{p.pads.length}</td>
-                            <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>{p.gostName || 'CAD'}</td>
-                            <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>{p.library}</td>
+                            <td style={{ padding: '3px 6px', borderBottom: '1px solid var(--ui-border)' }}>{p.pads.length}</td>
+                            <td style={{ padding: '3px 6px', borderBottom: '1px solid var(--ui-border)' }}>{p.gostName || 'CAD'}</td>
+                            <td style={{ padding: '3px 6px', borderBottom: '1px solid var(--ui-border)' }}>{p.library}</td>
                           </tr>
                         );
                       })}
                       {filteredPatterns.length === 0 && (
                         <tr>
-                          <td colSpan={4} style={{ padding: 14, textAlign: 'center', color: '#777' }}>
+                          <td colSpan={4} style={{ padding: 14, textAlign: 'center', color: 'var(--ui-muted)' }}>
                             Нет корпусов по выбранному фильтру.
                           </td>
                         </tr>
@@ -495,7 +495,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
             </div>
 
             {/* Right: Dual Live Preview */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, border: '1px solid #A0A0A0', background: '#F4F4F4', padding: 6, overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, border: '1px solid var(--ui-border)', background: 'var(--ui-subtle)', padding: 6, overflowY: 'auto' }}>
               {activeTab === 'components' && (
                 <>
                   <div style={{ fontWeight: 'bold', fontSize: 11 }}>Предпросмотр УГО</div>
@@ -508,7 +508,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
               <PatternPreviewCanvas pattern={resolvedLinkedPattern} />
 
               {activeTab === 'components' && selectedComp && (
-                <div style={{ fontSize: 11, lineHeight: 1.4, background: '#FFF', border: '1px solid #CCC', padding: 6 }}>
+                <div style={{ fontSize: 11, lineHeight: 1.4, background: 'var(--ui-surface)', border: '1px solid var(--ui-border)', padding: 6 }}>
                   <div><b>Имя:</b> {selectedComp.name}</div>
                   <div><b>Позиционное обозначение:</b> {selectedComp.refDesPrefix} {selectedComp.defaultValue ? `(${selectedComp.defaultValue})` : ''}</div>
                   <div><b>Секций:</b> {selectedComp.parts.length}</div>
@@ -519,7 +519,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
               )}
 
               {activeTab === 'patterns' && resolvedLinkedPattern && (
-                <div style={{ fontSize: 11, lineHeight: 1.4, background: '#FFF', border: '1px solid #CCC', padding: 6 }}>
+                <div style={{ fontSize: 11, lineHeight: 1.4, background: 'var(--ui-surface)', border: '1px solid var(--ui-border)', padding: 6 }}>
                   <div><b>Корпус:</b> {resolvedLinkedPattern.name}</div>
                   <div><b>Площадок:</b> {resolvedLinkedPattern.pads.length}</div>
                   <div><b>3D-модель:</b> {resolvedLinkedPattern.model3d?.shape ?? 'Box'}</div>
@@ -547,14 +547,14 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
           </div>
 
           {warnings.length > 0 && (
-            <div style={{ maxHeight: 54, overflowY: 'auto', fontSize: 11, background: '#FFF8E1', border: '1px solid #E0C070', padding: '4px 6px' }}>
+            <div style={{ maxHeight: 54, overflowY: 'auto', fontSize: 11, background: 'var(--ui-warning-bg)', border: '1px solid var(--ui-warning-border)', padding: '4px 6px' }}>
               <b>Замечания импорта:</b> {warnings.join(' | ')}
             </div>
           )}
 
           {/* Footer */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #9A9A9A', paddingTop: 6 }}>
-            <span style={{ fontSize: 11, color: '#333' }} data-testid="cadlib-status" role="status">{statusMsg}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--ui-border)', paddingTop: 6 }}>
+            <span style={{ fontSize: 11, color: 'var(--ui-muted)' }} data-testid="cadlib-status" role="status">{statusMsg}</span>
             <button className="dt-btn" onClick={onClose}>Закрыть</button>
           </div>
         </div>

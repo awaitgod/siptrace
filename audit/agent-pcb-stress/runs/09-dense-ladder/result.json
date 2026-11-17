@@ -1,0 +1,2611 @@
+{
+  "id": "09-dense-ladder",
+  "model": "deepseek-v4.1-flash-1017",
+  "status": "complete",
+  "durationMs": 134376,
+  "checkCount": 2,
+  "actual": {
+    "plan": "Задание 09-dense-ladder: только самостоятельная плата (схема НЕ создаётся).\nТребования ТЗ:\n- Плата 34×24 мм, 2 слоя, зазор 0,25 мм; контур (0,0)-(34,0)-(34,24)-(0,24) в абсолютных координатах.\n- 12 библиотечных резисторов 0805: COMP_R_R1_12_0805 (УГО/корпус PAT_CHIP_2012M), площадки 1=-0,95 мм, 2=+0,95 мм, 1,05×1,35 мм, SMD Top.\n- Позиции с допуском 0,1 мм, сторона Top, угол 0, закрепить (locked):\n R1(6,5) R2(13,5) R3(20,5) R4(27,5); R5(6,12) R6(13,12) R7(20,12) R8(27,12); R9(6,19) R10(13,19) R11(20,19) R12(27,19).\n- Цепи (исчерпывающе): ROW1=R1.1,R2.1,R3.1,R4.1; ROW2=R5.1,R6.1,R7.1,R8.1; ROW3=R9.1,R10.1,R11.1,R12.1; COL1=R1.2,R5.2,R9.2; COL2=R2.2,R6.2,R10.2; COL3=R3.2,R7.2,R11.2; COL4=R4.2,R8.2,R12.2.\n- Других корпусов, цепей, зон, заливок не добавлять. Сквозные переходы вне площадок разрешены.\nПринятое решение по топологии (соблюдает зазор 0,25):\n- Столбцы COL1..COL4 — прямые вертикальные дорожки Top по x=6,95/13,95/20,95/27,95 (через центры площадок 2), y=5..19, без переходов.\n- Строки ROW1..ROW3 — Top-вывод от площадки 1 (x=5,05+7·k, y) вниз на 2,0 мм к переходному отверстию Ø0,6/0,3 вне площадки, затем горизонтальная дорожка Bottom по y=3/10/17, затем такие же переходы у остальных площадок строки. Ширина дорожек 0,3 мм.\nПроверки: check после первой группы трасс, затем DRC/ERC/неразведённые, сверка площадок с ТЗ, PNG платы.\nИсточники: библиотечная запись COMP_R_R1_12_0805 (АО «НПО Эркон», АЛЯР.434110.005 ТУ) и PAT_CHIP_2012M; номиналы не заданы ТЗ — используется библиотечное значение 10к, без изменения перечня.",
+    "targets": {
+      "documents": "pcb",
+      "designation": "09-dense-ladder",
+      "board": {
+        "width": 34,
+        "height": 24,
+        "layers": 2,
+        "clearance": 0.25,
+        "positions": [
+          {
+            "ref": "R1",
+            "x": 6,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R2",
+            "x": 13,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R3",
+            "x": 20,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R4",
+            "x": 27,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R5",
+            "x": 6,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R6",
+            "x": 13,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R7",
+            "x": 20,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R8",
+            "x": 27,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R9",
+            "x": 6,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R10",
+            "x": 13,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R11",
+            "x": 20,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R12",
+            "x": 27,
+            "y": 19,
+            "tolerance": 0.1
+          }
+        ]
+      }
+    },
+    "revision": 62,
+    "currentChecks": {
+      "erc": 0,
+      "drc": 24,
+      "outsideFrame": 0,
+      "unrouted": 0,
+      "requirements": [
+        {
+          "requirement": "Ширина платы",
+          "expected": 34,
+          "actual": 34,
+          "pass": true
+        },
+        {
+          "requirement": "Высота платы",
+          "expected": 24,
+          "actual": 24,
+          "pass": true
+        },
+        {
+          "requirement": "Слои платы",
+          "expected": 2,
+          "actual": 2,
+          "pass": true
+        },
+        {
+          "requirement": "Минимальный зазор",
+          "expected": 0.25,
+          "actual": 0.25,
+          "pass": true
+        },
+        {
+          "requirement": "Положение R1",
+          "expected": {
+            "x": 6,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 6,
+            "y": 5
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R2",
+          "expected": {
+            "x": 13,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 13,
+            "y": 5
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R3",
+          "expected": {
+            "x": 20,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 20,
+            "y": 5
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R4",
+          "expected": {
+            "x": 27,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 27,
+            "y": 5
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R5",
+          "expected": {
+            "x": 6,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 6,
+            "y": 12
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R6",
+          "expected": {
+            "x": 13,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 13,
+            "y": 12
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R7",
+          "expected": {
+            "x": 20,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 20,
+            "y": 12
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R8",
+          "expected": {
+            "x": 27,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 27,
+            "y": 12
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R9",
+          "expected": {
+            "x": 6,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 6,
+            "y": 19
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R10",
+          "expected": {
+            "x": 13,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 13,
+            "y": 19
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R11",
+          "expected": {
+            "x": 20,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 20,
+            "y": 19
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R12",
+          "expected": {
+            "x": 27,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 27,
+            "y": 19
+          },
+          "pass": true
+        }
+      ],
+      "revision": 62,
+      "errors": 0,
+      "warnings": 24,
+      "blockers": []
+    },
+    "canRestoreVerified": true,
+    "pcb": {
+      "outline": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 34,
+          "y": 0
+        },
+        {
+          "x": 34,
+          "y": 24
+        },
+        {
+          "x": 0,
+          "y": 24
+        }
+      ],
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "pads": [
+        {
+          "ref": "R1",
+          "number": "1",
+          "x": 5.05,
+          "y": 5,
+          "layer": "TopCopper",
+          "net": "ROW1",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R1",
+          "number": "2",
+          "x": 6.95,
+          "y": 5,
+          "layer": "TopCopper",
+          "net": "COL1",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R2",
+          "number": "1",
+          "x": 12.05,
+          "y": 5,
+          "layer": "TopCopper",
+          "net": "ROW1",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R2",
+          "number": "2",
+          "x": 13.95,
+          "y": 5,
+          "layer": "TopCopper",
+          "net": "COL2",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R3",
+          "number": "1",
+          "x": 19.05,
+          "y": 5,
+          "layer": "TopCopper",
+          "net": "ROW1",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R3",
+          "number": "2",
+          "x": 20.95,
+          "y": 5,
+          "layer": "TopCopper",
+          "net": "COL3",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R4",
+          "number": "1",
+          "x": 26.05,
+          "y": 5,
+          "layer": "TopCopper",
+          "net": "ROW1",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R4",
+          "number": "2",
+          "x": 27.95,
+          "y": 5,
+          "layer": "TopCopper",
+          "net": "COL4",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R5",
+          "number": "1",
+          "x": 5.05,
+          "y": 12,
+          "layer": "TopCopper",
+          "net": "ROW2",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R5",
+          "number": "2",
+          "x": 6.95,
+          "y": 12,
+          "layer": "TopCopper",
+          "net": "COL1",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R6",
+          "number": "1",
+          "x": 12.05,
+          "y": 12,
+          "layer": "TopCopper",
+          "net": "ROW2",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R6",
+          "number": "2",
+          "x": 13.95,
+          "y": 12,
+          "layer": "TopCopper",
+          "net": "COL2",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R7",
+          "number": "1",
+          "x": 19.05,
+          "y": 12,
+          "layer": "TopCopper",
+          "net": "ROW2",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R7",
+          "number": "2",
+          "x": 20.95,
+          "y": 12,
+          "layer": "TopCopper",
+          "net": "COL3",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R8",
+          "number": "1",
+          "x": 26.05,
+          "y": 12,
+          "layer": "TopCopper",
+          "net": "ROW2",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R8",
+          "number": "2",
+          "x": 27.95,
+          "y": 12,
+          "layer": "TopCopper",
+          "net": "COL4",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R9",
+          "number": "1",
+          "x": 5.05,
+          "y": 19,
+          "layer": "TopCopper",
+          "net": "ROW3",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R9",
+          "number": "2",
+          "x": 6.95,
+          "y": 19,
+          "layer": "TopCopper",
+          "net": "COL1",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R10",
+          "number": "1",
+          "x": 12.05,
+          "y": 19,
+          "layer": "TopCopper",
+          "net": "ROW3",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R10",
+          "number": "2",
+          "x": 13.95,
+          "y": 19,
+          "layer": "TopCopper",
+          "net": "COL2",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R11",
+          "number": "1",
+          "x": 19.05,
+          "y": 19,
+          "layer": "TopCopper",
+          "net": "ROW3",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R11",
+          "number": "2",
+          "x": 20.95,
+          "y": 19,
+          "layer": "TopCopper",
+          "net": "COL3",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R12",
+          "number": "1",
+          "x": 26.05,
+          "y": 19,
+          "layer": "TopCopper",
+          "net": "ROW3",
+          "width": 1.05,
+          "height": 1.35
+        },
+        {
+          "ref": "R12",
+          "number": "2",
+          "x": 27.95,
+          "y": 19,
+          "layer": "TopCopper",
+          "net": "COL4",
+          "width": 1.05,
+          "height": 1.35
+        }
+      ],
+      "rules": {
+        "gostAccuracyClass": 4,
+        "clearanceTraceToTrace": 0.25,
+        "clearanceTraceToPad": 0.25,
+        "clearancePadToPad": 0.25,
+        "clearanceViaToAny": 0.25,
+        "clearanceHoleToHole": 0.2,
+        "clearanceCopperToBoard": 0.25,
+        "minTraceWidth": 0.3,
+        "defaultTraceWidth": 0.3,
+        "maxTraceWidth": 10,
+        "minViaOuter": 0.6,
+        "minViaHole": 0.3,
+        "minAnnularRing": 0.05,
+        "minSilkWidth": 0.12,
+        "silkToPadClearance": 0.12,
+        "diffPairMaxLengthMismatch": 0.15,
+        "realTimeDrc": true,
+        "checkUnroutedNets": true,
+        "checkSilkOverPads": true
+      },
+      "layers": [
+        {
+          "id": "TopCopper",
+          "name": "Верхний (Top)",
+          "kind": "Signal",
+          "routingDirection": "Horizontal",
+          "color": "#FF3030",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "BottomCopper",
+          "name": "Нижний (Bottom)",
+          "kind": "Signal",
+          "routingDirection": "Vertical",
+          "color": "#3078FF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "TopSilk",
+          "name": "Шелкография Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#FFFFFF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "BottomSilk",
+          "name": "Шелкография Низ",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#AA88FF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "TopMask",
+          "name": "Маска Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#9933AA",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "BottomMask",
+          "name": "Маска Низ",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#662288",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "TopPaste",
+          "name": "Паста Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#999999",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "BottomPaste",
+          "name": "Паста Низ",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#777777",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "TopAssembly",
+          "name": "Сборочный Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#FFCC00",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "Courtyard",
+          "name": "Контур установки (Courtyard)",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#808080",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "BoardOutline",
+          "name": "Контур платы",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#CC44FF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "Keepout",
+          "name": "Запрет (Keepout)",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#FF0088",
+          "visible": true,
+          "enabled": true
+        }
+      ],
+      "components": [
+        {
+          "id": "pcbcomp_nq9ken2_7djt",
+          "refDes": "R1",
+          "value": "ЧИП_2012М (0805)",
+          "x": 6,
+          "y": 5,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "ROW1",
+            "2": "COL1"
+          }
+        },
+        {
+          "id": "pcbcomp_giy7c0v_7djt",
+          "refDes": "R2",
+          "value": "ЧИП_2012М (0805)",
+          "x": 13,
+          "y": 5,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "ROW1",
+            "2": "COL2"
+          }
+        },
+        {
+          "id": "pcbcomp_vpuonqx_7djt",
+          "refDes": "R3",
+          "value": "ЧИП_2012М (0805)",
+          "x": 20,
+          "y": 5,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "ROW1",
+            "2": "COL3"
+          }
+        },
+        {
+          "id": "pcbcomp_120b7z1_7dju",
+          "refDes": "R4",
+          "value": "ЧИП_2012М (0805)",
+          "x": 27,
+          "y": 5,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "ROW1",
+            "2": "COL4"
+          }
+        },
+        {
+          "id": "pcbcomp_6j3v0lg_7dju",
+          "refDes": "R5",
+          "value": "ЧИП_2012М (0805)",
+          "x": 6,
+          "y": 12,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "ROW2",
+            "2": "COL1"
+          }
+        },
+        {
+          "id": "pcbcomp_h4e1yzx_7dju",
+          "refDes": "R6",
+          "value": "ЧИП_2012М (0805)",
+          "x": 13,
+          "y": 12,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "ROW2",
+            "2": "COL2"
+          }
+        },
+        {
+          "id": "pcbcomp_kuheyap_7djv",
+          "refDes": "R7",
+          "value": "ЧИП_2012М (0805)",
+          "x": 20,
+          "y": 12,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "ROW2",
+            "2": "COL3"
+          }
+        },
+        {
+          "id": "pcbcomp_xrx8wkm_7djv",
+          "refDes": "R8",
+          "value": "ЧИП_2012М (0805)",
+          "x": 27,
+          "y": 12,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "ROW2",
+            "2": "COL4"
+          }
+        },
+        {
+          "id": "pcbcomp_m0dxcda_7djv",
+          "refDes": "R9",
+          "value": "ЧИП_2012М (0805)",
+          "x": 6,
+          "y": 19,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "ROW3",
+            "2": "COL1"
+          }
+        },
+        {
+          "id": "pcbcomp_xcopjbk_7djw",
+          "refDes": "R10",
+          "value": "ЧИП_2012М (0805)",
+          "x": 13,
+          "y": 19,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "ROW3",
+            "2": "COL2"
+          }
+        },
+        {
+          "id": "pcbcomp_rjrgiji_7djw",
+          "refDes": "R11",
+          "value": "ЧИП_2012М (0805)",
+          "x": 20,
+          "y": 19,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "ROW3",
+            "2": "COL3"
+          }
+        },
+        {
+          "id": "pcbcomp_id4gp5l_7djw",
+          "refDes": "R12",
+          "value": "ЧИП_2012М (0805)",
+          "x": 27,
+          "y": 19,
+          "angle": 0,
+          "side": "Top",
+          "locked": true,
+          "patternId": "PAT_CHIP_2012M",
+          "padNets": {
+            "1": "ROW3",
+            "2": "COL4"
+          }
+        }
+      ],
+      "traces": [
+        {
+          "id": "trace_o0c70pf_8295",
+          "netName": "COL1",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 6.95,
+              "y": 5
+            },
+            {
+              "x": 6.95,
+              "y": 12
+            }
+          ]
+        },
+        {
+          "id": "trace_wz8bozh_8299",
+          "netName": "COL1",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 6.95,
+              "y": 12
+            },
+            {
+              "x": 6.95,
+              "y": 19
+            }
+          ]
+        },
+        {
+          "id": "trace_7bzz9tq_829c",
+          "netName": "COL2",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 13.95,
+              "y": 5
+            },
+            {
+              "x": 13.95,
+              "y": 12
+            }
+          ]
+        },
+        {
+          "id": "trace_eay5j42_829f",
+          "netName": "COL2",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 13.95,
+              "y": 12
+            },
+            {
+              "x": 13.95,
+              "y": 19
+            }
+          ]
+        },
+        {
+          "id": "trace_kxkks70_829i",
+          "netName": "COL3",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 20.95,
+              "y": 5
+            },
+            {
+              "x": 20.95,
+              "y": 12
+            }
+          ]
+        },
+        {
+          "id": "trace_0g5np4z_829l",
+          "netName": "COL3",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 20.95,
+              "y": 12
+            },
+            {
+              "x": 20.95,
+              "y": 19
+            }
+          ]
+        },
+        {
+          "id": "trace_53hnc00_829n",
+          "netName": "COL4",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 27.95,
+              "y": 5
+            },
+            {
+              "x": 27.95,
+              "y": 12
+            }
+          ]
+        },
+        {
+          "id": "trace_q351pr6_829q",
+          "netName": "COL4",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 27.95,
+              "y": 12
+            },
+            {
+              "x": 27.95,
+              "y": 19
+            }
+          ]
+        },
+        {
+          "id": "trace_u0yp09u_8fhw",
+          "netName": "ROW1",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 5.05,
+              "y": 5
+            },
+            {
+              "x": 5.05,
+              "y": 3
+            }
+          ]
+        },
+        {
+          "id": "trace_72dqkjp_8fi5",
+          "netName": "ROW1",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 12.05,
+              "y": 5
+            },
+            {
+              "x": 12.05,
+              "y": 3
+            }
+          ]
+        },
+        {
+          "id": "trace_2qryuyu_8fi8",
+          "netName": "ROW1",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 19.05,
+              "y": 5
+            },
+            {
+              "x": 19.05,
+              "y": 3
+            }
+          ]
+        },
+        {
+          "id": "trace_jsyzq9b_8fib",
+          "netName": "ROW1",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 26.05,
+              "y": 5
+            },
+            {
+              "x": 26.05,
+              "y": 3
+            }
+          ]
+        },
+        {
+          "id": "trace_utkp4at_8fie",
+          "netName": "ROW2",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 5.05,
+              "y": 12
+            },
+            {
+              "x": 5.05,
+              "y": 10
+            }
+          ]
+        },
+        {
+          "id": "trace_jcflype_8fih",
+          "netName": "ROW2",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 12.05,
+              "y": 12
+            },
+            {
+              "x": 12.05,
+              "y": 10
+            }
+          ]
+        },
+        {
+          "id": "trace_jiggnpr_8fik",
+          "netName": "ROW2",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 19.05,
+              "y": 12
+            },
+            {
+              "x": 19.05,
+              "y": 10
+            }
+          ]
+        },
+        {
+          "id": "trace_8b7982g_8fin",
+          "netName": "ROW2",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 26.05,
+              "y": 12
+            },
+            {
+              "x": 26.05,
+              "y": 10
+            }
+          ]
+        },
+        {
+          "id": "trace_yrx9rtv_8fir",
+          "netName": "ROW3",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 5.05,
+              "y": 19
+            },
+            {
+              "x": 5.05,
+              "y": 17
+            }
+          ]
+        },
+        {
+          "id": "trace_4dpmx60_8fiv",
+          "netName": "ROW3",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 12.05,
+              "y": 19
+            },
+            {
+              "x": 12.05,
+              "y": 17
+            }
+          ]
+        },
+        {
+          "id": "trace_5l3jt0c_8fiy",
+          "netName": "ROW3",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 19.05,
+              "y": 19
+            },
+            {
+              "x": 19.05,
+              "y": 17
+            }
+          ]
+        },
+        {
+          "id": "trace_pom1fz7_8fj1",
+          "netName": "ROW3",
+          "layer": "TopCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 26.05,
+              "y": 19
+            },
+            {
+              "x": 26.05,
+              "y": 17
+            }
+          ]
+        },
+        {
+          "id": "trace_q7n971n_8hg7",
+          "netName": "ROW1",
+          "layer": "BottomCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 5.05,
+              "y": 3
+            },
+            {
+              "x": 12.05,
+              "y": 3
+            },
+            {
+              "x": 19.05,
+              "y": 3
+            },
+            {
+              "x": 26.05,
+              "y": 3
+            }
+          ]
+        },
+        {
+          "id": "trace_fyji0gm_8hgb",
+          "netName": "ROW2",
+          "layer": "BottomCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 5.05,
+              "y": 10
+            },
+            {
+              "x": 12.05,
+              "y": 10
+            },
+            {
+              "x": 19.05,
+              "y": 10
+            },
+            {
+              "x": 26.05,
+              "y": 10
+            }
+          ]
+        },
+        {
+          "id": "trace_ob0ra3p_8hge",
+          "netName": "ROW3",
+          "layer": "BottomCopper",
+          "width": 0.3,
+          "points": [
+            {
+              "x": 5.05,
+              "y": 17
+            },
+            {
+              "x": 12.05,
+              "y": 17
+            },
+            {
+              "x": 19.05,
+              "y": 17
+            },
+            {
+              "x": 26.05,
+              "y": 17
+            }
+          ]
+        }
+      ],
+      "vias": [
+        {
+          "id": "via_1o6b7pi_881l",
+          "x": 5.05,
+          "y": 3,
+          "netName": "ROW1",
+          "outerDiameter": 0.6,
+          "holeDiameter": 0.3,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_7ogwgje_881l",
+          "x": 12.05,
+          "y": 3,
+          "netName": "ROW1",
+          "outerDiameter": 0.6,
+          "holeDiameter": 0.3,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_else88u_881m",
+          "x": 19.05,
+          "y": 3,
+          "netName": "ROW1",
+          "outerDiameter": 0.6,
+          "holeDiameter": 0.3,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_bn347yf_881m",
+          "x": 26.05,
+          "y": 3,
+          "netName": "ROW1",
+          "outerDiameter": 0.6,
+          "holeDiameter": 0.3,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_re8822w_8b12",
+          "x": 5.05,
+          "y": 10,
+          "netName": "ROW2",
+          "outerDiameter": 0.6,
+          "holeDiameter": 0.3,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_c9hxxkf_8b13",
+          "x": 12.05,
+          "y": 10,
+          "netName": "ROW2",
+          "outerDiameter": 0.6,
+          "holeDiameter": 0.3,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_ummfh2v_8b13",
+          "x": 19.05,
+          "y": 10,
+          "netName": "ROW2",
+          "outerDiameter": 0.6,
+          "holeDiameter": 0.3,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_o2kf2qe_8b14",
+          "x": 26.05,
+          "y": 10,
+          "netName": "ROW2",
+          "outerDiameter": 0.6,
+          "holeDiameter": 0.3,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_638v4w9_8b15",
+          "x": 5.05,
+          "y": 17,
+          "netName": "ROW3",
+          "outerDiameter": 0.6,
+          "holeDiameter": 0.3,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_l2j9sy6_8b15",
+          "x": 12.05,
+          "y": 17,
+          "netName": "ROW3",
+          "outerDiameter": 0.6,
+          "holeDiameter": 0.3,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_7eo6nlv_8b16",
+          "x": 19.05,
+          "y": 17,
+          "netName": "ROW3",
+          "outerDiameter": 0.6,
+          "holeDiameter": 0.3,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_rpwforx_8b16",
+          "x": 26.05,
+          "y": 17,
+          "netName": "ROW3",
+          "outerDiameter": 0.6,
+          "holeDiameter": 0.3,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        }
+      ],
+      "cutouts": [],
+      "keepouts": [],
+      "pours": []
+    }
+  },
+  "independent": {
+    "drc": [
+      {
+        "id": "drc_1",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_nq9ken2_7djt_pcbcomp_nq9ken2_7djt_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 5.05,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_nq9ken2_7djt",
+          "pcbcomp_nq9ken2_7djt"
+        ]
+      },
+      {
+        "id": "drc_2",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_nq9ken2_7djt_pcbcomp_nq9ken2_7djt_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 6.95,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_nq9ken2_7djt",
+          "pcbcomp_nq9ken2_7djt"
+        ]
+      },
+      {
+        "id": "drc_3",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_giy7c0v_7djt_pcbcomp_giy7c0v_7djt_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 12.05,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_giy7c0v_7djt",
+          "pcbcomp_giy7c0v_7djt"
+        ]
+      },
+      {
+        "id": "drc_4",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_giy7c0v_7djt_pcbcomp_giy7c0v_7djt_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 13.95,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R2.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_giy7c0v_7djt",
+          "pcbcomp_giy7c0v_7djt"
+        ]
+      },
+      {
+        "id": "drc_5",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_vpuonqx_7djt_pcbcomp_vpuonqx_7djt_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 19.05,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_vpuonqx_7djt",
+          "pcbcomp_vpuonqx_7djt"
+        ]
+      },
+      {
+        "id": "drc_6",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_vpuonqx_7djt_pcbcomp_vpuonqx_7djt_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 20.95,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R3.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_vpuonqx_7djt",
+          "pcbcomp_vpuonqx_7djt"
+        ]
+      },
+      {
+        "id": "drc_7",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_120b7z1_7dju_pcbcomp_120b7z1_7dju_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 26.05,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_120b7z1_7dju",
+          "pcbcomp_120b7z1_7dju"
+        ]
+      },
+      {
+        "id": "drc_8",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_120b7z1_7dju_pcbcomp_120b7z1_7dju_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 27.95,
+        "y": 5,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R4.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_120b7z1_7dju",
+          "pcbcomp_120b7z1_7dju"
+        ]
+      },
+      {
+        "id": "drc_9",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_6j3v0lg_7dju_pcbcomp_6j3v0lg_7dju_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 5.05,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_6j3v0lg_7dju",
+          "pcbcomp_6j3v0lg_7dju"
+        ]
+      },
+      {
+        "id": "drc_10",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_6j3v0lg_7dju_pcbcomp_6j3v0lg_7dju_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 6.95,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R5.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_6j3v0lg_7dju",
+          "pcbcomp_6j3v0lg_7dju"
+        ]
+      },
+      {
+        "id": "drc_11",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_h4e1yzx_7dju_pcbcomp_h4e1yzx_7dju_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 12.05,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_h4e1yzx_7dju",
+          "pcbcomp_h4e1yzx_7dju"
+        ]
+      },
+      {
+        "id": "drc_12",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_h4e1yzx_7dju_pcbcomp_h4e1yzx_7dju_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 13.95,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R6.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_h4e1yzx_7dju",
+          "pcbcomp_h4e1yzx_7dju"
+        ]
+      },
+      {
+        "id": "drc_13",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_kuheyap_7djv_pcbcomp_kuheyap_7djv_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 19.05,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R7.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_kuheyap_7djv",
+          "pcbcomp_kuheyap_7djv"
+        ]
+      },
+      {
+        "id": "drc_14",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_kuheyap_7djv_pcbcomp_kuheyap_7djv_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 20.95,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R7.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_kuheyap_7djv",
+          "pcbcomp_kuheyap_7djv"
+        ]
+      },
+      {
+        "id": "drc_15",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_xrx8wkm_7djv_pcbcomp_xrx8wkm_7djv_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 26.05,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R8.1 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_xrx8wkm_7djv",
+          "pcbcomp_xrx8wkm_7djv"
+        ]
+      },
+      {
+        "id": "drc_16",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_xrx8wkm_7djv_pcbcomp_xrx8wkm_7djv_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 27.95,
+        "y": 12,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R8.2 (зазор 0.03 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_xrx8wkm_7djv",
+          "pcbcomp_xrx8wkm_7djv"
+        ]
+      },
+      {
+        "id": "drc_17",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_m0dxcda_7djv_pcbcomp_m0dxcda_7djv_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 5.05,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R9.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_m0dxcda_7djv",
+          "pcbcomp_m0dxcda_7djv"
+        ]
+      },
+      {
+        "id": "drc_18",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_m0dxcda_7djv_pcbcomp_m0dxcda_7djv_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 6.95,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R9.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_m0dxcda_7djv",
+          "pcbcomp_m0dxcda_7djv"
+        ]
+      },
+      {
+        "id": "drc_19",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_xcopjbk_7djw_pcbcomp_xcopjbk_7djw_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 12.05,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R10.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_xcopjbk_7djw",
+          "pcbcomp_xcopjbk_7djw"
+        ]
+      },
+      {
+        "id": "drc_20",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_xcopjbk_7djw_pcbcomp_xcopjbk_7djw_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 13.95,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R10.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_xcopjbk_7djw",
+          "pcbcomp_xcopjbk_7djw"
+        ]
+      },
+      {
+        "id": "drc_21",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_rjrgiji_7djw_pcbcomp_rjrgiji_7djw_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 19.05,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R11.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_rjrgiji_7djw",
+          "pcbcomp_rjrgiji_7djw"
+        ]
+      },
+      {
+        "id": "drc_22",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_rjrgiji_7djw_pcbcomp_rjrgiji_7djw_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 20.95,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R11.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_rjrgiji_7djw",
+          "pcbcomp_rjrgiji_7djw"
+        ]
+      },
+      {
+        "id": "drc_23",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_id4gp5l_7djw_pcbcomp_id4gp5l_7djw_pad_1",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 26.05,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R12.1 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_id4gp5l_7djw",
+          "pcbcomp_id4gp5l_7djw"
+        ]
+      },
+      {
+        "id": "drc_24",
+        "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_id4gp5l_7djw_pcbcomp_id4gp5l_7djw_pad_2",
+        "waived": false,
+        "severity": "Warning",
+        "layer": "TopSilk",
+        "x": 27.95,
+        "y": 19,
+        "code": "DRC-SILK-PAD",
+        "message": "Шелкография перекрывает КП R12.2 (зазор 0.02 мм < 0.12 мм).",
+        "objectIds": [
+          "pcbcomp_id4gp5l_7djw",
+          "pcbcomp_id4gp5l_7djw"
+        ]
+      }
+    ],
+    "ratlines": [],
+    "finalCheck": {
+      "erc": [],
+      "drc": [
+        {
+          "id": "drc_1",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_nq9ken2_7djt_pcbcomp_nq9ken2_7djt_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 5.05,
+          "y": 5,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R1.1 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_nq9ken2_7djt",
+            "pcbcomp_nq9ken2_7djt"
+          ]
+        },
+        {
+          "id": "drc_2",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_nq9ken2_7djt_pcbcomp_nq9ken2_7djt_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 6.95,
+          "y": 5,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R1.2 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_nq9ken2_7djt",
+            "pcbcomp_nq9ken2_7djt"
+          ]
+        },
+        {
+          "id": "drc_3",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_giy7c0v_7djt_pcbcomp_giy7c0v_7djt_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 12.05,
+          "y": 5,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R2.1 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_giy7c0v_7djt",
+            "pcbcomp_giy7c0v_7djt"
+          ]
+        },
+        {
+          "id": "drc_4",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_giy7c0v_7djt_pcbcomp_giy7c0v_7djt_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 13.95,
+          "y": 5,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R2.2 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_giy7c0v_7djt",
+            "pcbcomp_giy7c0v_7djt"
+          ]
+        },
+        {
+          "id": "drc_5",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_vpuonqx_7djt_pcbcomp_vpuonqx_7djt_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 19.05,
+          "y": 5,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R3.1 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_vpuonqx_7djt",
+            "pcbcomp_vpuonqx_7djt"
+          ]
+        },
+        {
+          "id": "drc_6",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_vpuonqx_7djt_pcbcomp_vpuonqx_7djt_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 20.95,
+          "y": 5,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R3.2 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_vpuonqx_7djt",
+            "pcbcomp_vpuonqx_7djt"
+          ]
+        },
+        {
+          "id": "drc_7",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_120b7z1_7dju_pcbcomp_120b7z1_7dju_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 26.05,
+          "y": 5,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R4.1 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_120b7z1_7dju",
+            "pcbcomp_120b7z1_7dju"
+          ]
+        },
+        {
+          "id": "drc_8",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_120b7z1_7dju_pcbcomp_120b7z1_7dju_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 27.95,
+          "y": 5,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R4.2 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_120b7z1_7dju",
+            "pcbcomp_120b7z1_7dju"
+          ]
+        },
+        {
+          "id": "drc_9",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_6j3v0lg_7dju_pcbcomp_6j3v0lg_7dju_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 5.05,
+          "y": 12,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R5.1 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_6j3v0lg_7dju",
+            "pcbcomp_6j3v0lg_7dju"
+          ]
+        },
+        {
+          "id": "drc_10",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_6j3v0lg_7dju_pcbcomp_6j3v0lg_7dju_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 6.95,
+          "y": 12,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R5.2 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_6j3v0lg_7dju",
+            "pcbcomp_6j3v0lg_7dju"
+          ]
+        },
+        {
+          "id": "drc_11",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_h4e1yzx_7dju_pcbcomp_h4e1yzx_7dju_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 12.05,
+          "y": 12,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R6.1 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_h4e1yzx_7dju",
+            "pcbcomp_h4e1yzx_7dju"
+          ]
+        },
+        {
+          "id": "drc_12",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_h4e1yzx_7dju_pcbcomp_h4e1yzx_7dju_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 13.95,
+          "y": 12,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R6.2 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_h4e1yzx_7dju",
+            "pcbcomp_h4e1yzx_7dju"
+          ]
+        },
+        {
+          "id": "drc_13",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_kuheyap_7djv_pcbcomp_kuheyap_7djv_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 19.05,
+          "y": 12,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R7.1 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_kuheyap_7djv",
+            "pcbcomp_kuheyap_7djv"
+          ]
+        },
+        {
+          "id": "drc_14",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_kuheyap_7djv_pcbcomp_kuheyap_7djv_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 20.95,
+          "y": 12,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R7.2 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_kuheyap_7djv",
+            "pcbcomp_kuheyap_7djv"
+          ]
+        },
+        {
+          "id": "drc_15",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_xrx8wkm_7djv_pcbcomp_xrx8wkm_7djv_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 26.05,
+          "y": 12,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R8.1 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_xrx8wkm_7djv",
+            "pcbcomp_xrx8wkm_7djv"
+          ]
+        },
+        {
+          "id": "drc_16",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_xrx8wkm_7djv_pcbcomp_xrx8wkm_7djv_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 27.95,
+          "y": 12,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R8.2 (зазор 0.03 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_xrx8wkm_7djv",
+            "pcbcomp_xrx8wkm_7djv"
+          ]
+        },
+        {
+          "id": "drc_17",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_m0dxcda_7djv_pcbcomp_m0dxcda_7djv_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 5.05,
+          "y": 19,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R9.1 (зазор 0.02 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_m0dxcda_7djv",
+            "pcbcomp_m0dxcda_7djv"
+          ]
+        },
+        {
+          "id": "drc_18",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_m0dxcda_7djv_pcbcomp_m0dxcda_7djv_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 6.95,
+          "y": 19,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R9.2 (зазор 0.02 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_m0dxcda_7djv",
+            "pcbcomp_m0dxcda_7djv"
+          ]
+        },
+        {
+          "id": "drc_19",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_xcopjbk_7djw_pcbcomp_xcopjbk_7djw_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 12.05,
+          "y": 19,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R10.1 (зазор 0.02 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_xcopjbk_7djw",
+            "pcbcomp_xcopjbk_7djw"
+          ]
+        },
+        {
+          "id": "drc_20",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_xcopjbk_7djw_pcbcomp_xcopjbk_7djw_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 13.95,
+          "y": 19,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R10.2 (зазор 0.02 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_xcopjbk_7djw",
+            "pcbcomp_xcopjbk_7djw"
+          ]
+        },
+        {
+          "id": "drc_21",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_rjrgiji_7djw_pcbcomp_rjrgiji_7djw_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 19.05,
+          "y": 19,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R11.1 (зазор 0.02 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_rjrgiji_7djw",
+            "pcbcomp_rjrgiji_7djw"
+          ]
+        },
+        {
+          "id": "drc_22",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_rjrgiji_7djw_pcbcomp_rjrgiji_7djw_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 20.95,
+          "y": 19,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R11.2 (зазор 0.02 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_rjrgiji_7djw",
+            "pcbcomp_rjrgiji_7djw"
+          ]
+        },
+        {
+          "id": "drc_23",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_id4gp5l_7djw_pcbcomp_id4gp5l_7djw_pad_1",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 26.05,
+          "y": 19,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R12.1 (зазор 0.02 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_id4gp5l_7djw",
+            "pcbcomp_id4gp5l_7djw"
+          ]
+        },
+        {
+          "id": "drc_24",
+          "signature": "DRC-SILK-PAD::TopSilk::silk_pcbcomp_id4gp5l_7djw_pcbcomp_id4gp5l_7djw_pad_2",
+          "waived": false,
+          "severity": "Warning",
+          "layer": "TopSilk",
+          "x": 27.95,
+          "y": 19,
+          "code": "DRC-SILK-PAD",
+          "message": "Шелкография перекрывает КП R12.2 (зазор 0.02 мм < 0.12 мм).",
+          "objectIds": [
+            "pcbcomp_id4gp5l_7djw",
+            "pcbcomp_id4gp5l_7djw"
+          ]
+        }
+      ],
+      "layout": [],
+      "labelIssues": [],
+      "nets": [],
+      "unrouted": 0,
+      "unfilledPours": [],
+      "pcbGeometry": [],
+      "geometryWarnings": [],
+      "targetIssues": [],
+      "requirements": [
+        {
+          "requirement": "Ширина платы",
+          "expected": 34,
+          "actual": 34,
+          "pass": true
+        },
+        {
+          "requirement": "Высота платы",
+          "expected": 24,
+          "actual": 24,
+          "pass": true
+        },
+        {
+          "requirement": "Слои платы",
+          "expected": 2,
+          "actual": 2,
+          "pass": true
+        },
+        {
+          "requirement": "Минимальный зазор",
+          "expected": 0.25,
+          "actual": 0.25,
+          "pass": true
+        },
+        {
+          "requirement": "Положение R1",
+          "expected": {
+            "x": 6,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 6,
+            "y": 5
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R2",
+          "expected": {
+            "x": 13,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 13,
+            "y": 5
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R3",
+          "expected": {
+            "x": 20,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 20,
+            "y": 5
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R4",
+          "expected": {
+            "x": 27,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 27,
+            "y": 5
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R5",
+          "expected": {
+            "x": 6,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 6,
+            "y": 12
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R6",
+          "expected": {
+            "x": 13,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 13,
+            "y": 12
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R7",
+          "expected": {
+            "x": 20,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 20,
+            "y": 12
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R8",
+          "expected": {
+            "x": 27,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 27,
+            "y": 12
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R9",
+          "expected": {
+            "x": 6,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 6,
+            "y": 19
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R10",
+          "expected": {
+            "x": 13,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 13,
+            "y": 19
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R11",
+          "expected": {
+            "x": 20,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 20,
+            "y": 19
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R12",
+          "expected": {
+            "x": 27,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 27,
+            "y": 19
+          },
+          "pass": true
+        }
+      ],
+      "revision": 62,
+      "blockers": []
+    }
+  },
+  "draft": {
+    "plan": "Задание 09-dense-ladder: только самостоятельная плата (схема НЕ создаётся).\nТребования ТЗ:\n- Плата 34×24 мм, 2 слоя, зазор 0,25 мм; контур (0,0)-(34,0)-(34,24)-(0,24) в абсолютных координатах.\n- 12 библиотечных резисторов 0805: COMP_R_R1_12_0805 (УГО/корпус PAT_CHIP_2012M), площадки 1=-0,95 мм, 2=+0,95 мм, 1,05×1,35 мм, SMD Top.\n- Позиции с допуском 0,1 мм, сторона Top, угол 0, закрепить (locked):\n R1(6,5) R2(13,5) R3(20,5) R4(27,5); R5(6,12) R6(13,12) R7(20,12) R8(27,12); R9(6,19) R10(13,19) R11(20,19) R12(27,19).\n- Цепи (исчерпывающе): ROW1=R1.1,R2.1,R3.1,R4.1; ROW2=R5.1,R6.1,R7.1,R8.1; ROW3=R9.1,R10.1,R11.1,R12.1; COL1=R1.2,R5.2,R9.2; COL2=R2.2,R6.2,R10.2; COL3=R3.2,R7.2,R11.2; COL4=R4.2,R8.2,R12.2.\n- Других корпусов, цепей, зон, заливок не добавлять. Сквозные переходы вне площадок разрешены.\nПринятое решение по топологии (соблюдает зазор 0,25):\n- Столбцы COL1..COL4 — прямые вертикальные дорожки Top по x=6,95/13,95/20,95/27,95 (через центры площадок 2), y=5..19, без переходов.\n- Строки ROW1..ROW3 — Top-вывод от площадки 1 (x=5,05+7·k, y) вниз на 2,0 мм к переходному отверстию Ø0,6/0,3 вне площадки, затем горизонтальная дорожка Bottom по y=3/10/17, затем такие же переходы у остальных площадок строки. Ширина дорожек 0,3 мм.\nПроверки: check после первой группы трасс, затем DRC/ERC/неразведённые, сверка площадок с ТЗ, PNG платы.\nИсточники: библиотечная запись COMP_R_R1_12_0805 (АО «НПО Эркон», АЛЯР.434110.005 ТУ) и PAT_CHIP_2012M; номиналы не заданы ТЗ — используется библиотечное значение 10к, без изменения перечня.",
+    "targets": {
+      "documents": "pcb",
+      "designation": "09-dense-ladder",
+      "board": {
+        "width": 34,
+        "height": 24,
+        "layers": 2,
+        "clearance": 0.25,
+        "positions": [
+          {
+            "ref": "R1",
+            "x": 6,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R2",
+            "x": 13,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R3",
+            "x": 20,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R4",
+            "x": 27,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R5",
+            "x": 6,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R6",
+            "x": 13,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R7",
+            "x": 20,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R8",
+            "x": 27,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R9",
+            "x": 6,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R10",
+            "x": 13,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R11",
+            "x": 20,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          {
+            "ref": "R12",
+            "x": 27,
+            "y": 19,
+            "tolerance": 0.1
+          }
+        ]
+      }
+    },
+    "checks": {
+      "erc": 0,
+      "drc": 24,
+      "outsideFrame": 0,
+      "unrouted": 0,
+      "requirements": [
+        {
+          "requirement": "Ширина платы",
+          "expected": 34,
+          "actual": 34,
+          "pass": true
+        },
+        {
+          "requirement": "Высота платы",
+          "expected": 24,
+          "actual": 24,
+          "pass": true
+        },
+        {
+          "requirement": "Слои платы",
+          "expected": 2,
+          "actual": 2,
+          "pass": true
+        },
+        {
+          "requirement": "Минимальный зазор",
+          "expected": 0.25,
+          "actual": 0.25,
+          "pass": true
+        },
+        {
+          "requirement": "Положение R1",
+          "expected": {
+            "x": 6,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 6,
+            "y": 5
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R2",
+          "expected": {
+            "x": 13,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 13,
+            "y": 5
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R3",
+          "expected": {
+            "x": 20,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 20,
+            "y": 5
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R4",
+          "expected": {
+            "x": 27,
+            "y": 5,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 27,
+            "y": 5
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R5",
+          "expected": {
+            "x": 6,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 6,
+            "y": 12
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R6",
+          "expected": {
+            "x": 13,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 13,
+            "y": 12
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R7",
+          "expected": {
+            "x": 20,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 20,
+            "y": 12
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R8",
+          "expected": {
+            "x": 27,
+            "y": 12,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 27,
+            "y": 12
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R9",
+          "expected": {
+            "x": 6,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 6,
+            "y": 19
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R10",
+          "expected": {
+            "x": 13,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 13,
+            "y": 19
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R11",
+          "expected": {
+            "x": 20,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 20,
+            "y": 19
+          },
+          "pass": true
+        },
+        {
+          "requirement": "Положение R12",
+          "expected": {
+            "x": 27,
+            "y": 19,
+            "tolerance": 0.1
+          },
+          "actual": {
+            "x": 27,
+            "y": 19
+          },
+          "pass": true
+        }
+      ],
+      "revision": 62,
+      "errors": 0,
+      "warnings": 24,
+      "blockers": []
+    },
+    "report": {
+      "summary": "Задание 09-dense-ladder выполнено как самостоятельная плата (схема не создавалась — по ТЗ).\n\nДокументы (редактируемые, лаунчер): печатная плата «09-dense-ladder», ревизия 62. Схема отсутствует намеренно; лишних документов нет.\n\nПлата: контур 34×24 мм по вершинам (0,0)-(34,0)-(34,24)-(0,24), 2 слоя, минимальный зазор 0,25 мм, дорожка 0,3 мм, переход Ø0,6/0,3.\nКомплект: ровно 12 библиотечных резисторов 0805 (COMP_R_R1_12_0805 / PAT_CHIP_2012M), иных корпусов нет. Все позиции R1(6,5) R2(13,5) R3(20,5) R4(27,5) R5(6,12) R6(13,12) R7(20,12) R8(27,12) R9(6,19) R10(13,19) R11(20,19) R12(27,19) установлены стороной Top, угол 0, закреплены (locked), отклонение 0 мм при допуске 0,1 мм.\n\nПлощадки строго по ТЗ: R1.1/R2.1/R3.1/R4.1=ROW1; R5.1/R6.1/R7.1/R8.1=ROW2; R9.1/R10.1/R11.1/R12.1=ROW3; R1.2/R5.2/R9.2=COL1; R2.2/R6.2/R10.2=COL2; R3.2/R7.2/R11.2=COL3; R4.2/R8.2/R12.2=COL4. Свободных площадок с «чужими» сетями нет, дополнительные цепи не вводились.\n\nТрассировка: COL1…COL4 — вертикальные дорожки Top на x=6,95/13,95/20,95/27,95 от y=5 до 19; ROW1…ROW3 — выводы Top от площадок 1 к переходным отверстиям вне площадок и горизонтальные шины Bottom на y=3/10/17 (переходы вне SMD-площадок, разрешены ТЗ). Зоны запрета и заливки не создавались (ТЗ запрещает).\n\nПроверки последней версии (check + finalize_project, rev 62):\n- ERC: пусто (схемы нет, электрических правил для проверки не применимо).\n- DRC: 0 ошибок, 24 предупреждения DRC-SILK-PAD (TopSilk перекрывает КП с зазором 0,02–0,03 мм < 0,12 мм) на библиотечных корпусах R1–R12, по два на корпус (площадки 1 и 2). Причина — геометрия библиотечного корпуса PAT_CHIP_2012M; правила не ослаблялись, корпуса не пересоздавались. Полный перечень: R1 (5,05/6,95; y=5), R2 (12,05/13,95; y=5), R3 (19,05/20,95; y=5), R4 (26,05/27,95; y=5), R5 (5,05/6,95; y=12), R6 (12,05/13,95; y=12), R7 (19,05/20,95; y=12), R8 (26,05/27,95; y=12), R9 (5,05/6,95; y=19), R10 (12,05/13,95; y=19), R11 (19,05/20,95; y=19), R12 (26,05/27,95; y=19).\n- Неразведённых связей: 0; незалитых полигонов: 0; замечаний по геометрии платы и keepout: 0; labelIssues: 0; targetIssues: 0; blockers: 0.\n- Сверка требований (compare_requirements): ширина 34, высота 24, 2 слоя, зазор 0,25 и все 12 позиций — pass.\n- Снимок платы просмотрен: контур, 12 корпусов, обозначения, дорожки строк/столбцов и переходные отверстия читаемы, наложений подписей нет; контакт дорожек с площадками виден.\n\nИсточники: библиотечная запись резистора 0805 (АО «НПО Эркон», АЛЯР.434110.005 ТУ) и корпус PAT_CHIP_2012M; номинал ТЗ не задаёт — использовано библиотечное значение, перечень не изменялся.",
+      "limitations": "1) Плата самостоятельная (без схемы) — соответствие схеме и ERC-связность по схеме проверить невозможно; «нулевой ERC» здесь означает лишь отсутствие схемного листа. 2) 24 предупреждения DRC-SILK-PAD относятся к шелкографии библиотечного корпуса 0805 (зазор 0,02–0,03 мм вместо 0,12 мм); это предупреждения, не ошибки, допустимы по ТЗ с указанием конкретных позиций (см. summary). 3) Моделирование (DC/AC/Transient) не выполнялось: задача — только топология печатной платы, без схемы и без тестовых источников; работоспособность матрицы, АЧХ и готовность к производству не подтверждаются. 4) Электрические характеристики (номинал, мощность, точность резисторов) определяются библиотечной записью, ТЗ их не задаёт.",
+      "status": "complete"
+    }
+  },
+  "images": [
+    {
+      "file": "final-1.png",
+      "label": "Печатная плата",
+      "revision": 62
+    }
+  ]
+}

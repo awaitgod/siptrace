@@ -99,9 +99,11 @@ test('desktop schematic export reports the outcome of the native save command', 
     Object.assign(window, {
       isTauri: true,
       __TAURI_INTERNALS__: {
-        invoke: async (command: string, args: { filename: string; extension: string; content: string }) => {
+        invoke: async (command: string, args: { filename: string; extension: string; bytes: number[] }) => {
           if (command !== 'export_text_file') return;
-          if (args.filename !== 'курс.asc' || args.extension !== 'asc' || !args.content.includes('(Schematic "курс"')) {
+          const content = new TextDecoder('windows-1251').decode(Uint8Array.from(args.bytes));
+          if (args.filename !== 'курс.asc' || args.extension !== 'asc' ||
+              !content.startsWith('(Source "DipTrace-Schematic" 46)\r\n') || !content.includes('(Pages\r\n')) {
             throw new Error('Неверные данные экспорта');
           }
           attempts++;
@@ -142,7 +144,10 @@ test('schematic export downloads an ASC file when there is no save picker', asyn
   expect(download.suggestedFilename()).toBe('курс.asc');
   expect(await download.failure()).toBeNull();
   const path = await download.path();
-  expect(await readFile(path, 'utf8')).toContain('(Schematic "курс"');
+  const bytes = await readFile(path);
+  const content = new TextDecoder('windows-1251').decode(bytes);
+  expect(content).toMatch(/^\(Source "DipTrace-Schematic" 46\)\r\n/);
+  expect(content).toContain('(Name "Схема электрическая принципиальная")');
   await expect(page.locator('.dt-statusbar')).toContainText('Начата загрузка файла курс.asc.');
 });
 

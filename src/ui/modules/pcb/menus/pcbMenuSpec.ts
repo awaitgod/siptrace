@@ -1,7 +1,7 @@
 import { PcbProject, Point2D } from '../../../../core/types';
 import { createProjectFromOptions, loadActiveSchematic, openAppModule } from '../../../../core/store';
 import { updateAllCopperPours } from '../../../../engines/copperPour';
-import { convertSchematicToPcb } from '../../../../engines/netlist';
+import { convertSchematicToPcb } from '../../../../engines/netlist/schematicToPcbConverter';
 import { exportDipTraceAsciiPcb } from '../../../../engines/importers';
 import { saveTextFile } from '../../../../core/utils/fileIo';
 import { TopMenuSpec } from '../../../components/MenuBar';

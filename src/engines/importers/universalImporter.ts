@@ -9,6 +9,7 @@ import {
     parseDipTraceBinarySchematic
 } from './dipTraceBinaryParser';
 import { parseDipTraceAsciiPcbWithReport, parseDipTraceAsciiSchematicWithReport, parseDipTraceXmlPcbWithReport, parseDipTraceXmlSchematicWithReport } from './dipTraceImporter';
+import { decodeDipTraceSchematicAscii } from './diptrace/asciiEncoding';
 import { parseDxfToPcb, parseEagleXml, parseExcellonToPcb, parseGerberToPcb, parseKicadPcb, parseKicadSchematic, parseMultiEcadPcb, parseMultiEcadSchematic, parseProteusInput } from './ecadFormatsImporter';
 import { convertImportedPcbToGost, convertImportedSchematicToGost, GostConversionReport } from './gostConverter';
 import { isOle2Binary } from './ecad/ole2Reader';
@@ -168,7 +169,7 @@ export async function importCadSchematic(input: string | Uint8Array, filename = 
             const res = parseMultiEcadSchematic(input, baseName);
             return { ...res, detectedFormat: res.report.sourceFormat };
         }
-        const decoded = utf8Decode(input);
+        const decoded = decodeDipTraceSchematicAscii(input) ?? utf8Decode(input);
         if (ext.endsWith('.pdsprj') || ext.endsWith('.dsn')) {
             const res = await parseProteusInput(input, baseName);
             return { ...res, detectedFormat: 'Proteus (.pdsprj/.dsn)' };

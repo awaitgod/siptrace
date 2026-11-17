@@ -1,0 +1,945 @@
+{
+  "documents": {
+    "pcb": {
+      "version": "1.0",
+      "filePath": "",
+      "projectName": "05-cutout",
+      "units": "mm",
+      "gridSize": 1.25,
+      "boardThickness": 1.6,
+      "soldermaskColor": "#0d5e2e",
+      "silkscreenColor": "#ffffff",
+      "surfaceFinish": "ENIG",
+      "layerCount": 2,
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "boardOutline": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 60,
+          "y": 0
+        },
+        {
+          "x": 60,
+          "y": 29
+        },
+        {
+          "x": 41,
+          "y": 29
+        },
+        {
+          "x": 41,
+          "y": 44
+        },
+        {
+          "x": 0,
+          "y": 44
+        }
+      ],
+      "cutouts": [
+        {
+          "id": "cutout_a86rknc_7c8s",
+          "points": [
+            {
+              "x": 19,
+              "y": 12
+            },
+            {
+              "x": 32,
+              "y": 12
+            },
+            {
+              "x": 32,
+              "y": 27
+            },
+            {
+              "x": 19,
+              "y": 27
+            }
+          ]
+        }
+      ],
+      "keepouts": [],
+      "layers": [
+        {
+          "id": "TopCopper",
+          "name": "Верхний (Top)",
+          "kind": "Signal",
+          "routingDirection": "Horizontal",
+          "color": "#FF3030",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "BottomCopper",
+          "name": "Нижний (Bottom)",
+          "kind": "Signal",
+          "routingDirection": "Vertical",
+          "color": "#3078FF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "TopSilk",
+          "name": "Шелкография Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#FFFFFF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "BottomSilk",
+          "name": "Шелкография Низ",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#AA88FF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "TopMask",
+          "name": "Маска Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#9933AA",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "BottomMask",
+          "name": "Маска Низ",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#662288",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "TopPaste",
+          "name": "Паста Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#999999",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "BottomPaste",
+          "name": "Паста Низ",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#777777",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "TopAssembly",
+          "name": "Сборочный Верх",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#FFCC00",
+          "visible": false,
+          "enabled": true
+        },
+        {
+          "id": "Courtyard",
+          "name": "Контур установки (Courtyard)",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#808080",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "BoardOutline",
+          "name": "Контур платы",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#CC44FF",
+          "visible": true,
+          "enabled": true
+        },
+        {
+          "id": "Keepout",
+          "name": "Запрет (Keepout)",
+          "kind": "NonSignal",
+          "routingDirection": "Any",
+          "color": "#FF0088",
+          "visible": true,
+          "enabled": true
+        }
+      ],
+      "components": [
+        {
+          "id": "pcbcomp_wexys3g_7aq3",
+          "refDes": "R1",
+          "value": "ЧИП_2012М (0805)",
+          "typeName": "ЧИП_2012М (0805)",
+          "patternId": "PAT_CHIP_2012M",
+          "x": 8,
+          "y": 9,
+          "angle": 0,
+          "side": "Top",
+          "showRefDes": true,
+          "showValue": false,
+          "refDesOffset": {
+            "x": 0,
+            "y": -2.875
+          },
+          "pads": [
+            {
+              "id": "pad_1",
+              "number": "1",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": -0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            },
+            {
+              "id": "pad_2",
+              "number": "2",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": 0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            }
+          ],
+          "padNets": {
+            "1": "SENSE",
+            "2": "RETURN"
+          },
+          "graphics": [
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": -0.775,
+              "x2": 0.9,
+              "y2": -0.775,
+              "width": 0.15
+            },
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": 0.775,
+              "x2": 0.9,
+              "y2": 0.775,
+              "width": 0.15
+            },
+            {
+              "type": "rect",
+              "layer": "TopAssembly",
+              "x": -1,
+              "y": -0.625,
+              "w": 2,
+              "h": 1.25,
+              "width": 0.1
+            },
+            {
+              "type": "rect",
+              "layer": "Courtyard",
+              "x": -1.7750000000000001,
+              "y": -1.375,
+              "w": 3.5500000000000003,
+              "h": 2.75,
+              "width": 0.1
+            }
+          ],
+          "courtyard": {
+            "width": 3.5500000000000003,
+            "height": 2.75
+          },
+          "model3d": {
+            "shape": "ChipSMD",
+            "bodyWidth": 1.25,
+            "bodyLength": 2,
+            "bodyHeight": 0.6,
+            "color": "#b88958",
+            "pinCount": 2,
+            "pitch": 1.9
+          },
+          "locked": true
+        },
+        {
+          "id": "pcbcomp_idd3ued_7aq3",
+          "refDes": "R2",
+          "value": "ЧИП_2012М (0805)",
+          "typeName": "ЧИП_2012М (0805)",
+          "patternId": "PAT_CHIP_2012M",
+          "x": 50,
+          "y": 9,
+          "angle": 0,
+          "side": "Top",
+          "showRefDes": true,
+          "showValue": false,
+          "refDesOffset": {
+            "x": 0,
+            "y": -2.875
+          },
+          "pads": [
+            {
+              "id": "pad_1",
+              "number": "1",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": -0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            },
+            {
+              "id": "pad_2",
+              "number": "2",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": 0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            }
+          ],
+          "padNets": {
+            "1": "SENSE",
+            "2": "RETURN"
+          },
+          "graphics": [
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": -0.775,
+              "x2": 0.9,
+              "y2": -0.775,
+              "width": 0.15
+            },
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": 0.775,
+              "x2": 0.9,
+              "y2": 0.775,
+              "width": 0.15
+            },
+            {
+              "type": "rect",
+              "layer": "TopAssembly",
+              "x": -1,
+              "y": -0.625,
+              "w": 2,
+              "h": 1.25,
+              "width": 0.1
+            },
+            {
+              "type": "rect",
+              "layer": "Courtyard",
+              "x": -1.7750000000000001,
+              "y": -1.375,
+              "w": 3.5500000000000003,
+              "h": 2.75,
+              "width": 0.1
+            }
+          ],
+          "courtyard": {
+            "width": 3.5500000000000003,
+            "height": 2.75
+          },
+          "model3d": {
+            "shape": "ChipSMD",
+            "bodyWidth": 1.25,
+            "bodyLength": 2,
+            "bodyHeight": 0.6,
+            "color": "#b88958",
+            "pinCount": 2,
+            "pitch": 1.9
+          },
+          "locked": true
+        },
+        {
+          "id": "pcbcomp_hka4fzj_7aq3",
+          "refDes": "R3",
+          "value": "ЧИП_2012М (0805)",
+          "typeName": "ЧИП_2012М (0805)",
+          "patternId": "PAT_CHIP_2012M",
+          "x": 8,
+          "y": 35,
+          "angle": 0,
+          "side": "Top",
+          "showRefDes": true,
+          "showValue": false,
+          "refDesOffset": {
+            "x": 0,
+            "y": -2.875
+          },
+          "pads": [
+            {
+              "id": "pad_1",
+              "number": "1",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": -0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            },
+            {
+              "id": "pad_2",
+              "number": "2",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": 0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            }
+          ],
+          "padNets": {
+            "1": "SENSE",
+            "2": "RETURN"
+          },
+          "graphics": [
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": -0.775,
+              "x2": 0.9,
+              "y2": -0.775,
+              "width": 0.15
+            },
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": 0.775,
+              "x2": 0.9,
+              "y2": 0.775,
+              "width": 0.15
+            },
+            {
+              "type": "rect",
+              "layer": "TopAssembly",
+              "x": -1,
+              "y": -0.625,
+              "w": 2,
+              "h": 1.25,
+              "width": 0.1
+            },
+            {
+              "type": "rect",
+              "layer": "Courtyard",
+              "x": -1.7750000000000001,
+              "y": -1.375,
+              "w": 3.5500000000000003,
+              "h": 2.75,
+              "width": 0.1
+            }
+          ],
+          "courtyard": {
+            "width": 3.5500000000000003,
+            "height": 2.75
+          },
+          "model3d": {
+            "shape": "ChipSMD",
+            "bodyWidth": 1.25,
+            "bodyLength": 2,
+            "bodyHeight": 0.6,
+            "color": "#b88958",
+            "pinCount": 2,
+            "pitch": 1.9
+          },
+          "locked": true
+        },
+        {
+          "id": "pcbcomp_it5n4e5_7aq3",
+          "refDes": "R4",
+          "value": "ЧИП_2012М (0805)",
+          "typeName": "ЧИП_2012М (0805)",
+          "patternId": "PAT_CHIP_2012M",
+          "x": 34,
+          "y": 36,
+          "angle": 0,
+          "side": "Top",
+          "showRefDes": true,
+          "showValue": false,
+          "refDesOffset": {
+            "x": 0,
+            "y": -2.875
+          },
+          "pads": [
+            {
+              "id": "pad_1",
+              "number": "1",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": -0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            },
+            {
+              "id": "pad_2",
+              "number": "2",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": 0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            }
+          ],
+          "padNets": {
+            "1": "SENSE",
+            "2": "RETURN"
+          },
+          "graphics": [
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": -0.775,
+              "x2": 0.9,
+              "y2": -0.775,
+              "width": 0.15
+            },
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": 0.775,
+              "x2": 0.9,
+              "y2": 0.775,
+              "width": 0.15
+            },
+            {
+              "type": "rect",
+              "layer": "TopAssembly",
+              "x": -1,
+              "y": -0.625,
+              "w": 2,
+              "h": 1.25,
+              "width": 0.1
+            },
+            {
+              "type": "rect",
+              "layer": "Courtyard",
+              "x": -1.7750000000000001,
+              "y": -1.375,
+              "w": 3.5500000000000003,
+              "h": 2.75,
+              "width": 0.1
+            }
+          ],
+          "courtyard": {
+            "width": 3.5500000000000003,
+            "height": 2.75
+          },
+          "model3d": {
+            "shape": "ChipSMD",
+            "bodyWidth": 1.25,
+            "bodyLength": 2,
+            "bodyHeight": 0.6,
+            "color": "#b88958",
+            "pinCount": 2,
+            "pitch": 1.9
+          },
+          "locked": true
+        }
+      ],
+      "traces": [
+        {
+          "id": "trace_f9ldvd5_9oql",
+          "netName": "SENSE",
+          "layer": "TopCopper",
+          "width": 0.35,
+          "points": [
+            {
+              "x": 7.05,
+              "y": 9
+            },
+            {
+              "x": 5,
+              "y": 9
+            },
+            {
+              "x": 5,
+              "y": 35
+            },
+            {
+              "x": 7.05,
+              "y": 35
+            }
+          ]
+        },
+        {
+          "id": "trace_t5aubn3_9oqm",
+          "netName": "SENSE",
+          "layer": "TopCopper",
+          "width": 0.35,
+          "points": [
+            {
+              "x": 7.05,
+              "y": 35
+            },
+            {
+              "x": 7.05,
+              "y": 38
+            },
+            {
+              "x": 33.05,
+              "y": 38
+            },
+            {
+              "x": 33.05,
+              "y": 36
+            }
+          ]
+        },
+        {
+          "id": "trace_h61otdt_a5ab",
+          "netName": "SENSE",
+          "layer": "TopCopper",
+          "width": 0.35,
+          "points": [
+            {
+              "x": 33.05,
+              "y": 36
+            },
+            {
+              "x": 33.05,
+              "y": 9
+            },
+            {
+              "x": 49.05,
+              "y": 9
+            }
+          ]
+        },
+        {
+          "id": "trace_b3esmle_a5ac",
+          "netName": "RETURN",
+          "layer": "TopCopper",
+          "width": 0.35,
+          "points": [
+            {
+              "x": 8.95,
+              "y": 9
+            },
+            {
+              "x": 8.95,
+              "y": 35
+            }
+          ]
+        },
+        {
+          "id": "trace_jsk3gy6_a5ae",
+          "netName": "RETURN",
+          "layer": "TopCopper",
+          "width": 0.35,
+          "points": [
+            {
+              "x": 34.95,
+              "y": 36
+            },
+            {
+              "x": 39.5,
+              "y": 36
+            },
+            {
+              "x": 39.5,
+              "y": 11
+            },
+            {
+              "x": 50.95,
+              "y": 11
+            },
+            {
+              "x": 50.95,
+              "y": 9
+            }
+          ]
+        },
+        {
+          "id": "trace_xhzzsqa_da98",
+          "netName": "RETURN",
+          "layer": "TopCopper",
+          "width": 0.35,
+          "points": [
+            {
+              "x": 8.95,
+              "y": 35
+            },
+            {
+              "x": 8.95,
+              "y": 31
+            }
+          ]
+        },
+        {
+          "id": "trace_h63tr6x_da9a",
+          "netName": "RETURN",
+          "layer": "TopCopper",
+          "width": 0.35,
+          "points": [
+            {
+              "x": 34.95,
+              "y": 36
+            },
+            {
+              "x": 36.5,
+              "y": 36
+            }
+          ]
+        },
+        {
+          "id": "trace_t23zqf3_dbml",
+          "netName": "RETURN",
+          "layer": "BottomCopper",
+          "width": 0.35,
+          "points": [
+            {
+              "x": 8.95,
+              "y": 31
+            },
+            {
+              "x": 8.95,
+              "y": 30
+            },
+            {
+              "x": 36.5,
+              "y": 30
+            },
+            {
+              "x": 36.5,
+              "y": 36
+            }
+          ]
+        }
+      ],
+      "vias": [
+        {
+          "id": "via_rp9s7fx_d6k1",
+          "x": 8.95,
+          "y": 31,
+          "netName": "RETURN",
+          "outerDiameter": 0.6,
+          "holeDiameter": 0.3,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        },
+        {
+          "id": "via_146485q_d6k2",
+          "x": 36.5,
+          "y": 36,
+          "netName": "RETURN",
+          "outerDiameter": 0.6,
+          "holeDiameter": 0.3,
+          "startLayer": "TopCopper",
+          "endLayer": "BottomCopper",
+          "viaStyle": "Through"
+        }
+      ],
+      "copperPours": [],
+      "shapes": [],
+      "netClasses": [
+        {
+          "id": "nc_default",
+          "name": "Сигнальные",
+          "traceWidth": 0.25,
+          "minWidth": 0.15,
+          "maxWidth": 5,
+          "clearance": 0.2,
+          "viaOuterDiameter": 0.7,
+          "viaHoleDiameter": 0.35
+        }
+      ],
+      "netClassAssignments": {},
+      "diffPairs": [],
+      "designRules": {
+        "gostAccuracyClass": 4,
+        "clearanceTraceToTrace": 0.25,
+        "clearanceTraceToPad": 0.25,
+        "clearancePadToPad": 0.25,
+        "clearanceViaToAny": 0.25,
+        "clearanceHoleToHole": 0.2,
+        "clearanceCopperToBoard": 0.25,
+        "minTraceWidth": 0.35,
+        "defaultTraceWidth": 0.35,
+        "maxTraceWidth": 10,
+        "minViaOuter": 0.6,
+        "minViaHole": 0.3,
+        "minAnnularRing": 0.05,
+        "minSilkWidth": 0.12,
+        "silkToPadClearance": 0.12,
+        "diffPairMaxLengthMismatch": 0.15,
+        "realTimeDrc": true,
+        "checkUnroutedNets": true,
+        "checkSilkOverPads": true
+      },
+      "teardropsEnabled": false
+    }
+  },
+  "plan": "Задание 05-cutout. Только самостоятельная плата (без схемы). Габарит 60x44, 2 слоя, зазор 0.25. Г-образный контур: (0,0)-(60,0)-(60,29)-(41,29)-(41,44)-(0,44). Сквозной прямоугольный вырез (19,12)-(32,12)-(32,27)-(19,27). 4 резистора 0805 из библиотеки: R1(8,9,Top,0), R2(50,9,Top,0), R3(8,35,Top,0), R4(34,36,Top,0) — закрепить, допуск 0.1 мм. Сети: SENSE = R1.1,R2.1,R3.1,R4.1; RETURN = R1.2,R2.2,R3.2,R4.2. Прочие площадки без сети. Не добавлять другие корпуса, цепи, зоны, заливки. Развести обе сети дорожками и переходами по материалу платы, зазор 0.25. Проверки: состав сетей, DRC, unrouted, геометрия. Шелкография-предупреждения допустимы с пояснением.",
+  "targets": {
+    "documents": "pcb",
+    "boardRefs": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+    ],
+    "board": {
+      "width": 60,
+      "height": 44,
+      "layers": 2,
+      "clearance": 0.25,
+      "positions": [
+        {
+          "ref": "R1",
+          "x": 8,
+          "y": 9,
+          "tolerance": 0.1
+        },
+        {
+          "ref": "R2",
+          "x": 50,
+          "y": 9,
+          "tolerance": 0.1
+        },
+        {
+          "ref": "R3",
+          "x": 8,
+          "y": 35,
+          "tolerance": 0.1
+        },
+        {
+          "ref": "R4",
+          "x": 34,
+          "y": 36,
+          "tolerance": 0.1
+        }
+      ]
+    }
+  },
+  "checks": {
+    "erc": 0,
+    "drc": 8,
+    "outsideFrame": 0,
+    "unrouted": 0,
+    "requirements": [
+      {
+        "requirement": "Ширина платы",
+        "expected": 60,
+        "actual": 60,
+        "pass": true
+      },
+      {
+        "requirement": "Высота платы",
+        "expected": 44,
+        "actual": 44,
+        "pass": true
+      },
+      {
+        "requirement": "Слои платы",
+        "expected": 2,
+        "actual": 2,
+        "pass": true
+      },
+      {
+        "requirement": "Минимальный зазор",
+        "expected": 0.25,
+        "actual": 0.25,
+        "pass": true
+      },
+      {
+        "requirement": "Положение R1",
+        "expected": {
+          "x": 8,
+          "y": 9,
+          "tolerance": 0.1
+        },
+        "actual": {
+          "x": 8,
+          "y": 9
+        },
+        "pass": true
+      },
+      {
+        "requirement": "Положение R2",
+        "expected": {
+          "x": 50,
+          "y": 9,
+          "tolerance": 0.1
+        },
+        "actual": {
+          "x": 50,
+          "y": 9
+        },
+        "pass": true
+      },
+      {
+        "requirement": "Положение R3",
+        "expected": {
+          "x": 8,
+          "y": 35,
+          "tolerance": 0.1
+        },
+        "actual": {
+          "x": 8,
+          "y": 35
+        },
+        "pass": true
+      },
+      {
+        "requirement": "Положение R4",
+        "expected": {
+          "x": 34,
+          "y": 36,
+          "tolerance": 0.1
+        },
+        "actual": {
+          "x": 34,
+          "y": 36
+        },
+        "pass": true
+      }
+    ],
+    "revision": 22,
+    "errors": 0,
+    "warnings": 8,
+    "blockers": []
+  },
+  "report": {
+    "summary": "Задание 05-cutout выполнено: создана самостоятельная печатная плата без схемы (документ «Печатная плата», ревизия 22).\n\nЧто сделано:\n1. Контур: фактический Г-образный контур по заданным вершинам (0,0)-(60,0)-(60,29)-(41,29)-(41,44)-(0,44), габарит 60x44 мм, 2 слоя, минимальный зазор 0.25 мм — совпадает с ТЗ (requirements: все 4 проверки габаритов/слоёв/зазора pass).\n2. Сквозной прямоугольный вырез (окно) по вершинам (19,12)-(32,12)-(32,27)-(19,27) — один cutout, координаты точно по ТЗ.\n3. Комплект: 4 библиотечных резистора 0805 (PAT_CHIP_2012M), без других корпусов. Позиции закреплены (locked) с углом 0, стороной Top и попадают в допуск 0.1 мм: R1(8,9), R2(50,9), R3(8,35), R4(34,36) — проверки положения pass.\n4. Назначения площадок исчерпывающие: R1.1/R2.1/R3.1/R4.1 = SENSE; R1.2/R2.2/R3.2/R4.2 = RETURN; иных сетей, корпусов, зон запрета и заливок не добавлено.\n5. Разводка обеих сетей по материалу платы, ширина 0.35 мм, ортогональные участки:\n   - SENSE (TopCopper): R1.1 → x=5 → R3.1; R3.1 → y=38 → x=33.05 → R4.1; R4.1 → x=33.05 → R2.1. Все участки вне окна (правая кромка меди x≈32.9 при границе окна 32) и внутри контура.\n   - RETURN: R1.2 → R3.2 (TopCopper, x=8.95); R3.2 → via (8.95,31) → BottomCopper y=30 → via (36.5,36) → R4.2 (TopCopper); R4.2 → 39.5,36 → y=11 → 50.95,11 → R2.2 (TopCopper). Два переходных отверстия 0.6/0.3 мм той же цепи, состыкованы с дорожками; центры в материале платы, не в зоне окна и вне SMD-площадок (зазор до R4.2 ≥0.7 мм).\n   - Обход по нижнему слою применён именно для RETURN (R3.2↔R4.2), так как маршрут по верхнему слою конфликтовал с SENSE (проверка выдавала DRC-зазор −0.35 мм); смена подхода дала чистую разводку.\n\nРезультат проверки последней ревизии (check/finalize):\n- ERC: 0 замечаний (схемы нет, проверка на плате).\n- DRC: 0 ошибок; 8 предупреждений — все DRC-SILK-PAD по библиотечному корпусу 0805: шелкография контура корпуса перекрывает площадки R1.1/R1.2 (0.03 мм), R2.1/R2.2 (0.03 мм), R3.1/R3.2 (0.02 мм), R4.1/R4.2 (0.02 мм) при норме 0.12 мм. Это свойство библиотечного посадочного места PAT_CHIP_2012M (контур шелкографии нарисован вплотную к КП), а не следствие ручного размещения; предупреждения не ослаблялись и не скрывались.\n- Неразведённых связей: 0 (unrouted=0) — обе сети соединяют по четыре корпуса.\n- Незалитых полигонов: 0 (заливки по ТЗ не требуются).\n- Геометрия (pcbGeometry/geometryWarnings): без замечаний — дорожки и переходы остаются на материале платы, окно не пересечено.\n- targetIssues: нет; comparison.inSync — комплект документов соответствует плану (только плата).\n- Визуальная проверка PNG: контур с вырезом читается, окно свободно от меди, все четыре корпуса подписаны, дорожки не проходят через окно и не выходят за контур, переходы видны и соединены с дорожками обоих слоёв.\n\nИтог честный: электрическая связность обеих сетей и монтажная геометрия выполнены; остаются только допустимые предупреждения шелкографии библиотечного корпуса.",
+    "limitations": "Механическая прочность и технологичность не моделировались: перемычка материала между окном (x=32) и правой кромкой (x=41) шириной ~9 мм, между окном (y=27) и нижней частью — достаточны по геометрии, но не рассчитывались на изгиб. Переходные отверстия 0.6/0.3 мм приняты по минимальным правилам платы (minViaOuter 0.6, minViaHole 0.3) и не согласованы с конкретным производством. Номиналы резисторов ТЗ не задаёт (учебные сети), поэтому в значениях указан библиотечный тип «ЧИП_2012М (0805)». Предупреждения DRC-SILK-PAD относятся к библиотечному посадочному месту 0805 и не устранены изменением правил; при необходимости их снимают правкой шелкографии в библиотеке. Электрические характеристики (токи, падение напряжения, влияние окна на паразитные параметры) не моделировались — проверки редактора и снимки подтверждают только связность и геометрию, но не работоспособность или готовность к производству.",
+    "status": "complete"
+  }
+}

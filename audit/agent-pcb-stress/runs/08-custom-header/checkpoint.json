@@ -1,0 +1,781 @@
+{
+  "documents": {
+    "schematic": {
+      "version": "1.0",
+      "filePath": "",
+      "projectName": "Интерфейс",
+      "units": "mm",
+      "gridSize": 2.5,
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "sheets": [
+        {
+          "id": "sheet_1",
+          "name": "Интерфейс",
+          "format": "A4_L",
+          "titleBlock": {
+            "enabled": true,
+            "form": "Form1",
+            "showZones": true,
+            "showCornerStamp26": true,
+            "designation": "СТРЕСС.260008 Э3",
+            "name": "Учебный разъём с развязкой",
+            "subName": "Схема электрическая принципиальная",
+            "organization": "",
+            "litera": "",
+            "mass": "—",
+            "scale": "—",
+            "sheetNumber": 1,
+            "totalSheets": 1,
+            "developer": "",
+            "checker": "",
+            "techControl": "",
+            "normControl": "",
+            "approver": "",
+            "date": "17.11.2026",
+            "documentCode": "Э3"
+          },
+          "components": [
+            {
+              "id": "comp_os56swn_961v",
+              "componentDefId": "COMP_EDU_HDR_4PIN",
+              "libraryId": "lib_user",
+              "refDes": "XT1",
+              "instanceId": "pkg_4rjengt_961v",
+              "value": "Разъём учебный 4 конт.",
+              "typeName": "Разъём учебный 4 конт. (1-VIN,2-A,3-B,4-GND)",
+              "partIndex": 0,
+              "x": 60,
+              "y": 110,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_EDU_HDR_4PIN",
+              "refDesOffset": {
+                "x": -2.5,
+                "y": -19
+              },
+              "valueOffset": {
+                "x": -2.5,
+                "y": 19
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            },
+            {
+              "id": "comp_0yamoer_961v",
+              "componentDefId": "COMP_EDU_HDR_4PIN",
+              "libraryId": "lib_user",
+              "refDes": "XT2",
+              "instanceId": "pkg_f2yufha_961v",
+              "value": "Разъём учебный 4 конт.",
+              "typeName": "Разъём учебный 4 конт. (1-VIN,2-A,3-B,4-GND)",
+              "partIndex": 0,
+              "x": 230,
+              "y": 110,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_EDU_HDR_4PIN",
+              "refDesOffset": {
+                "x": -2.5,
+                "y": -19
+              },
+              "valueOffset": {
+                "x": -2.5,
+                "y": 19
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            },
+            {
+              "id": "comp_1w3z319_961v",
+              "componentDefId": "COMP_R_R1_12_0805",
+              "libraryId": "Резисторы (ГОСТ 2.728)",
+              "refDes": "R1",
+              "instanceId": "pkg_u1649x5_961v",
+              "value": "100 Ом",
+              "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 140,
+              "y": 70,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -6
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 6
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            },
+            {
+              "id": "comp_epkm0u8_961w",
+              "componentDefId": "COMP_R_R1_12_0805",
+              "libraryId": "Резисторы (ГОСТ 2.728)",
+              "refDes": "R2",
+              "instanceId": "pkg_30jaka2_961w",
+              "value": "100 Ом",
+              "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 140,
+              "y": 150,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -6
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 6
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            },
+            {
+              "id": "comp_rdy8cvf_961w",
+              "componentDefId": "COMP_C_K10_17V_0805",
+              "libraryId": "Конденсаторы (ГОСТ 2.728)",
+              "refDes": "C1",
+              "instanceId": "pkg_4jlvnks_961w",
+              "value": "100 нФ",
+              "typeName": "К10-17в (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 185,
+              "y": 40,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -8
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 8
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            }
+          ],
+          "wires": [],
+          "buses": [],
+          "busTaps": [],
+          "junctions": [],
+          "netPorts": [],
+          "diffPairs": [],
+          "hierarchyBlocks": [],
+          "shapes": []
+        }
+      ],
+      "activeSheetId": "sheet_1",
+      "netClasses": [
+        {
+          "id": "nc_default",
+          "name": "Сигнальные",
+          "traceWidth": 0.25,
+          "minWidth": 0.15,
+          "maxWidth": 5,
+          "clearance": 0.2,
+          "viaOuterDiameter": 0.7,
+          "viaHoleDiameter": 0.35
+        }
+      ],
+      "netClassAssignments": {},
+      "customComponentDefs": {
+        "COMP_EDU_HDR_4PIN": {
+          "id": "COMP_EDU_HDR_4PIN",
+          "name": "Разъём учебный 4 конт. (1-VIN,2-A,3-B,4-GND)",
+          "defaultValue": "Разъём учебный 4 конт. (1-VIN,2-A,3-B,4-GND)",
+          "refDesPrefix": "XT",
+          "patternId": "PAT_EDU_HDR_4PIN",
+          "description": "ТЗ 08-custom-header: контакты 1 VIN, 2 A, 3 B, 4 GND, все Passive; УГО и посадочное место заданы ТЗ",
+          "library": "lib_user",
+          "gostStandard": "",
+          "parts": [
+            {
+              "partIndex": 0,
+              "name": "Разъём учебный 4 конт. (1-VIN,2-A,3-B,4-GND)",
+              "primitives": [
+                {
+                  "type": "rect",
+                  "x": -15,
+                  "y": -15,
+                  "w": 30,
+                  "h": 30,
+                  "width": 0.42
+                },
+                {
+                  "type": "text",
+                  "x": 0,
+                  "y": -11.8,
+                  "text": "Разъём учебный 4 конт. (1-VIN,2-A,3-B,4-GND)",
+                  "size": 2.8,
+                  "align": "center",
+                  "bold": true
+                }
+              ],
+              "pins": [
+                {
+                  "id": "pl_1_0",
+                  "number": "1",
+                  "name": "VIN",
+                  "x": -20,
+                  "y": -7.5,
+                  "length": 5,
+                  "orientation": 0,
+                  "electricalType": "Passive",
+                  "style": "Line",
+                  "showName": true,
+                  "showNumber": true,
+                  "padMapping": "1"
+                },
+                {
+                  "id": "pl_2_1",
+                  "number": "2",
+                  "name": "A",
+                  "x": -20,
+                  "y": -2.5,
+                  "length": 5,
+                  "orientation": 0,
+                  "electricalType": "Passive",
+                  "style": "Line",
+                  "showName": true,
+                  "showNumber": true,
+                  "padMapping": "2"
+                },
+                {
+                  "id": "pl_3_2",
+                  "number": "3",
+                  "name": "B",
+                  "x": -20,
+                  "y": 2.5,
+                  "length": 5,
+                  "orientation": 0,
+                  "electricalType": "Passive",
+                  "style": "Line",
+                  "showName": true,
+                  "showNumber": true,
+                  "padMapping": "3"
+                },
+                {
+                  "id": "pl_4_3",
+                  "number": "4",
+                  "name": "GND",
+                  "x": -20,
+                  "y": 7.5,
+                  "length": 5,
+                  "orientation": 0,
+                  "electricalType": "Passive",
+                  "style": "Line",
+                  "showName": true,
+                  "showNumber": true,
+                  "padMapping": "4"
+                }
+              ]
+            }
+          ],
+          "attributes": {
+            "datasheet": "ТЗ 08-custom-header: контакты 1 VIN, 2 A, 3 B, 4 GND, все Passive; УГО и посадочное место заданы ТЗ"
+          }
+        },
+        "COMP_R_R1_12_0805": {
+          "id": "COMP_R_R1_12_0805",
+          "name": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "library": "Резисторы (ГОСТ 2.728)",
+          "refDesPrefix": "R",
+          "defaultValue": "10к",
+          "gostStandard": "АЛЯР.434110.005 ТУ",
+          "description": "Резистор чип для поверхностного монтажа Р1-12 (2012М / 0805)",
+          "manufacturer": "АО «НПО Эркон»",
+          "patternId": "PAT_CHIP_2012M",
+          "spiceModel": {
+            "prefix": "R",
+            "params": {
+              "R": 10000
+            }
+          },
+          "parts": [
+            {
+              "partIndex": 1,
+              "name": "Part 1",
+              "primitives": [
+                {
+                  "type": "rect",
+                  "x": -5,
+                  "y": -2,
+                  "w": 10,
+                  "h": 4,
+                  "width": 0.35
+                }
+              ],
+              "pins": [
+                {
+                  "id": "pin_1",
+                  "number": "1",
+                  "name": "1",
+                  "x": -10,
+                  "y": 0,
+                  "length": 5,
+                  "orientation": 0,
+                  "electricalType": "Passive",
+                  "style": "Line",
+                  "showName": false,
+                  "showNumber": false,
+                  "padMapping": "1"
+                },
+                {
+                  "id": "pin_2",
+                  "number": "2",
+                  "name": "2",
+                  "x": 10,
+                  "y": 0,
+                  "length": 5,
+                  "orientation": 180,
+                  "electricalType": "Passive",
+                  "style": "Line",
+                  "showName": false,
+                  "showNumber": false,
+                  "padMapping": "2"
+                }
+              ]
+            }
+          ]
+        },
+        "COMP_C_K10_17V_0805": {
+          "id": "COMP_C_K10_17V_0805",
+          "name": "К10-17в (ЧИП 2012М/0805)",
+          "library": "Конденсаторы (ГОСТ 2.728)",
+          "refDesPrefix": "C",
+          "defaultValue": "0,1 мкФ",
+          "gostStandard": "ОЖ0.460.172 ТУ",
+          "description": "Конденсатор керамический многослойный ЧИП К10-17в (2012М)",
+          "manufacturer": "ОАО «Кулон»",
+          "patternId": "PAT_CHIP_2012M",
+          "spiceModel": {
+            "prefix": "C",
+            "params": {
+              "C": 1e-7
+            }
+          },
+          "parts": [
+            {
+              "partIndex": 1,
+              "name": "Part 1",
+              "primitives": [
+                {
+                  "type": "line",
+                  "x1": -1,
+                  "y1": -4,
+                  "x2": -1,
+                  "y2": 4,
+                  "width": 0.4
+                },
+                {
+                  "type": "line",
+                  "x1": 1,
+                  "y1": -4,
+                  "x2": 1,
+                  "y2": 4,
+                  "width": 0.4
+                }
+              ],
+              "pins": [
+                {
+                  "id": "pin_1",
+                  "number": "1",
+                  "name": "1",
+                  "x": -5,
+                  "y": 0,
+                  "length": 4,
+                  "orientation": 0,
+                  "electricalType": "Passive",
+                  "style": "Line",
+                  "showName": false,
+                  "showNumber": false,
+                  "padMapping": "1"
+                },
+                {
+                  "id": "pin_2",
+                  "number": "2",
+                  "name": "2",
+                  "x": 5,
+                  "y": 0,
+                  "length": 4,
+                  "orientation": 180,
+                  "electricalType": "Passive",
+                  "style": "Line",
+                  "showName": false,
+                  "showNumber": false,
+                  "padMapping": "2"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "customPatternDefs": {
+        "PAT_EDU_HDR_4PIN": {
+          "id": "PAT_EDU_HDR_4PIN",
+          "name": "Учебный разъём 4 конт. THT (10x4x5)",
+          "description": "ТЗ 08-custom-header: центры площадок X=-3,81;-1,27;1,27;3,81 мм, y=0; круглые Ø1,8 мм; сверло 0,9 мм; тело 10x4x5 мм",
+          "library": "lib_user",
+          "pads": [
+            {
+              "number": "1",
+              "x": -3.81,
+              "y": 0,
+              "width": 1.8,
+              "height": 1.8,
+              "type": "THT",
+              "shape": "Round",
+              "holeDiameter": 0.9,
+              "id": "pad_7tbug6w_8xpr",
+              "layer": "All"
+            },
+            {
+              "number": "2",
+              "x": -1.27,
+              "y": 0,
+              "width": 1.8,
+              "height": 1.8,
+              "type": "THT",
+              "shape": "Round",
+              "holeDiameter": 0.9,
+              "id": "pad_6gafwy2_8xpr",
+              "layer": "All"
+            },
+            {
+              "number": "3",
+              "x": 1.27,
+              "y": 0,
+              "width": 1.8,
+              "height": 1.8,
+              "type": "THT",
+              "shape": "Round",
+              "holeDiameter": 0.9,
+              "id": "pad_hzyqf7b_8xpr",
+              "layer": "All"
+            },
+            {
+              "number": "4",
+              "x": 3.81,
+              "y": 0,
+              "width": 1.8,
+              "height": 1.8,
+              "type": "THT",
+              "shape": "Round",
+              "holeDiameter": 0.9,
+              "id": "pad_gwotkoc_8xpr",
+              "layer": "All"
+            }
+          ],
+          "graphics": [],
+          "courtyard": {
+            "width": 4,
+            "height": 10
+          },
+          "model3d": {
+            "shape": "Box",
+            "bodyWidth": 4,
+            "bodyLength": 10,
+            "bodyHeight": 5,
+            "color": "#343941"
+          }
+        },
+        "PAT_CHIP_2012M": {
+          "id": "PAT_CHIP_2012M",
+          "name": "ЧИП_2012М (0805)",
+          "library": "Корпуса пассивных ЭРЭ (ГОСТ)",
+          "gostName": "Р1-12-2012М / К10-17в-2012",
+          "ipcName": "ЧИП_2012М (0805)",
+          "description": "Метрический ЧИП-корпус 2.0 × 1.25 мм (Р1-12, К10-17)",
+          "pads": [
+            {
+              "id": "pad_1",
+              "number": "1",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": -0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            },
+            {
+              "id": "pad_2",
+              "number": "2",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": 0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            }
+          ],
+          "graphics": [
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": -0.775,
+              "x2": 0.9,
+              "y2": -0.775,
+              "width": 0.15
+            },
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": 0.775,
+              "x2": 0.9,
+              "y2": 0.775,
+              "width": 0.15
+            },
+            {
+              "type": "rect",
+              "layer": "TopAssembly",
+              "x": -1,
+              "y": -0.625,
+              "w": 2,
+              "h": 1.25,
+              "width": 0.1
+            },
+            {
+              "type": "rect",
+              "layer": "Courtyard",
+              "x": -1.7750000000000001,
+              "y": -1.375,
+              "w": 3.5500000000000003,
+              "h": 2.75,
+              "width": 0.1
+            }
+          ],
+          "courtyard": {
+            "width": 3.5500000000000003,
+            "height": 2.75
+          },
+          "model3d": {
+            "shape": "ChipSMD",
+            "bodyWidth": 1.25,
+            "bodyLength": 2,
+            "bodyHeight": 0.6,
+            "color": "#b88958",
+            "pinCount": 2,
+            "pitch": 1.9
+          }
+        }
+      }
+    }
+  },
+  "plan": "Задача 08-custom-header «Учебный разъём с развязкой»: схема Э3 + связанная плата.\nДокументы: обе (schematic + pcb). Обозначение «СТРЕСС.260008 Э3», лист «Интерфейс» A4_L Form1.\nНets: VIN=XT1.1,XT2.1,C1.1; GND=XT1.4,XT2.4,C1.2; A_IN=XT1.2,R1.1; A_OUT=R1.2,XT2.2; B_IN=XT1.3,R2.1; B_OUT=R2.2,XT2.3.\nЗначения: R1=R2=100 Ом, C1=100 нФ. R/C — библиотечные 0805.\nXT1/XT2 — одно учебное УГО (контакты 1 VIN,2 A,3 B,4 GND, все Passive) и одно проектное THT посадочное место: площадки центры x=-3.81,-1.27,1.27,3.81, y=0, круглые Ø1.8, сверло 0.9, тело 10x4x5 мм.\nПлата: 54x36 мм, 2 слоя, зазор 0.25 мм; контур (0,0)-(54,0)-(54,36)-(0,36). XT1 (9,18) Top 90°; XT2 (45,18) Top 270°; оба закреплены (locked), допуск 0.1 мм.\nБез других корпусов, цepей, зон и заливок. Площадки без указанной сети — без сети.\nПорядо: set_targets → библиотека R/C → define_component/pattern для XT → схема → check → create_board → размещение/закрепление → разводка → refill/check → finalize → finish.",
+  "targets": {
+    "documents": "both",
+    "schematicNets": {
+      "VIN": [
+        {
+          "ref": "XT1",
+          "pin": "1"
+        },
+        {
+          "ref": "XT2",
+          "pin": "1"
+        },
+        {
+          "ref": "C1",
+          "pin": "1"
+        }
+      ],
+      "GND": [
+        {
+          "ref": "XT1",
+          "pin": "4"
+        },
+        {
+          "ref": "XT2",
+          "pin": "4"
+        },
+        {
+          "ref": "C1",
+          "pin": "2"
+        }
+      ],
+      "A_IN": [
+        {
+          "ref": "XT1",
+          "pin": "2"
+        },
+        {
+          "ref": "R1",
+          "pin": "1"
+        }
+      ],
+      "A_OUT": [
+        {
+          "ref": "R1",
+          "pin": "2"
+        },
+        {
+          "ref": "XT2",
+          "pin": "2"
+        }
+      ],
+      "B_IN": [
+        {
+          "ref": "XT1",
+          "pin": "3"
+        },
+        {
+          "ref": "R2",
+          "pin": "1"
+        }
+      ],
+      "B_OUT": [
+        {
+          "ref": "R2",
+          "pin": "2"
+        },
+        {
+          "ref": "XT2",
+          "pin": "3"
+        }
+      ]
+    },
+    "boardNets": {
+      "VIN": [
+        {
+          "ref": "XT1",
+          "pin": "1"
+        },
+        {
+          "ref": "XT2",
+          "pin": "1"
+        },
+        {
+          "ref": "C1",
+          "pin": "1"
+        }
+      ],
+      "GND": [
+        {
+          "ref": "XT1",
+          "pin": "4"
+        },
+        {
+          "ref": "XT2",
+          "pin": "4"
+        },
+        {
+          "ref": "C1",
+          "pin": "2"
+        }
+      ],
+      "A_IN": [
+        {
+          "ref": "XT1",
+          "pin": "2"
+        },
+        {
+          "ref": "R1",
+          "pin": "1"
+        }
+      ],
+      "A_OUT": [
+        {
+          "ref": "R1",
+          "pin": "2"
+        },
+        {
+          "ref": "XT2",
+          "pin": "2"
+        }
+      ],
+      "B_IN": [
+        {
+          "ref": "XT1",
+          "pin": "3"
+        },
+        {
+          "ref": "R2",
+          "pin": "1"
+        }
+      ],
+      "B_OUT": [
+        {
+          "ref": "R2",
+          "pin": "2"
+        },
+        {
+          "ref": "XT2",
+          "pin": "3"
+        }
+      ]
+    },
+    "schematicRefs": [
+      "XT1",
+      "XT2",
+      "R1",
+      "R2",
+      "C1"
+    ],
+    "boardRefs": [
+      "XT1",
+      "XT2",
+      "R1",
+      "R2",
+      "C1"
+    ],
+    "designation": "СТРЕСС.260008 Э3",
+    "sheets": [
+      {
+        "name": "Интерфейс",
+        "format": "A4_L",
+        "form": "Form1"
+      }
+    ],
+    "values": {
+      "R1": "100 Ом",
+      "R2": "100 Ом",
+      "C1": "100 нФ"
+    },
+    "board": {
+      "width": 54,
+      "height": 36,
+      "layers": 2,
+      "clearance": 0.25,
+      "positions": [
+        {
+          "ref": "XT1",
+          "x": 9,
+          "y": 18,
+          "tolerance": 0.1
+        },
+        {
+          "ref": "XT2",
+          "x": 45,
+          "y": 18,
+          "tolerance": 0.1
+        }
+      ]
+    }
+  }
+}

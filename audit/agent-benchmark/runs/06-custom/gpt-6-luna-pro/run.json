@@ -1,0 +1,41 @@
+{
+  "test": {
+    "id": "06-custom",
+    "name": "Свой компонент и корпус",
+    "type": "both",
+    "task": "Создай схему Э3 и связанную плату 40×30 мм для учебного двухконтактного модуля XT1 плюс R1 1 кОм 0805. ТЕСТ.000006 Э3. Источник данных — предоставленное здесь ТЗ учебной детали. Определи собственные УГО и корпус XT1: контакт 1 назови A, контакт 2 B, оба Passive; круглые THT площадки Ø1,8 мм, сверло 0,9 мм, центры x=-1,27 и +1,27 мм, y=0; тело 6×4×5 мм. Цепь A включает XT1.1 и R1.1, цепь B — XT1.2 и R1.2. Разведи обе цепи."
+  },
+  "model": "gpt-6-luna-pro",
+  "error": "Error: Ошибка AITUNNEL (HTTP 400). Проверьте доступность модели и поддержку инструментов.",
+  "durationMs": 1983,
+  "requests": [
+    {
+      "http": 400,
+      "id": "chat-034zJFkLQPFBQtEYrMQcz0",
+      "msApi": 1979,
+      "imageCount": 0,
+      "apiError": "{ \"error\": { \"message\": \"Invalid schema for function 'read_library': '^[\\\\\\\\p{L}\\\\\\\\p{N}_.#-]+$' is not a 'regex'.\", \"type\": \"invalid_request_error\", \"param\": \"tools[2].parameters\", \"code\": \"invalid_function_parameters\" }\n}"
+    }
+  ],
+  "events": [
+    {
+      "ms": 0,
+      "kind": "step",
+      "step": "Запрос к модели 1/50"
+    },
+    {
+      "ms": 1980,
+      "kind": "api",
+      "http": 400,
+      "id": "chat-034zJFkLQPFBQtEYrMQcz0",
+      "msApi": 1979,
+      "imageCount": 0,
+      "apiError": "{ \"error\": { \"message\": \"Invalid schema for function 'read_library': '^[\\\\\\\\p{L}\\\\\\\\p{N}_.#-]+$' is not a 'regex'.\", \"type\": \"invalid_request_error\", \"param\": \"tools[2].parameters\", \"code\": \"invalid_function_parameters\" }\n}"
+    }
+  ],
+  "independent": {},
+  "captures": [],
+  "draft": {
+    "plan": ""
+  }
+}

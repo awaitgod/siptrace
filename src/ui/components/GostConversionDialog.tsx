@@ -19,14 +19,14 @@ export const GostConversionDialog: React.FC<GostConversionDialogProps> = ({ repo
         </div>
 
         <div className="dt-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ background: '#e5f1fb', border: '1px solid #99d1ff', padding: '6px 8px', fontSize: 11.5 }}>
+          <div className="dt-message-info" style={{ padding: '6px 8px', fontSize: 11.5 }}>
             <b>Исходный САПР:</b> {report.sourceFormat} · <b>Компонентов:</b> {report.convertedComponents} ·{' '}
             <b>Переведено в УГО ГОСТ:</b> {report.convertedSymbolsToUgo} · <b>Корпусов приведено:</b>{' '}
             {report.convertedPatterns}
           </div>
 
           {report.warnings && report.warnings.length > 0 && (
-            <div role="alert" style={{ background: '#fff4d6', border: '1px solid #bd8300', padding: '8px', fontSize: 12 }}>
+            <div role="alert" className="dt-message-warning" style={{ padding: '8px', fontSize: 12 }}>
               <b>Данные импортированы не полностью</b>
               <ul>{report.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>
             </div>

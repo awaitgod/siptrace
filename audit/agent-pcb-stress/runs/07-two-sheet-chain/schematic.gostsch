@@ -1,0 +1,563 @@
+{
+  "version": "1.0",
+  "filePath": "",
+  "projectName": "СТРЕСС.260007 Э3",
+  "units": "mm",
+  "gridSize": 2.5,
+  "origin": {
+    "x": 0,
+    "y": 0
+  },
+  "sheets": [
+    {
+      "id": "sheet_1",
+      "name": "Вход",
+      "format": "A4_L",
+      "titleBlock": {
+        "enabled": true,
+        "form": "Form1",
+        "showZones": true,
+        "showCornerStamp26": true,
+        "designation": "СТРЕСС.260007 Э3",
+        "name": "Цепочка резисторная двухлистовая",
+        "subName": "Схема электрическая принципиальная",
+        "organization": "",
+        "litera": "",
+        "mass": "—",
+        "scale": "—",
+        "sheetNumber": 1,
+        "totalSheets": 2,
+        "developer": "",
+        "checker": "",
+        "techControl": "",
+        "normControl": "",
+        "approver": "",
+        "date": "17.11.2026",
+        "documentCode": "Э3"
+      },
+      "components": [
+        {
+          "id": "comp_y321mj3_7bzh",
+          "componentDefId": "COMP_R_R1_12_0805",
+          "libraryId": "Резисторы (ГОСТ 2.728)",
+          "refDes": "R1",
+          "instanceId": "pkg_ycoqwiv_7bzh",
+          "value": "1 кОм",
+          "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "partIndex": 1,
+          "x": 50,
+          "y": 60,
+          "angle": 0,
+          "flipX": false,
+          "flipY": false,
+          "patternId": "PAT_CHIP_2012M",
+          "refDesOffset": {
+            "x": 0,
+            "y": -6
+          },
+          "valueOffset": {
+            "x": 0,
+            "y": 6
+          },
+          "showRefDes": true,
+          "showValue": true,
+          "labelAngle": 0
+        },
+        {
+          "id": "comp_10w966i_7bzh",
+          "componentDefId": "COMP_R_R1_12_0805",
+          "libraryId": "Резисторы (ГОСТ 2.728)",
+          "refDes": "R2",
+          "instanceId": "pkg_337ulpl_7bzh",
+          "value": "1 кОм",
+          "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "partIndex": 1,
+          "x": 80,
+          "y": 60,
+          "angle": 0,
+          "flipX": false,
+          "flipY": false,
+          "patternId": "PAT_CHIP_2012M",
+          "refDesOffset": {
+            "x": 0,
+            "y": -6
+          },
+          "valueOffset": {
+            "x": 0,
+            "y": 6
+          },
+          "showRefDes": true,
+          "showValue": true,
+          "labelAngle": 0
+        },
+        {
+          "id": "comp_rihmmku_7bzi",
+          "componentDefId": "COMP_R_R1_12_0805",
+          "libraryId": "Резисторы (ГОСТ 2.728)",
+          "refDes": "R3",
+          "instanceId": "pkg_1ovn48m_7bzi",
+          "value": "1 кОм",
+          "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "partIndex": 1,
+          "x": 110,
+          "y": 60,
+          "angle": 0,
+          "flipX": false,
+          "flipY": false,
+          "patternId": "PAT_CHIP_2012M",
+          "refDesOffset": {
+            "x": 0,
+            "y": -6
+          },
+          "valueOffset": {
+            "x": 0,
+            "y": 6
+          },
+          "showRefDes": true,
+          "showValue": true,
+          "labelAngle": 0
+        }
+      ],
+      "wires": [
+        {
+          "id": "wire_3gn9ljy_7grc",
+          "points": [
+            {
+              "x": 60,
+              "y": 60
+            },
+            {
+              "x": 70,
+              "y": 60
+            }
+          ],
+          "netName": "N1"
+        },
+        {
+          "id": "wire_mi9vle8_7grd",
+          "points": [
+            {
+              "x": 90,
+              "y": 60
+            },
+            {
+              "x": 100,
+              "y": 60
+            }
+          ],
+          "netName": "N2"
+        },
+        {
+          "id": "wire_sgy5awg_7ims",
+          "points": [
+            {
+              "x": 120,
+              "y": 60
+            },
+            {
+              "x": 140,
+              "y": 60
+            }
+          ],
+          "netName": "LINK"
+        },
+        {
+          "id": "wire_ugjr0np_7imu",
+          "points": [
+            {
+              "x": 40,
+              "y": 60
+            },
+            {
+              "x": 20,
+              "y": 60
+            }
+          ],
+          "netName": "IN"
+        }
+      ],
+      "buses": [],
+      "busTaps": [],
+      "junctions": [],
+      "netPorts": [
+        {
+          "id": "port_3lo04sh_7ims",
+          "x": 140,
+          "y": 60,
+          "angle": 0,
+          "netName": "LINK",
+          "style": "OffPageOut"
+        },
+        {
+          "id": "port_jd9o1m8_7imu",
+          "x": 20,
+          "y": 60,
+          "angle": 0,
+          "netName": "IN",
+          "style": "PortLeft"
+        }
+      ],
+      "diffPairs": [],
+      "hierarchyBlocks": [],
+      "shapes": []
+    },
+    {
+      "id": "sheet_0hdn9mm_74kv",
+      "name": "Выход",
+      "format": "A4_L",
+      "titleBlock": {
+        "enabled": true,
+        "form": "Form2a",
+        "showZones": true,
+        "showCornerStamp26": true,
+        "designation": "СТРЕСС.260007 Э3",
+        "name": "Цепочка резисторная двухлистовая",
+        "subName": "Схема электрическая принципиальная",
+        "organization": "",
+        "litera": "",
+        "mass": "—",
+        "scale": "—",
+        "sheetNumber": 2,
+        "totalSheets": 2,
+        "developer": "",
+        "checker": "",
+        "techControl": "",
+        "normControl": "",
+        "approver": "",
+        "date": "17.11.2026",
+        "documentCode": "Э3"
+      },
+      "components": [
+        {
+          "id": "comp_llscrzi_7drk",
+          "componentDefId": "COMP_R_R1_12_0805",
+          "libraryId": "Резисторы (ГОСТ 2.728)",
+          "refDes": "R4",
+          "instanceId": "pkg_kpgqze2_7drk",
+          "value": "1 кОм",
+          "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "partIndex": 1,
+          "x": 50,
+          "y": 60,
+          "angle": 0,
+          "flipX": false,
+          "flipY": false,
+          "patternId": "PAT_CHIP_2012M",
+          "refDesOffset": {
+            "x": 0,
+            "y": -6
+          },
+          "valueOffset": {
+            "x": 0,
+            "y": 6
+          },
+          "showRefDes": true,
+          "showValue": true,
+          "labelAngle": 0
+        },
+        {
+          "id": "comp_sg693xi_7drl",
+          "componentDefId": "COMP_R_R1_12_0805",
+          "libraryId": "Резисторы (ГОСТ 2.728)",
+          "refDes": "R5",
+          "instanceId": "pkg_o02t74f_7drl",
+          "value": "1 кОм",
+          "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "partIndex": 1,
+          "x": 80,
+          "y": 60,
+          "angle": 0,
+          "flipX": false,
+          "flipY": false,
+          "patternId": "PAT_CHIP_2012M",
+          "refDesOffset": {
+            "x": 0,
+            "y": -6
+          },
+          "valueOffset": {
+            "x": 0,
+            "y": 6
+          },
+          "showRefDes": true,
+          "showValue": true,
+          "labelAngle": 0
+        },
+        {
+          "id": "comp_zegmm3t_7drl",
+          "componentDefId": "COMP_R_R1_12_0805",
+          "libraryId": "Резисторы (ГОСТ 2.728)",
+          "refDes": "R6",
+          "instanceId": "pkg_kbszxw0_7drl",
+          "value": "1 кОм",
+          "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "partIndex": 1,
+          "x": 110,
+          "y": 60,
+          "angle": 0,
+          "flipX": false,
+          "flipY": false,
+          "patternId": "PAT_CHIP_2012M",
+          "refDesOffset": {
+            "x": 0,
+            "y": -6
+          },
+          "valueOffset": {
+            "x": 0,
+            "y": 6
+          },
+          "showRefDes": true,
+          "showValue": true,
+          "labelAngle": 0
+        }
+      ],
+      "wires": [
+        {
+          "id": "wire_x8xwkz4_7kfu",
+          "points": [
+            {
+              "x": 40,
+              "y": 60
+            },
+            {
+              "x": 20,
+              "y": 60
+            }
+          ],
+          "netName": "LINK"
+        },
+        {
+          "id": "wire_tyb23pg_7kfx",
+          "points": [
+            {
+              "x": 60,
+              "y": 60
+            },
+            {
+              "x": 70,
+              "y": 60
+            }
+          ],
+          "netName": "N4"
+        },
+        {
+          "id": "wire_p9rtp9z_7kfx",
+          "points": [
+            {
+              "x": 90,
+              "y": 60
+            },
+            {
+              "x": 100,
+              "y": 60
+            }
+          ],
+          "netName": "N5"
+        },
+        {
+          "id": "wire_2edqfps_7kfy",
+          "points": [
+            {
+              "x": 120,
+              "y": 60
+            },
+            {
+              "x": 140,
+              "y": 60
+            }
+          ],
+          "netName": "OUT"
+        }
+      ],
+      "buses": [],
+      "busTaps": [],
+      "junctions": [],
+      "netPorts": [
+        {
+          "id": "port_82b1d4q_7kfu",
+          "x": 20,
+          "y": 60,
+          "angle": 0,
+          "netName": "LINK",
+          "style": "OffPageIn"
+        },
+        {
+          "id": "port_a4vk224_7kfy",
+          "x": 140,
+          "y": 60,
+          "angle": 0,
+          "netName": "OUT",
+          "style": "PortRight"
+        }
+      ],
+      "diffPairs": [],
+      "hierarchyBlocks": [],
+      "shapes": []
+    }
+  ],
+  "activeSheetId": "sheet_1",
+  "netClasses": [
+    {
+      "id": "nc_default",
+      "name": "Сигнальные",
+      "traceWidth": 0.25,
+      "minWidth": 0.15,
+      "maxWidth": 5,
+      "clearance": 0.2,
+      "viaOuterDiameter": 0.7,
+      "viaHoleDiameter": 0.35
+    }
+  ],
+  "netClassAssignments": {},
+  "customComponentDefs": {
+    "COMP_R_R1_12_0805": {
+      "id": "COMP_R_R1_12_0805",
+      "name": "Р1-12-0,125 (ЧИП 2012М/0805)",
+      "library": "Резисторы (ГОСТ 2.728)",
+      "refDesPrefix": "R",
+      "defaultValue": "10к",
+      "gostStandard": "АЛЯР.434110.005 ТУ",
+      "description": "Резистор чип для поверхностного монтажа Р1-12 (2012М / 0805)",
+      "manufacturer": "АО «НПО Эркон»",
+      "patternId": "PAT_CHIP_2012M",
+      "spiceModel": {
+        "prefix": "R",
+        "params": {
+          "R": 10000
+        }
+      },
+      "parts": [
+        {
+          "partIndex": 1,
+          "name": "Part 1",
+          "primitives": [
+            {
+              "type": "rect",
+              "x": -5,
+              "y": -2,
+              "w": 10,
+              "h": 4,
+              "width": 0.35
+            }
+          ],
+          "pins": [
+            {
+              "id": "pin_1",
+              "number": "1",
+              "name": "1",
+              "x": -10,
+              "y": 0,
+              "length": 5,
+              "orientation": 0,
+              "electricalType": "Passive",
+              "style": "Line",
+              "showName": false,
+              "showNumber": false,
+              "padMapping": "1"
+            },
+            {
+              "id": "pin_2",
+              "number": "2",
+              "name": "2",
+              "x": 10,
+              "y": 0,
+              "length": 5,
+              "orientation": 180,
+              "electricalType": "Passive",
+              "style": "Line",
+              "showName": false,
+              "showNumber": false,
+              "padMapping": "2"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "customPatternDefs": {
+    "PAT_CHIP_2012M": {
+      "id": "PAT_CHIP_2012M",
+      "name": "ЧИП_2012М (0805)",
+      "library": "Корпуса пассивных ЭРЭ (ГОСТ)",
+      "gostName": "Р1-12-2012М / К10-17в-2012",
+      "ipcName": "ЧИП_2012М (0805)",
+      "description": "Метрический ЧИП-корпус 2.0 × 1.25 мм (Р1-12, К10-17)",
+      "pads": [
+        {
+          "id": "pad_1",
+          "number": "1",
+          "type": "SMD",
+          "shape": "RoundedRect",
+          "x": -0.95,
+          "y": 0,
+          "width": 1.05,
+          "height": 1.35,
+          "cornerRadius": 0.08,
+          "layer": "Top"
+        },
+        {
+          "id": "pad_2",
+          "number": "2",
+          "type": "SMD",
+          "shape": "RoundedRect",
+          "x": 0.95,
+          "y": 0,
+          "width": 1.05,
+          "height": 1.35,
+          "cornerRadius": 0.08,
+          "layer": "Top"
+        }
+      ],
+      "graphics": [
+        {
+          "type": "line",
+          "layer": "TopSilk",
+          "x1": -0.9,
+          "y1": -0.775,
+          "x2": 0.9,
+          "y2": -0.775,
+          "width": 0.15
+        },
+        {
+          "type": "line",
+          "layer": "TopSilk",
+          "x1": -0.9,
+          "y1": 0.775,
+          "x2": 0.9,
+          "y2": 0.775,
+          "width": 0.15
+        },
+        {
+          "type": "rect",
+          "layer": "TopAssembly",
+          "x": -1,
+          "y": -0.625,
+          "w": 2,
+          "h": 1.25,
+          "width": 0.1
+        },
+        {
+          "type": "rect",
+          "layer": "Courtyard",
+          "x": -1.7750000000000001,
+          "y": -1.375,
+          "w": 3.5500000000000003,
+          "h": 2.75,
+          "width": 0.1
+        }
+      ],
+      "courtyard": {
+        "width": 3.5500000000000003,
+        "height": 2.75
+      },
+      "model3d": {
+        "shape": "ChipSMD",
+        "bodyWidth": 1.25,
+        "bodyLength": 2,
+        "bodyHeight": 0.6,
+        "color": "#b88958",
+        "pinCount": 2,
+        "pitch": 1.9
+      }
+    }
+  }
+}

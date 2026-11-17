@@ -1,3 +1,6 @@
+@font-face { font-family: 'Inter'; src: url('./fonts/Inter-Variable.ttf') format('truetype'); font-style: normal; font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'OpenGost'; src: url('./fonts/OpenGostTypeB-Regular.ttf') format('truetype'); font-style: normal; font-weight: 400; font-display: swap; }
+
 * {
   box-sizing: border-box;
   user-select: none;
@@ -9,7 +12,7 @@ html, body, #root {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+  font-family: "Inter", "Segoe UI", Tahoma, Arial, sans-serif;
   font-size: 11px;
   color: #000000;
   background: #f0f0f0;
@@ -223,7 +226,7 @@ html, body, #root {
 
 .dt-tb-select {
   height: 20px;
-  font-family: "Segoe UI", Tahoma, sans-serif;
+  font-family: inherit;
   font-size: 11px;
   border: 1px solid #adadad;
   background: #ffffff;
@@ -613,7 +616,7 @@ button.dt-black-bar:hover {
   height: 23px;
   min-width: 78px;
   padding: 0 12px;
-  font-family: "Segoe UI", Tahoma, sans-serif;
+  font-family: inherit;
   font-size: 11.5px;
   background: #e1e1e1;
   border: 1px solid #adadad;
@@ -787,3 +790,213 @@ button.dt-dropdown-row{display:flex;width:100%;border:0;background:transparent;t
 button.dt-dropdown-row:hover,button.dt-dropdown-row:focus{background:#cce8ff;outline:1px solid #0078d7}
 [role=button]:focus-visible,.dt-sheet-tab:focus-visible{outline:2px solid #0078d7;outline-offset:-2px}
 @media print{body>#root{display:none}#siptrace-print{display:block}}
+
+/* SIPTrace Modern Classic: compact desktop surfaces around the CAD canvas. */
+:root {
+  --ui-bg: #f3f5f7;
+  --ui-surface: #ffffff;
+  --ui-subtle: #f8fafc;
+  --ui-border: #e2e7eb;
+  --ui-text: #17212b;
+  --ui-muted: #526170;
+  --ui-accent: #0067c0;
+  --ui-accent-soft: #e6f2fc;
+  --ui-selected: #d6eafb;
+  --ui-focus: #005a9e;
+  --ui-warning-bg: #fff8e1;
+  --ui-warning-border: #c89b36;
+}
+
+html, body, #root { font-size: 12px; color: var(--ui-text); background: var(--ui-bg); }
+.dt-menubar { height: 28px; padding: 0 5px; background: var(--ui-surface); border-color: var(--ui-border); }
+.dt-menubar-brand { font-size: 12px; color: var(--ui-muted); }
+.dt-menu-item { font-size: 12px; line-height: 20px; padding: 2px 8px; border-radius: 4px; color: var(--ui-text); }
+.dt-menu-item:hover, .dt-menu-item:focus-visible { background: var(--ui-accent-soft); border-color: transparent; }
+.dt-menu-item.open { background: var(--ui-selected); border-color: transparent; }
+.dt-dropdown { top: 28px; padding: 4px; background: var(--ui-surface); border: 1px solid var(--ui-border); border-radius: 4px; box-shadow: 0 8px 24px rgba(23,33,43,.18); }
+.dt-dropdown-row { min-height: 26px; font-size: 12px; color: var(--ui-text); border-radius: 3px; }
+.dt-dropdown-row:hover:not(.disabled), .dt-dropdown-row:focus-visible, .dt-dropdown-row.sub-open,
+button.dt-dropdown-row:hover, button.dt-dropdown-row:focus { background: var(--ui-accent-soft); }
+.dt-dropdown-shortcut { font-size: 11px; color: var(--ui-muted); }
+.dt-dropdown-inline { top: auto; padding: 0; border: 0; box-shadow: none; }
+
+.dt-toolbar-row { height: 40px; padding: 3px 6px; gap: 2px; background: var(--ui-subtle); border-color: var(--ui-border); scrollbar-color: #8799a8 var(--ui-subtle); scrollbar-width: thin; }
+.dt-toolbar-row::-webkit-scrollbar { height: 6px; }
+.dt-toolbar-row::-webkit-scrollbar-thumb { background: #8799a8; border: 1px solid var(--ui-subtle); }
+.dt-pcb3d-toolbar { height: auto; min-height: 36px; }
+.dt-tb-btn { width: 28px; height: 28px; border-radius: 4px; color: var(--ui-text); }
+.dt-tb-btn:hover:not(:disabled) { background: var(--ui-accent-soft); border-color: #b6d9f4; }
+.dt-tb-btn.active { background: var(--ui-selected); border-color: var(--ui-accent); box-shadow: none; }
+.dt-tb-sep { height: 20px; margin: 0 4px; background: var(--ui-border); }
+.dt-tb-select { height: 26px; padding: 0 5px; border: 1px solid #aebbc7; border-radius: 3px; background: var(--ui-surface); color: var(--ui-text); font-size: 12px; }
+
+.dt-workspace, .dt-left-sidebar, .dt-right-sidebar { background: var(--ui-bg); }
+.dt-left-sidebar { border-color: var(--ui-border); }
+.dt-right-sidebar { border-color: var(--ui-border); padding: 4px; gap: 4px; }
+.dt-black-bar { height: 27px; padding: 0 8px; background: var(--ui-subtle); color: var(--ui-text); border-bottom: 1px solid var(--ui-border); font-size: 12px; font-weight: 600; }
+button.dt-black-bar:hover { background: var(--ui-accent-soft); }
+button.dt-black-bar[aria-pressed="true"] { color: var(--ui-accent); background: var(--ui-accent-soft); }
+.dt-lib-list, .dt-comp-list { background: var(--ui-surface); color: var(--ui-text); border-color: var(--ui-border); }
+.dt-lib-item, .dt-comp-item { padding: 2px 8px; font-size: 12px; line-height: 18px; }
+.dt-lib-item:hover, .dt-comp-item:hover, .dt-tree-row:hover { background: var(--ui-accent-soft); }
+.dt-lib-item.selected, .dt-comp-item.selected, .dt-tree-row.selected { background: var(--ui-selected); color: #123550; box-shadow: inset 3px 0 var(--ui-accent); }
+.dt-sidebar-actions, .dt-sidebar-search { padding: 4px 6px; background: var(--ui-subtle); border-bottom: 1px solid var(--ui-border); }
+.dt-sidebar-search .dt-input { width: 100%; }
+.dt-sidebar-tools { padding: 6px; display: flex; flex-direction: column; gap: 4px; background: var(--ui-subtle); color: var(--ui-text); }
+.dt-pcb-quick-settings { border-top: 1px solid var(--ui-border); }
+.dt-route-report { background: #ffffe1; color: #17212b; border: 1px solid #999; }
+.dt-message-success { background: #e8f6ea; color: #194e27; border: 1px solid #82c991; }
+.dt-message-info { background: #e5f1fb; color: #17212b; border: 1px solid #c7dbe9; }
+.dt-message-warning { background: var(--ui-warning-bg); color: #553b0d; border: 1px solid var(--ui-warning-border); }
+.dt-error-message { color: #b42318; }
+.dt-sidebar-preview-controls { padding: 4px 6px; background: var(--ui-subtle); border-top: 1px solid var(--ui-border); display: flex; align-items: center; justify-content: space-between; }
+.dt-preview-area { padding: 4px 6px 6px; gap: 4px; background: var(--ui-subtle); }
+.dt-preview-box { border: 1px solid #526170; border-radius: 2px; }
+.dt-preview-label { font-size: 11px; color: var(--ui-muted); }
+.dt-panel-card { background: var(--ui-surface); border: 1px solid var(--ui-border); border-radius: 3px; overflow: hidden; }
+.dt-panel-header { height: 27px; padding: 0 8px; background: var(--ui-subtle); border-color: var(--ui-border); color: var(--ui-text); font-size: 12px; font-weight: 600; }
+.dt-panel-body { background: var(--ui-surface); }
+.dt-prop-row { min-height: 22px; border-color: #edf0f3; }
+.dt-prop-key { padding: 2px 6px; color: var(--ui-muted); background: var(--ui-subtle); border-color: #edf0f3; }
+.dt-prop-val { padding: 2px 6px; color: var(--ui-text); }
+.dt-prop-input { font-size: 12px; color: var(--ui-text); }
+.dt-prop-input:focus { background: var(--ui-accent-soft); outline: 2px solid var(--ui-focus); outline-offset: -2px; }
+.dt-tree-row { padding: 2px 8px; font-size: 12px; line-height: 18px; }
+.dt-splitter { background: var(--ui-bg); }
+.dt-splitter:hover, .dt-splitter:focus { background: var(--ui-accent); }
+
+.dt-sheet-bar { height: 27px; padding: 0 4px; background: var(--ui-bg); border-color: var(--ui-border); }
+.dt-sheet-tabs { gap: 2px; }
+.dt-sheet-tab { padding: 0 12px; background: transparent; border: 1px solid transparent; border-bottom: 2px solid transparent; color: var(--ui-muted); font-size: 12px; }
+.dt-sheet-tab:hover { background: var(--ui-accent-soft); }
+.dt-sheet-tab.active { background: var(--ui-surface); border-color: var(--ui-border); border-bottom-color: var(--ui-accent); color: var(--ui-text); font-weight: 600; }
+.dt-statusbar { height: 25px; background: var(--ui-subtle); border-color: var(--ui-border); color: var(--ui-muted); font-size: 11px; }
+.dt-status-cell { padding: 0 8px; border-color: var(--ui-border); }
+
+.dt-modal-backdrop { background: rgba(23,33,43,.4); }
+.dt-modal { background: var(--ui-surface); border: 1px solid #bdc9d3; border-radius: 6px; box-shadow: 0 14px 40px rgba(23,33,43,.25); overflow: hidden; }
+.dt-modal-title { min-height: 36px; height: auto; padding: 8px 12px; background: var(--ui-surface); border-color: var(--ui-border); color: var(--ui-text); font-size: 13px; font-weight: 600; }
+.dt-modal-body { padding: 12px; }
+.dt-modal-footer { padding: 8px 12px; background: var(--ui-subtle); border-color: var(--ui-border); gap: 8px; }
+.dt-btn { height: 27px; padding: 0 12px; border: 1px solid #acbac7; border-radius: 4px; background: var(--ui-surface); color: var(--ui-text); font-size: 12px; }
+.dt-toolbar-row .dt-btn { height: 28px; font-size: 12px; }
+.dt-btn:hover:not(:disabled) { background: var(--ui-accent-soft); border-color: var(--ui-accent); }
+.dt-btn:active:not(:disabled) { background: var(--ui-selected); }
+.dt-btn.primary { border-color: var(--ui-accent); color: var(--ui-accent); box-shadow: inset 0 0 0 1px var(--ui-accent); }
+.dt-btn:disabled { opacity: .5; cursor: default; }
+.dt-input, .dt-select { height: 27px; padding: 0 6px; border: 1px solid #aebbc7; border-radius: 3px; background: var(--ui-surface); color: var(--ui-text); font-size: 12px; }
+.dt-table { color: var(--ui-text); font-size: 12px; }
+.dt-table th, .dt-table td { border-color: #e3e8ed; padding: 4px 6px; }
+.dt-table th { background: var(--ui-subtle); }
+.dt-tabstrip { background: var(--ui-bg); border-color: var(--ui-border); }
+.dt-tab-btn { height: 28px; border: 1px solid transparent; border-bottom: 2px solid transparent; border-radius: 3px 3px 0 0; background: transparent; color: var(--ui-muted); font-size: 12px; }
+.dt-tab-btn:hover { background: var(--ui-accent-soft); }
+.dt-tab-btn.active { top: 0; background: var(--ui-surface); border: 1px solid var(--ui-border); border-bottom: 2px solid var(--ui-accent); color: var(--ui-text); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [role=button]:focus-visible, .dt-sheet-tab:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: -2px; }
+.dt-launcher-win { background: var(--ui-bg); }
+.dt-launcher-inner { gap: 6px; }
+.dt-launcher-module-btn { background: var(--ui-surface); border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-text); box-shadow: 0 1px 2px rgba(23,33,43,.05); font-weight: 500; }
+.dt-launcher-module-btn:hover { background: var(--ui-accent-soft); border-color: var(--ui-accent); }
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: var(--ui-subtle); }
+::-webkit-scrollbar-thumb { background: #b7c2cb; border: 3px solid var(--ui-subtle); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #8799a8; }
+
+/* Dark application chrome follows the existing dark schematic setting. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ui-bg: #11161b;
+  --ui-surface: #171c21;
+  --ui-subtle: #14191e;
+  --ui-border: #1f262c;
+  --ui-text: #e3eaf1;
+  --ui-muted: #b3c0cc;
+  --ui-accent: #69b9ff;
+  --ui-accent-soft: #283e52;
+  --ui-selected: #315473;
+  --ui-focus: #91cdff;
+  --ui-warning-bg: #3a3221;
+  --ui-warning-border: #a88a4b;
+}
+:root[data-theme="dark"] .dt-left-sidebar,
+:root[data-theme="dark"] .dt-right-sidebar {
+  --ui-bg: #111619;
+  --ui-surface: #13181c;
+  --ui-subtle: #13181c;
+  --ui-border: #1c2227;
+  --ui-accent-soft: #24313c;
+  --ui-selected: #2c4355;
+}
+:root[data-theme="dark"] .dt-schematic { background: var(--ui-bg) !important; }
+:root[data-theme="dark"] .dt-menu-item,
+:root[data-theme="dark"] .dt-menubar-brand,
+:root[data-theme="dark"] .dt-prop-val,
+:root[data-theme="dark"] .dt-find-result { color: var(--ui-text); }
+:root[data-theme="dark"] .dt-find-result { background: var(--ui-surface); }
+:root[data-theme="dark"] .dt-table { background: var(--ui-surface); }
+/* A single dock with dividers, instead of a frame around every section. */
+:root[data-theme="dark"] .dt-right-sidebar { padding: 0; gap: 0; }
+:root[data-theme="dark"] .dt-right-sidebar > .dt-btn { margin: 4px 6px; }
+:root[data-theme="dark"] .dt-right-sidebar .dt-panel-card { border: 0; border-radius: 0; }
+:root[data-theme="dark"] .dt-right-sidebar .dt-panel-card + .dt-panel-card { border-top: 1px solid var(--ui-border); }
+:root[data-theme="dark"] .dt-right-sidebar .dt-panel-header { border-bottom-color: var(--ui-border); }
+:root[data-theme="dark"] .dt-right-sidebar .dt-prop-key { border-right: 0; }
+:root[data-theme="dark"] .dt-lib-item.selected,
+:root[data-theme="dark"] .dt-comp-item.selected,
+:root[data-theme="dark"] .dt-tree-row.selected { color: #f5faff; }
+:root[data-theme="dark"] .dt-prop-key { border-color: var(--ui-border); }
+:root[data-theme="dark"] .dt-prop-val { background: var(--ui-surface); }
+:root[data-theme="dark"] .dt-prop-row { border-color: var(--ui-border); }
+:root[data-theme="dark"] .dt-input,
+:root[data-theme="dark"] .dt-select,
+:root[data-theme="dark"] .dt-tb-select,
+:root[data-theme="dark"] .dt-btn { border-color: #222a30; }
+:root[data-theme="dark"] .dt-btn.primary { border-color: var(--ui-accent); color: #b8e0ff; }
+:root[data-theme="dark"] .dt-modal { border-color: var(--ui-border); }
+:root[data-theme="dark"] .dt-message-success { background: #25372c; color: #d5efdb; border-color: #527a5c; }
+:root[data-theme="dark"] .dt-message-info { background: #20303d; color: #e3eaf1; border-color: #2d4050; }
+:root[data-theme="dark"] .dt-message-warning { color: #f4e8c7; }
+:root[data-theme="dark"] .dt-error-message { color: #ff9b94; }
+:root[data-theme="dark"] .dt-route-report { background: #333a2b; color: #eff4e9; border-color: #7b8b68; }
+:root[data-theme="dark"] .dt-modal-backdrop { background: rgba(0,0,0,.6); }
+:root[data-theme="dark"] .dt-table th,
+:root[data-theme="dark"] .dt-table td { border-color: var(--ui-border); }
+:root[data-theme="dark"] .dt-launcher-module-btn:hover,
+:root[data-theme="dark"] .dt-menubar-brand.clickable:hover { background: var(--ui-accent-soft); color: var(--ui-text); }
+:root[data-theme="dark"] .dt-right-sidebar [style*="background-color: rgb(153, 204, 255)"] { background-color: var(--ui-selected) !important; }
+:root[data-theme="dark"] .dt-right-sidebar [style*="color: rgb(204, 0, 0)"],
+:root[data-theme="dark"] .dt-modal [style*="color: rgb(187, 0, 0)"] { color: #ff9b94 !important; }
+:root[data-theme="dark"] .dt-right-sidebar [style*="color: rgb(153, 96, 0)"],
+:root[data-theme="dark"] .dt-right-sidebar [style*="color: rgb(119, 85, 0)"] { color: #f2c879 !important; }
+:root[data-theme="dark"] .dt-right-sidebar [style*="color: rgb(43, 122, 43)"] { color: #8ed49b !important; }
+:root[data-theme="dark"] .dt-modal [style*="background: rgb(255, 255, 255)"],
+:root[data-theme="dark"] .dt-modal [style*="background: rgb(247, 247, 247)"] { background: var(--ui-surface) !important; color: var(--ui-text); border-color: var(--ui-border) !important; }
+:root[data-theme="dark"] .dt-modal [style*="color: rgb(34, 34, 34)"],
+:root[data-theme="dark"] .dt-modal [style*="color: rgb(68, 68, 68)"],
+:root[data-theme="dark"] .dt-right-sidebar [style*="color: rgb(102, 102, 102)"] { color: var(--ui-muted) !important; }
+
+/* Consistent compact controls; active and keyboard-focus indicators remain distinct. */
+.dt-btn, .dt-input, .dt-select, .dt-tb-select, .dt-tb-btn, .dt-menu-item,
+.dt-dropdown-row, .dt-tab-btn { border-radius: 4px; }
+.dt-input, .dt-select, .dt-tb-select { padding-left: 8px; padding-right: 8px; }
+.dt-panel-header, .dt-black-bar, .dt-lib-item, .dt-comp-item, .dt-tree-row { padding-left: 8px; padding-right: 8px; }
+.dt-modal { border-radius: 4px; }
+.dt-modal-title, .dt-modal-body, .dt-modal-footer { padding-left: 12px; padding-right: 12px; }
+.dt-input, .dt-select, .dt-tb-select, .dt-btn { border-color: #cdd6dd; }
+:root[data-theme="dark"] .dt-input, :root[data-theme="dark"] .dt-select,
+:root[data-theme="dark"] .dt-tb-select, :root[data-theme="dark"] .dt-btn { border-color: #222a30; }
+:root[data-theme="dark"] .dt-preview-box { border-color: #1c2327; }
+.dt-btn:hover:not(:disabled), .dt-tb-btn:hover:not(:disabled) { border-color: var(--ui-accent); }
+.dt-btn.primary, .dt-tb-btn.active { border-color: var(--ui-accent); }
+.dip-icon {
+  color: var(--icon-color, #5e6267);
+  flex: none;
+}
+[data-theme="dark"] .dip-icon {
+  color: #b5b9bd;
+}
+
+/* Give line-based schematic symbols the same visual weight as filled controls. */
+.dt-tb-btn .dip-icon:not(.dip-icon-filled) [stroke="currentColor"] {
+  stroke-width: 1.25;
+}

@@ -1,6 +1,7 @@
 import {
   ComponentDef,
   PlacedComponent,
+  PatternDef,
   Point2D,
   SchBus,
   SchJunction,
@@ -9,13 +10,189 @@ import {
   SchWire,
   SchematicProject,
   SchematicSheet,
-  SheetFormatId
+  SheetFormatId,
+  SymbolPin,
+  SymbolPrimitive
 } from '../../../core/types';
 import { uid } from '../../../core/geometry';
 import { createDefaultGostTitleBlock } from '../../../gost/gostTitleBlock';
 import { SHEET_FORMATS } from '../../../gost/titleBlock/sheetFormats';
 import { convertImportedSchematicToGost, GostConversionReport } from '../gostConverter';
 import { SExprList, parseSExpressions, sxFind, sxFindAll, sxNum, sxStr, sxWalk } from '../sexprParser';
+import { mapDipElectricType, mapDipPadShape, mapDipPinStyle } from './binaryCommon';
+import { deriveWireJunctions } from '../../../core/schematic/editing';
+
+const numberField = (node: SExprList, tag: string, fallback = 0) => sxNum(sxFind(node, tag), 1, fallback);
+const stringField = (node: SExprList, tag: string, fallback = '') => sxStr(sxFind(node, tag), 1, fallback);
+const records = (node: SExprList, container: string, tag: string) => sxFindAll(sxFind(node, container) ?? [], tag);
+const mm = (value: number) => value / 3;
+const nativePoint = (node: SExprList, start = 1) => ({ x: mm(sxNum(node, start)), y: mm(sxNum(node, start + 1)) });
+
+function nativeDrawing(node: SExprList): SymbolPrimitive | undefined {
+  const points = records(node, 'Points_New', 'pt').map(p => nativePoint(p));
+  if (!points.length) points.push(...records(node, 'Points', 'pt').map(p => nativePoint(p)));
+  if (!points.length) return;
+  const [a, b] = points;
+  const width = mm(numberField(node, 'PenWidth', 0.75));
+  switch (numberField(node, 'Type')) {
+    case 1:
+      if (b) return { type: 'line', x1: a.x, y1: a.y, x2: b.x, y2: b.y, width };
+      break;
+    case 4:
+    case 5:
+      if (b) return { type: 'rect', x: Math.min(a.x, b.x), y: Math.min(a.y, b.y),
+        w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y), width };
+      break;
+    case 6:
+      if (b) return { type: 'circle', cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, r: Math.abs(b.x - a.x) / 2, width };
+      break;
+    case 10:
+      return { type: 'text', ...a, text: records(node, 'TextLine', 'pt').map(line => sxStr(line, 1)).join('\n') || stringField(node, 'Name'),
+        size: mm(numberField(node, 'FontSize', 6)) };
+  }
+}
+
+function parseNativeSchematic(root: SExprList): { project: SchematicProject; report: GostConversionReport } {
+  const pageRecords = records(root, 'Pages', 'Page');
+  const projectName = sxStr(pageRecords[0], 1) || 'Импорт_DipTrace_Схема';
+  const sheets: SchematicSheet[] = (pageRecords.length ? pageRecords : [[]]).map((page, index) => {
+    const format = (Object.keys(SHEET_FORMATS) as SheetFormatId[]).find(key =>
+      SHEET_FORMATS[key].widthMm === mm(numberField(page, 'PageWidth')) &&
+      SHEET_FORMATS[key].heightMm === mm(numberField(page, 'PageHeight'))) ?? 'A4_L';
+    return {
+      id: uid('sheet'), name: sxStr(page, 1) || `Лист ${index + 1}`, format,
+      titleBlock: createDefaultGostTitleBlock({ enabled: false, name: projectName, sheetNumber: index + 1, totalSheets: pageRecords.length || 1 }),
+      components: [], wires: [], shapes: [], buses: [], netPorts: [], junctions: [], busTaps: [], hierarchyBlocks: [], diffPairs: []
+    };
+  });
+  const sheetOf = (node: SExprList) => sheets[numberField(node, 'Page')] ?? sheets[0];
+  const world = (sheet: SchematicSheet, point: Point2D) => ({
+    x: point.x + SHEET_FORMATS[sheet.format].widthMm / 2,
+    y: point.y + SHEET_FORMATS[sheet.format].heightMm / 2
+  });
+  const customComponentDefs: Record<string, ComponentDef> = {};
+  const customPatternDefs: Record<string, PatternDef> = {};
+  const netNames = new Map<number, string>();
+  for (const net of records(root, 'Nets', 'Net')) {
+    const netNumber = numberField(net, 'Number', netNames.size);
+    const netName = sxStr(net, 1) || `NET_${netNumber + 1}`;
+    netNames.set(netNumber, netName);
+    for (const line of records(net, 'Lines', 'Line')) {
+      if (stringField(line, 'Hidden') === 'Y') continue;
+      const sheet = sheetOf(line);
+      const points = records(line, 'Points', 'pt').map(p => world(sheet, nativePoint(p)));
+      if (points.length > 1) sheet.wires.push({ id: uid('dtw'), points, netName });
+    }
+  }
+  const packages = new Map<string, string>();
+  for (const part of records(root, 'Components', 'Part')) {
+    if (stringField(part, 'Enabled') === 'N') continue;
+    const sheet = sheetOf(part);
+    const name = sxStr(part, 1);
+    const refDes = sxStr(part, 2);
+    const value = stringField(part, 'Value');
+    const isNetPort = numberField(part, 'PartType') === 2;
+    const pattern = sxFind(part, 'Pattern') ?? [];
+    const patternId = sxStr(pattern, 1) && records(pattern, 'Pads', 'Pad').length ? uid('dtpat') : '';
+    const padNumbers = new Map<number, string>();
+    if (patternId) {
+      const pads = records(pattern, 'Pads', 'Pad').map(pad => {
+        const number = sxStr(pad, 2);
+        padNumbers.set(numberField(pad, 'Number', sxNum(pad, 1)), number);
+        return {
+          id: uid('pad'), number, ...nativePoint(pad, 4), width: mm(numberField(pad, 'PadWidth_New', numberField(pad, 'PadWidth'))),
+          height: mm(numberField(pad, 'PadHeight_New', numberField(pad, 'PadHeight'))),
+          type: stringField(pad, 'SurfacePad') === 'Y' ? 'SMD' as const : 'THT' as const,
+          layer: stringField(pad, 'SurfacePad') === 'Y' ? 'Top' as const : 'All' as const,
+          shape: mapDipPadShape(numberField(pad, 'PadShape_New', numberField(pad, 'PadShape'))),
+          holeDiameter: mm(numberField(pad, 'PadHole')), angle: numberField(pad, 'PadAngle')
+        };
+      });
+      const width = mm(numberField(pattern, 'Width'));
+      const height = mm(numberField(pattern, 'Height'));
+      customPatternDefs[patternId] = {
+        id: patternId, name: sxStr(pattern, 1), library: 'DipTrace', description: stringField(pattern, 'Name_Description'),
+        pads, graphics: [], courtyard: { width, height },
+        model3d: { shape: 'Box', bodyWidth: width, bodyLength: height, bodyHeight: 1, color: '#404040' }
+      };
+    }
+    const pins: SymbolPin[] = records(part, 'Pins', 'Pin').map(pin => {
+      const body = nativePoint(pin, 2);
+      const axis = numberField(pin, 'Orientation') & 3;
+      const length = mm(numberField(pin, 'Length'));
+      const number = stringField(pin, 'StringNumber', sxStr(pin, 1));
+      const electricalType = mapDipElectricType(numberField(pin, 'ElectricType'));
+      return {
+        id: uid('pin'), number, name: stringField(pin, 'Name'), length,
+        x: body.x - [1, 0, -1, 0][axis] * length, y: body.y - [0, 1, 0, -1][axis] * length,
+        orientation: (axis * 90) as SymbolPin['orientation'], electricalType,
+        style: mapDipPinStyle(numberField(pin, 'Type')), showName: stringField(pin, 'ShowName') === 'Y',
+        showNumber: numberField(part, 'ShowNumbers') !== 2,
+        isHiddenPower: electricalType === 'Power' && stringField(pin, 'Hidden') === 'Y',
+        portNetName: netNames.get(numberField(pin, 'NetNumber', -1)),
+        padMapping: padNumbers.get(numberField(pin, 'Number', -1)) ?? number
+      };
+    });
+    const componentDefId = uid('dtdef');
+    const partIndex = numberField(part, 'PartNumber');
+    const primitives = records(part, 'Shapes', 'Shape').flatMap(shape => nativeDrawing(shape) ?? []);
+    const refDesPrefix = stringField(part, 'BaseRefDes') || refDes.replace(/\d+$/, '') || 'U';
+    customComponentDefs[componentDefId] = {
+      id: componentDefId, name, defaultValue: value, refDesPrefix, patternId, isNetPort,
+      manufacturer: stringField(part, 'Manufacturer'), description: '', library: 'DipTrace', gostStandard: '',
+      parts: [{ partIndex, name: stringField(part, 'PartName'), primitives, pins }]
+    };
+    const packageKey = JSON.stringify([refDes, stringField(part, 'BaseName', name)]);
+    if (!packages.has(packageKey)) packages.set(packageKey, uid('package'));
+    sheet.components.push({
+      id: uid('dtsch'), componentDefId, patternId, refDes, value, typeName: name, libraryId: 'DipTrace', partIndex,
+      ...world(sheet, { x: mm(numberField(part, 'X')), y: mm(numberField(part, 'Y')) }),
+      instanceId: packages.get(packageKey),
+      // Native ASC stores placed pin and primitive geometry in its current orientation.
+      angle: 0, flipX: false, flipY: false,
+      refDesOffset: nativePoint(sxFind(part, 'ShowRefDes') ?? [], 3),
+      valueOffset: nativePoint(sxFind(part, 'ShowValue') ?? [], 3),
+      showRefDes: !isNetPort && numberField(part, 'ShowRefDes') !== 2,
+      showValue: !isNetPort && numberField(part, 'ShowValue') !== 2
+    });
+  }
+  for (const node of records(root, 'Shapes', 'Shape')) {
+    const drawing = nativeDrawing(node);
+    if (!drawing || drawing.type === 'polyline' || drawing.type === 'arc') continue;
+    const sheet = sheetOf(node);
+    const id = uid('dtsh');
+    if (drawing.type === 'line') {
+      const a = world(sheet, { x: drawing.x1, y: drawing.y1 });
+      const b = world(sheet, { x: drawing.x2, y: drawing.y2 });
+      sheet.shapes.push({ id, type: 'line', x1: a.x, y1: a.y, x2: b.x, y2: b.y, width: drawing.width ?? 0.25 });
+    } else if (drawing.type === 'circle') {
+      const center = world(sheet, { x: drawing.cx, y: drawing.cy });
+      sheet.shapes.push({ ...drawing, id, cx: center.x, cy: center.y, width: drawing.width ?? 0.25 });
+    } else if (drawing.type === 'rect') {
+      sheet.shapes.push({ ...drawing, ...world(sheet, drawing), id, width: drawing.width ?? 0.25 });
+    } else {
+      sheet.shapes.push({ ...drawing, ...world(sheet, drawing), id, size: drawing.size ?? 2 });
+    }
+  }
+  for (const sheet of sheets) {
+    const byNet = new Map<string, SchWire[]>();
+    for (const wire of sheet.wires) {
+      if (!byNet.has(wire.netName)) byNet.set(wire.netName, []);
+      byNet.get(wire.netName)!.push(wire);
+    }
+    sheet.junctions = [...byNet.values()].flatMap(wires => deriveWireJunctions(wires));
+  }
+  return {
+    project: {
+      version: '1.0', filePath: '', projectName, units: 'mm', gridSize: mm(numberField(sxFind(root, 'Settings') ?? [], 'GridSize', 7.5)),
+      origin: { x: 0, y: 0 }, sheets, activeSheetId: sheets[0].id, customComponentDefs, customPatternDefs,
+      netClasses: [{ id: 'nc_default', name: 'Сигнальные', traceWidth: 0.25, minWidth: 0.15, maxWidth: 5,
+        clearance: 0.2, viaOuterDiameter: 0.7, viaHoleDiameter: 0.35 }],
+      netClassAssignments: {}
+    },
+    report: { sourceFormat: 'DipTrace ASCII (.dch/.asc)', convertedComponents: 0, convertedSymbolsToUgo: 0, convertedPatterns: 0, items: [] }
+  };
+}
 
 function dipTraceCoordToMm(val: number, scaleFactor: number): number {
   return Math.round(val * scaleFactor * 1000) / 1000;
@@ -38,7 +215,13 @@ export function parseDipTraceAsciiSchematicWithReport(ascii: string): {
   project: SchematicProject;
   report: GostConversionReport;
 } {
-  const roots = parseSExpressions(ascii);
+  // Native exports contain literal Windows paths, unlike the older SIPTrace variant.
+  const roots = parseSExpressions(ascii, { literalBackslashes: /^\s*\(Source\s+"DipTrace-Schematic"\s+46\)/.test(ascii) });
+  const source = roots.find(node => node[0] === 'Source');
+  const native = roots.find(node => node[0] === 'Schematic');
+  if (sxStr(source) === 'DipTrace-Schematic' && sxNum(source, 2) === 46 && native && sxFind(native, 'Pages')) {
+    return parseNativeSchematic(native);
+  }
   const allLists: SExprList[] = [];
   for (const r of roots) sxWalk(r, (node) => allLists.push(node));
 

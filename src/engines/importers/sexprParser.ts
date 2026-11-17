@@ -6,7 +6,7 @@
 export type SExprNode = string | SExprList;
 export type SExprList = SExprNode[];
 
-export function parseSExpressions(input: string): SExprList[] {
+export function parseSExpressions(input: string, { literalBackslashes = false } = {}): SExprList[] {
   const roots: SExprList[] = [];
   const stack: SExprList[] = [];
   let i = 0;
@@ -49,7 +49,7 @@ export function parseSExpressions(input: string): SExprList[] {
       let s = '';
       while (i < n) {
         const c = input[i];
-        if (c === '\\' && i + 1 < n) {
+        if (!literalBackslashes && c === '\\' && i + 1 < n) {
           const nxt = input[i + 1];
           s += nxt === 'n' ? '\n' : nxt === 't' ? '\t' : nxt;
           i += 2;

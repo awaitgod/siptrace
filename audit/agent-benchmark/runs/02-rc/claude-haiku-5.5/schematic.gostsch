@@ -1,0 +1,452 @@
+{
+  "version": "1.0",
+  "filePath": "",
+  "projectName": "ТЕСТ.000002 Э3 RC ФНЧ",
+  "units": "mm",
+  "gridSize": 2.5,
+  "origin": {
+    "x": 0,
+    "y": 0
+  },
+  "sheets": [
+    {
+      "id": "sheet_1",
+      "name": "Лист 1",
+      "format": "A4_L",
+      "titleBlock": {
+        "enabled": true,
+        "form": "Form1",
+        "showZones": true,
+        "showCornerStamp26": true,
+        "designation": "ТЕСТ.000002 Э3",
+        "name": "RC ФНЧ",
+        "subName": "Схема электрическая принципиальная",
+        "organization": "",
+        "litera": "",
+        "mass": "—",
+        "scale": "—",
+        "sheetNumber": 1,
+        "totalSheets": 1,
+        "developer": "",
+        "checker": "",
+        "techControl": "",
+        "normControl": "",
+        "approver": "",
+        "date": "17.11.2026",
+        "documentCode": "Э3"
+      },
+      "components": [
+        {
+          "id": "comp_zmw4sci_ejlt",
+          "componentDefId": "COMP_R_MLT025_X",
+          "libraryId": "lib_user",
+          "refDes": "R1",
+          "instanceId": "pkg_40cvw9a_ejlt",
+          "value": "1к",
+          "typeName": "МЛТ-0,25 (выводной)",
+          "partIndex": 0,
+          "x": 80,
+          "y": 100,
+          "angle": 0,
+          "flipX": false,
+          "flipY": false,
+          "patternId": "",
+          "refDesOffset": {
+            "x": 0,
+            "y": 0
+          },
+          "valueOffset": {
+            "x": 0,
+            "y": 0
+          },
+          "showRefDes": true,
+          "showValue": true
+        },
+        {
+          "id": "comp_dxb584x_ejlt",
+          "componentDefId": "COMP_C_K10_17B_X",
+          "libraryId": "lib_user",
+          "refDes": "C1",
+          "instanceId": "pkg_tdsxn8r_ejlt",
+          "value": "100нФ",
+          "typeName": "К10-17б (выводной)",
+          "partIndex": 0,
+          "x": 120,
+          "y": 80,
+          "angle": 90,
+          "flipX": false,
+          "flipY": false,
+          "patternId": "",
+          "refDesOffset": {
+            "x": 0,
+            "y": 0
+          },
+          "valueOffset": {
+            "x": 0,
+            "y": 0
+          },
+          "showRefDes": true,
+          "showValue": true,
+          "labelAngle": 0
+        },
+        {
+          "id": "comp_o21cowd_ejlt",
+          "componentDefId": "COMP_GND",
+          "libraryId": "УГО Общие (ГОСТ 2.721)",
+          "refDes": "GND1",
+          "instanceId": "pkg_z2rh43e_ejlt",
+          "value": "GND",
+          "typeName": "Земля (GND)",
+          "partIndex": 1,
+          "x": 120,
+          "y": 100,
+          "angle": 0,
+          "flipX": false,
+          "flipY": false,
+          "patternId": "",
+          "refDesOffset": {
+            "x": 0,
+            "y": 0
+          },
+          "valueOffset": {
+            "x": 0,
+            "y": 0
+          },
+          "showRefDes": true,
+          "showValue": true,
+          "labelAngle": 0
+        }
+      ],
+      "wires": [
+        {
+          "id": "wire_yfvk2du_fqo1",
+          "points": [
+            {
+              "x": 60,
+              "y": 97.5
+            },
+            {
+              "x": 55,
+              "y": 97.5
+            }
+          ],
+          "netName": "IN"
+        },
+        {
+          "id": "wire_1jeh707_fqo2",
+          "points": [
+            {
+              "x": 100,
+              "y": 97.5
+            },
+            {
+              "x": 110,
+              "y": 97.5
+            },
+            {
+              "x": 110,
+              "y": 60
+            },
+            {
+              "x": 122.5,
+              "y": 60
+            }
+          ],
+          "netName": "OUT"
+        },
+        {
+          "id": "wire_zjbuagp_fszw",
+          "points": [
+            {
+              "x": 122.5,
+              "y": 100
+            },
+            {
+              "x": 120,
+              "y": 100
+            }
+          ],
+          "netName": "GND"
+        },
+        {
+          "id": "wire_51ylw0u_fszw",
+          "points": [
+            {
+              "x": 100,
+              "y": 97.5
+            },
+            {
+              "x": 110,
+              "y": 97.5
+            },
+            {
+              "x": 110,
+              "y": 110
+            }
+          ],
+          "netName": "OUT"
+        }
+      ],
+      "buses": [],
+      "busTaps": [],
+      "junctions": [],
+      "netPorts": [
+        {
+          "id": "port_h85cqzq_eorl",
+          "x": 55,
+          "y": 97.5,
+          "angle": 0,
+          "netName": "IN",
+          "style": "PortLeft"
+        },
+        {
+          "id": "port_r965y0t_ess8",
+          "x": 135,
+          "y": 110,
+          "angle": 0,
+          "netName": "OUT",
+          "style": "PortRight"
+        },
+        {
+          "id": "port_85gvrom_fhc0",
+          "x": 135,
+          "y": 110,
+          "angle": 0,
+          "netName": "OUT",
+          "style": "PortRight"
+        },
+        {
+          "id": "port_5kocawn_fqo2",
+          "x": 55,
+          "y": 97.5,
+          "angle": 0,
+          "netName": "IN",
+          "style": "PortLeft"
+        },
+        {
+          "id": "port_908qxc0_fszw",
+          "x": 110,
+          "y": 110,
+          "angle": 0,
+          "netName": "OUT",
+          "style": "PortRight"
+        }
+      ],
+      "diffPairs": [],
+      "hierarchyBlocks": [],
+      "shapes": []
+    }
+  ],
+  "activeSheetId": "sheet_1",
+  "netClasses": [
+    {
+      "id": "nc_default",
+      "name": "Сигнальные",
+      "traceWidth": 0.25,
+      "minWidth": 0.15,
+      "maxWidth": 5,
+      "clearance": 0.2,
+      "viaOuterDiameter": 0.7,
+      "viaHoleDiameter": 0.35
+    }
+  ],
+  "netClassAssignments": {},
+  "customComponentDefs": {
+    "COMP_R_MLT025_X": {
+      "id": "COMP_R_MLT025_X",
+      "name": "МЛТ-0,25 (выводной)",
+      "defaultValue": "МЛТ-0,25 (выводной)",
+      "refDesPrefix": "R",
+      "patternId": "",
+      "description": "COMP_R_MLT025",
+      "library": "lib_user",
+      "gostStandard": "",
+      "parts": [
+        {
+          "partIndex": 0,
+          "name": "МЛТ-0,25 (выводной)",
+          "primitives": [
+            {
+              "type": "rect",
+              "x": -15,
+              "y": -10,
+              "w": 30,
+              "h": 20,
+              "width": 0.42
+            },
+            {
+              "type": "text",
+              "x": 0,
+              "y": -6.8,
+              "text": "МЛТ-0,25 (выводной)",
+              "size": 2.8,
+              "align": "center",
+              "bold": true
+            }
+          ],
+          "pins": [
+            {
+              "id": "pl_1_0",
+              "number": "1",
+              "name": "1",
+              "x": -20,
+              "y": -2.5,
+              "length": 5,
+              "orientation": 0,
+              "electricalType": "Passive",
+              "style": "Line",
+              "showName": true,
+              "showNumber": true,
+              "padMapping": "1"
+            },
+            {
+              "id": "pr_2_0",
+              "number": "2",
+              "name": "2",
+              "x": 20,
+              "y": -2.5,
+              "length": 5,
+              "orientation": 180,
+              "electricalType": "Passive",
+              "style": "Line",
+              "showName": true,
+              "showNumber": true,
+              "padMapping": "2"
+            }
+          ]
+        }
+      ],
+      "attributes": {
+        "datasheet": "COMP_R_MLT025"
+      }
+    },
+    "COMP_C_K10_17B_X": {
+      "id": "COMP_C_K10_17B_X",
+      "name": "К10-17б (выводной)",
+      "defaultValue": "К10-17б (выводной)",
+      "refDesPrefix": "C",
+      "patternId": "",
+      "description": "COMP_C_K10_17B",
+      "library": "lib_user",
+      "gostStandard": "",
+      "parts": [
+        {
+          "partIndex": 0,
+          "name": "К10-17б (выводной)",
+          "primitives": [
+            {
+              "type": "rect",
+              "x": -15,
+              "y": -10,
+              "w": 30,
+              "h": 20,
+              "width": 0.42
+            },
+            {
+              "type": "text",
+              "x": 0,
+              "y": -6.8,
+              "text": "К10-17б (выводной)",
+              "size": 2.8,
+              "align": "center",
+              "bold": true
+            }
+          ],
+          "pins": [
+            {
+              "id": "pl_1_0",
+              "number": "1",
+              "name": "1",
+              "x": -20,
+              "y": -2.5,
+              "length": 5,
+              "orientation": 0,
+              "electricalType": "Passive",
+              "style": "Line",
+              "showName": true,
+              "showNumber": true,
+              "padMapping": "1"
+            },
+            {
+              "id": "pr_2_0",
+              "number": "2",
+              "name": "2",
+              "x": 20,
+              "y": -2.5,
+              "length": 5,
+              "orientation": 180,
+              "electricalType": "Passive",
+              "style": "Line",
+              "showName": true,
+              "showNumber": true,
+              "padMapping": "2"
+            }
+          ]
+        }
+      ],
+      "attributes": {
+        "datasheet": "COMP_C_K10_17B"
+      }
+    },
+    "COMP_GND": {
+      "id": "COMP_GND",
+      "name": "Земля (GND)",
+      "library": "УГО Общие (ГОСТ 2.721)",
+      "refDesPrefix": "#GND",
+      "defaultValue": "GND",
+      "gostStandard": "ГОСТ 2.721-74",
+      "description": "Заземление / Общий провод схемы",
+      "patternId": "",
+      "isNetPort": true,
+      "portNetName": "GND",
+      "parts": [
+        {
+          "partIndex": 1,
+          "name": "Part 1",
+          "primitives": [
+            {
+              "type": "line",
+              "x1": -2.5,
+              "y1": 5,
+              "x2": 2.5,
+              "y2": 5,
+              "width": 0.35
+            },
+            {
+              "type": "line",
+              "x1": -1.5,
+              "y1": 6.2,
+              "x2": 1.5,
+              "y2": 6.2,
+              "width": 0.35
+            },
+            {
+              "type": "line",
+              "x1": -0.6,
+              "y1": 7.4,
+              "x2": 0.6,
+              "y2": 7.4,
+              "width": 0.35
+            }
+          ],
+          "pins": [
+            {
+              "id": "pin_1",
+              "number": "1",
+              "name": "GND",
+              "x": 0,
+              "y": 0,
+              "length": 5,
+              "orientation": 90,
+              "electricalType": "Power",
+              "style": "Line",
+              "showName": false,
+              "showNumber": false
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "customPatternDefs": {}
+}

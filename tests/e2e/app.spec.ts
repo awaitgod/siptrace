@@ -15,33 +15,45 @@ async function openGostModule(page: Page, moduleId: string): Promise<string[]> {
     }
   });
 
-  if (moduleId === 'launcher') {
-    await page.setViewportSize({ width: 364, height: 268 });
-  } else {
-    await page.setViewportSize({ width: 1280, height: 800 });
-  }
-
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto(`/?module=${encodeURIComponent(moduleId)}`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(450);
   return errors;
 }
 
 test.describe('SIPTrace — Vite Web Suite & Visual Verification', () => {
-  test('1. Launcher module renders compact 5-button DipTrace launcher only', async ({ page }) => {
+  test('1. Launcher creates and reopens a project and shares the editor theme', async ({ page }) => {
     const errors = await openGostModule(page, 'launcher');
     await expect(page).toHaveTitle('SIPTrace');
     await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /logo\.svg$/);
-    await expect(page.locator('.dt-launcher-module-btn')).toHaveCount(5);
-    await expect(page.getByText('+ Создать проект...')).toHaveCount(0);
-    await expect(page.getByText('Параметры по умолчанию')).toHaveCount(0);
-    await expect(page.getByText('Библиотеки CAD...')).toHaveCount(0);
-
-    await expect(page.getByRole('button', { name: 'Редактор схем' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Редактор плат' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Редактор компонентов' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Редактор посадочных мест' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '3D-просмотр платы' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Запуск редакторов' }).getByRole('button')).toHaveCount(5);
+    await expect(page.locator('.dt-menubar')).toHaveCSS('background-color', 'rgb(23, 28, 33)');
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '01_launcher.png') });
+
+    await page.getByText('Вид', { exact: true }).click();
+    await page.getByText('Светлая тема', { exact: true }).click();
+    await expect(page.locator('.dt-menubar')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+
+    await page.getByRole('button', { name: 'Создать проект' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Новый проект — SIPTrace' });
+    await dialog.getByLabel('Название проекта:').fill('Контроль питания');
+    await dialog.getByLabel('Обозначение (ЕСКД):').fill('ТЕСТ.436210.001');
+    await dialog.getByRole('button', { name: 'Создать', exact: true }).click();
+    await expect(page).toHaveURL(/module=schematic/);
+    await expect(page.locator('.dt-menubar')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await page.getByTitle('Стартовое окно SIPTrace').click();
+
+    const search = page.getByRole('searchbox', { name: 'Поиск проектов' });
+    await search.fill('  тест.436210  ');
+    const projects = page.getByRole('table', { name: 'Последние проекты' });
+    await expect(projects.getByRole('button')).toHaveCount(1);
+    await search.fill('несуществующий проект');
+    await expect(page.getByText('Проекты не найдены')).toBeVisible();
+    await search.fill('контроль питания');
+    await projects.getByRole('button', { name: /Контроль питания/ }).press('Enter');
+    await expect(page).toHaveTitle(/Контроль питания/);
     expect(errors).toEqual([]);
   });
 

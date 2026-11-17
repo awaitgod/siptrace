@@ -1,6 +1,9 @@
 import { DrcError, PadDef, PcbProject, PcbVia, Point2D } from '../core/types';
 import { dist, pointInPolygon, pointToSegmentDist, pointToSegmentNearest, polygonBounds, segmentToSegmentDist, segmentsIntersect, transformPoint } from '../core/geometry';
 
+import { COPPER_EPSILON, fitsBoardMaterial } from './pcbMaterial';
+import { copperEdges, copperRegionDistance, inCopperRegion, segmentToCopper, type CopperRegion } from './copperPour/region';
+
 export interface WorldPad {
   compId: string;
   refDes: string;
@@ -66,7 +69,7 @@ function spansOverlap(a: LayerSpan, b: LayerSpan): boolean {
 }
 
 // Distance from a point to the pad's rendered copper outline.
-function pointToPadDistance(point: Point2D, wp: WorldPad): number {
+export function pointToPadDistance(point: Point2D, wp: WorldPad): number {
   const angle = -wp.padAngleDeg * Math.PI / 180;
   const dx = point.x - wp.x, dy = point.y - wp.y;
   const lx = dx * Math.cos(angle) - dy * Math.sin(angle);
@@ -222,6 +225,13 @@ export interface RatlineSegment {
 }
 
 // Computes Minimum Spanning Tree of unrouted connections per net, accounting for traces, vias & copper pours!
+function padToCopperDistance(pad: WorldPad, region: CopperRegion): number {
+  if (inCopperRegion(pad, region)) return 0;
+  let distance = Infinity;
+  for (const [a, b] of copperEdges(region)) distance = Math.min(distance, segmentToPadDistance(a, b, pad));
+  return distance;
+}
+
 export function computeUnroutedRatlines(pcb: PcbProject): RatlineSegment[] {
   const pads = getWorldPads(pcb);
   const byNet = new Map<string, WorldPad[]>();
@@ -232,7 +242,7 @@ export function computeUnroutedRatlines(pcb: PcbProject): RatlineSegment[] {
   }
 
   const ratlines: RatlineSegment[] = [];
-  const SNAP = 0.35;
+  const SNAP = 0.001;
 
   for (const [netName, netPads] of byNet) {
     if (netPads.length < 2) continue;
@@ -284,7 +294,7 @@ export function computeUnroutedRatlines(pcb: PcbProject): RatlineSegment[] {
       viaNodeEntries.push({ idx, via: v, span });
       for (let i = 0; i < netPads.length; i++) {
         if (!spansOverlap(span, nodes[i].span)) continue;
-        if (pointToPadDistance(v, netPads[i]) <= Math.max(SNAP, v.outerDiameter * 0.5)) {
+        if (pointToPadDistance(v, netPads[i]) <= v.outerDiameter * 0.5 + SNAP) {
           union(idx, i);
         }
       }
@@ -306,13 +316,13 @@ export function computeUnroutedRatlines(pcb: PcbProject): RatlineSegment[] {
         const b = tr.points[k];
         for (let i = 0; i < netPads.length; i++) {
           if (!spansOverlap(span, nodes[i].span)) continue;
-          if (segmentToPadDistance(a, b, netPads[i]) <= Math.max(SNAP, tr.width * 0.5)) {
+          if (segmentToPadDistance(a, b, netPads[i]) <= tr.width * 0.5 + SNAP) {
             union(idxs[0], i);
           }
         }
         for (const vn of viaNodeEntries) {
           if (!spansOverlap(span, vn.span)) continue;
-          if (pointToSegmentDist(vn.via, a, b) <= Math.max(SNAP, vn.via.outerDiameter * 0.5 + tr.width * 0.5)) {
+          if (pointToSegmentDist(vn.via, a, b) <= (vn.via.outerDiameter + tr.width) * 0.5 + SNAP) {
             union(idxs[0], vn.idx);
           }
         }
@@ -326,7 +336,7 @@ export function computeUnroutedRatlines(pcb: PcbProject): RatlineSegment[] {
         const gb = traceNodeGroups[j];
         if (!spansOverlap(ga.span, gb.span)) continue;
         if (find(ga.repIdx) === find(gb.repIdx)) continue;
-        const tol = Math.max(SNAP, (ga.tr.width + gb.tr.width) * 0.5);
+        const tol = (ga.tr.width + gb.tr.width) * 0.5 + SNAP;
         let joined = false;
         for (let sa = 1; sa < ga.tr.points.length && !joined; sa++) {
           for (let sb = 1; sb < gb.tr.points.length && !joined; sb++) {
@@ -339,56 +349,30 @@ export function computeUnroutedRatlines(pcb: PcbProject): RatlineSegment[] {
       }
     }
 
-    // Check copper pours: group adjacent computed islands so isolated copper regions do not falsely short nets
-    for (const pour of pcb.copperPours) {
-      if (pour.netName === netName && pour.poured && pour.computedIslands && pour.computedIslands.length > 0 && pour.thermalType !== 'None') {
-        const pourSpan = layerToSpan(pour.layer);
-        const isls = pour.computedIslands;
-        const ib = isls.map((isl) => polygonBounds(isl.outer));
-        const islParent = isls.map((_, idx) => idx);
-        const findIsl = (x: number): number => {
-          while (islParent[x] !== x) {
-            islParent[x] = islParent[islParent[x]];
-            x = islParent[x];
-          }
-          return x;
-        };
-        for (let a = 0; a < ib.length; a++) {
-          for (let b = a + 1; b < ib.length; b++) {
-            const ra = findIsl(a);
-            const rb = findIsl(b);
-            if (ra === rb) continue;
-            const touchX = ib[a].maxX >= ib[b].minX - 0.05 && ib[b].maxX >= ib[a].minX - 0.05;
-            const touchY = ib[a].maxY >= ib[b].minY - 0.05 && ib[b].maxY >= ib[a].minY - 0.05;
-            if (touchX && touchY) islParent[ra] = rb;
-          }
+    // Connect actual generated copper. Thermal clearances and bounding-box overlap
+    // alone do not establish an electrical connection.
+    const islands = pcb.copperPours.flatMap(pour =>
+      pour.netName === netName && pour.poured
+        ? (pour.computedIslands ?? []).filter(region => region.outer.length >= 3)
+          .map(region => ({ region, span: layerToSpan(pour.layer) }))
+        : []);
+    const islandNodes = islands.map(({region, span}) => addNode({ ...region.outer[0], span, label: 'Pour', isPad: false }));
+    for (const [index, {region, span}] of islands.entries()) {
+      const node = islandNodes[index];
+      for (let other = 0; other < index; other++) {
+        if (spansOverlap(span, islands[other].span) && copperRegionDistance(region, islands[other].region, SNAP) <= SNAP) {
+          union(node, islandNodes[other]);
         }
-        const tol = Math.max(SNAP, (pour.thermalGap ?? 0.3) + 0.35);
-        const byComp = new Map<number, number[]>();
-        for (let i = 0; i < nodes.length; i++) {
-          const n = nodes[i];
-          if (!spansOverlap(pourSpan, n.span)) continue;
-          for (let k = 0; k < isls.length; k++) {
-            const b = ib[k];
-            if (n.x < b.minX - tol || n.x > b.maxX + tol || n.y < b.minY - tol || n.y > b.maxY + tol) continue;
-            const inPoly = pointInPolygon(n, isls[k].outer) && !(isls[k].holes ?? []).some((h) => pointInPolygon(n, h));
-            const nearEdge =
-              n.x >= b.minX - tol && n.x <= b.maxX + tol && n.y >= b.minY - tol && n.y <= b.maxY + tol &&
-              (isls[k].outer.some((pt, pIdx) => {
-                const nextPt = isls[k].outer[(pIdx + 1) % isls[k].outer.length];
-                return pointToSegmentDist(n, pt, nextPt) <= tol;
-              }));
-            if (inPoly || nearEdge) {
-              const root = findIsl(k);
-              if (!byComp.has(root)) byComp.set(root, []);
-              byComp.get(root)!.push(i);
-              break;
-            }
-          }
-        }
-        for (const group of byComp.values()) {
-          for (let m = 1; m < group.length; m++) union(group[0], group[m]);
-        }
+      }
+      for (const [i, pad] of netPads.entries()) {
+        if (spansOverlap(span, nodes[i].span) && padToCopperDistance(pad, region) <= SNAP) union(node, i);
+      }
+      for (const {idx, via, span: viaSpan} of viaNodeEntries) {
+        if (spansOverlap(span, viaSpan) && segmentToCopper(via, via, region) <= via.outerDiameter / 2 + SNAP) union(node, idx);
+      }
+      for (const {tr, span: traceSpan, repIdx} of traceNodeGroups) {
+        if (spansOverlap(span, traceSpan) && tr.points.some((point, i) => i > 0 &&
+          segmentToCopper(tr.points[i - 1], point, region) <= tr.width / 2 + SNAP)) union(node, repIdx);
       }
     }
 
@@ -727,70 +711,94 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
     }
   }
 
-  // 7. Copper-to-Board Outline Clearance (Traces, Pads, Vias)
-  if (pcb.boardOutline.length >= 3) {
-    for (const tr of pcb.traces) {
-      let edgeViol = false;
-      for (let k = 1; k < tr.points.length && !edgeViol; k++) {
-        for (let b = 0; b < pcb.boardOutline.length; b++) {
-          const bNext = (b + 1) % pcb.boardOutline.length;
-          const d = segmentToSegmentDist(tr.points[k - 1], tr.points[k], pcb.boardOutline[b], pcb.boardOutline[bNext]);
-          const gap = d - tr.width * 0.5;
-          if (gap + 1e-4 < rules.clearanceCopperToBoard) {
-            pushErr({
-              sigKey: `${tr.id}_edge`,
-              severity: 'Warning',
-              layer: tr.layer,
-              x: tr.points[k].x,
-              y: tr.points[k].y,
-              code: 'DRC-EDGE',
-              message: `Проводник «${tr.netName}» ближе ${rules.clearanceCopperToBoard.toFixed(2)} мм к краю платы.`,
-              objectIds: [tr.id]
-            });
-            edgeViol = true;
-            break;
-          }
-        }
+  // 7. Copper must stay on board material, including the clearance around cutouts.
+  const edgeClearance = rules.clearanceCopperToBoard;
+  for (const tr of pcb.traces) {
+    const bad = tr.points.find((point, index) => index > 0 &&
+      !fitsBoardMaterial(pcb, tr.points[index - 1], point, edgeClearance + tr.width / 2));
+    if (bad) pushErr({
+      sigKey: `${tr.id}_edge`, severity: 'Warning', layer: tr.layer, ...bad,
+      code: 'DRC-EDGE', message: `Проводник «${tr.netName}» нарушает зазор до края платы или выреза.`, objectIds: [tr.id]
+    });
+  }
+  const boundaries = [pcb.boardOutline, ...(pcb.cutouts ?? []).map(cutout => cutout.points)];
+  for (const wp of pads) {
+    if (wp.pad.type === 'MountingHole') continue;
+    if (!fitsBoardMaterial(pcb, wp, wp, 0) || boundaries.some(points => points.length >= 3 &&
+      points.some((point, index) => segmentToPadDistance(point, points[(index + 1) % points.length], wp) + COPPER_EPSILON < edgeClearance))) {
+      pushErr({
+        sigKey: `pad_${wp.compId}_${wp.pad.id}_edge`, severity: 'Warning',
+        layer: wp.effectiveLayer === 'All' ? 'TopCopper' : wp.effectiveLayer, x: wp.x, y: wp.y,
+        code: 'DRC-EDGE', message: `КП ${wp.refDes}.${wp.pad.number} нарушает зазор до края платы или выреза.`, objectIds: [wp.compId]
+      });
+    }
+  }
+  for (const via of pcb.vias) {
+    if (!fitsBoardMaterial(pcb, via, via, edgeClearance + via.outerDiameter / 2)) {
+      pushErr({
+        sigKey: `via_${via.id}_edge`, severity: 'Warning', layer: 'All', x: via.x, y: via.y,
+        code: 'DRC-EDGE', message: `Via ${via.netName || via.id} нарушает зазор до края платы или выреза.`, objectIds: [via.id]
+      });
+    }
+    const offendingPad = pads.find(wp => wp.pad.type === 'SMD' &&
+      spansOverlap(viaLayerSpan(via), layerToSpan(wp.effectiveLayer)) &&
+      (!via.viaInPad || wp.netName !== via.netName || !via.netName) &&
+      pointToPadDistance(via, wp) + COPPER_EPSILON < via.holeDiameter / 2);
+    if (offendingPad) pushErr({
+      sigKey: `${via.id}_smd_drill`, severity: 'Error', layer: 'All', x: via.x, y: via.y,
+      code: 'DRC-VIA-IN-PAD', message: `Отверстие пересекает SMD-площадку ${offendingPad.refDes}.${offendingPad.pad.number}.`,
+      objectIds: [via.id, offendingPad.compId]
+    });
+  }
+
+  const poured = pcb.copperPours.filter(pour => pour.poured && pour.computedIslands?.length);
+  for (const [index, pour] of poured.entries()) {
+    const regions = pour.computedIslands!.filter(region => region.outer.length >= 3);
+    const span = layerToSpan(pour.layer);
+    const clearance = (net: string, base: number) => Math.max(base, pour.clearance,
+      getNetClass(net)?.clearance ?? 0, getNetClass(pour.netName)?.clearance ?? 0);
+    const location = regions[0]?.outer[0];
+    if (!location) continue;
+    const issue = (objectId: string, label: string) => pushErr({
+      sigKey: `${pour.id}_${objectId}`, severity: 'Error', layer: pour.layer, ...location,
+      code: 'DRC-POUR-CLEARANCE', message: `Заливка «${pour.netName}» нарушает зазор до ${label}.`,
+      objectIds: [pour.id, objectId]
+    });
+    const materialMargin = Math.max(pour.boardClearance, edgeClearance);
+    if (regions.some(region => copperEdges(region).some(([a, b]) => !fitsBoardMaterial(pcb, a, b, materialMargin)) ||
+      (pcb.cutouts ?? []).some(cutout => cutout.points.some(point => inCopperRegion(point, region))))) {
+      issue(pour.id, 'края платы или выреза');
+    }
+    for (const zone of pcb.keepouts) {
+      if ((zone.kind === 'PourKeepout' || zone.kind === 'RouteKeepout') && zone.points.length >= 3 &&
+        (zone.layer === 'AllCopper' || zone.layer === pour.layer) &&
+        regions.some(region => copperRegionDistance(region, {outer: zone.points, holes: []}, COPPER_EPSILON) <= COPPER_EPSILON)) {
+        issue(zone.id, 'зоны запрета');
       }
     }
-    for (const wp of pads) {
-      if (wp.pad.type === 'MountingHole') continue;
-      for (let b = 0; b < pcb.boardOutline.length; b++) {
-        const bNext = (b + 1) % pcb.boardOutline.length;
-        const d = segmentToPadDistance(pcb.boardOutline[b], pcb.boardOutline[bNext], wp);
-        if (d + 1e-4 < rules.clearanceCopperToBoard) {
-          pushErr({
-            sigKey: `pad_${wp.compId}_${wp.pad.id}_edge`,
-            severity: 'Warning',
-            layer: wp.effectiveLayer === 'All' ? 'TopCopper' : wp.effectiveLayer,
-            x: wp.x,
-            y: wp.y,
-            code: 'DRC-EDGE',
-            message: `КП ${wp.refDes}.${wp.pad.number} ближе ${rules.clearanceCopperToBoard.toFixed(2)} мм к краю платы (${d.toFixed(2)} мм).`,
-            objectIds: [wp.compId]
-          });
-          break;
-        }
+    for (const pad of pads) {
+      if (pad.pad.type === 'MountingHole' || pad.netName === pour.netName || !spansOverlap(span, layerToSpan(pad.effectiveLayer))) continue;
+      const minGap = clearance(pad.netName, rules.clearanceTraceToPad);
+      if (regions.some(region => padToCopperDistance(pad, region) + COPPER_EPSILON < minGap)) {
+        issue(pad.compId, `КП ${pad.refDes}.${pad.pad.number}`);
       }
+    }
+    for (const trace of pcb.traces) {
+      if (trace.layer !== pour.layer || trace.netName === pour.netName) continue;
+      const minDist = clearance(trace.netName, rules.clearanceTraceToTrace) + trace.width / 2;
+      if (regions.some(region => trace.points.some((point, i) => i > 0 &&
+        segmentToCopper(trace.points[i - 1], point, region) + COPPER_EPSILON < minDist))) issue(trace.id, `дорожки «${trace.netName}»`);
     }
     for (const via of pcb.vias) {
-      for (let b = 0; b < pcb.boardOutline.length; b++) {
-        const bNext = (b + 1) % pcb.boardOutline.length;
-        const gap = pointToSegmentDist(via, pcb.boardOutline[b], pcb.boardOutline[bNext]) - via.outerDiameter * 0.5;
-        if (gap + 1e-4 < rules.clearanceCopperToBoard) {
-          pushErr({
-            sigKey: `via_${via.id}_edge`,
-            severity: 'Warning',
-            layer: 'All',
-            x: via.x,
-            y: via.y,
-            code: 'DRC-EDGE',
-            message: `Переходное отверстие (${via.netName || via.id}) ближе ${rules.clearanceCopperToBoard.toFixed(2)} мм к краю платы.`,
-            objectIds: [via.id]
-          });
-          break;
-        }
-      }
+      if (via.netName === pour.netName || !spansOverlap(span, viaLayerSpan(via))) continue;
+      const minDist = clearance(via.netName, rules.clearanceViaToAny) + via.outerDiameter / 2;
+      if (regions.some(region => segmentToCopper(via, via, region) + COPPER_EPSILON < minDist)) issue(via.id, `via «${via.netName}»`);
+    }
+    for (const other of poured.slice(0, index)) {
+      if (other.layer !== pour.layer || other.netName === pour.netName) continue;
+      const minDist = Math.max(other.clearance, clearance(other.netName, rules.clearanceTraceToTrace));
+      if (regions.some(region => other.computedIslands!.some(island => island.outer.length >= 3 &&
+        copperRegionDistance(region, island, minDist) + COPPER_EPSILON < minDist))) issue(other.id, `заливки «${other.netName}»`);
     }
   }
 

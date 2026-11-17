@@ -14,6 +14,11 @@ export interface RecentProjectItem {
   module: 'schematic' | 'pcb' | 'pcb3d';
   updatedAt: string;
   demoKey?: 'rs485' | 'mcu';
+  isPinned?: boolean;
+  layers?: number;
+  dimensions?: string;
+  componentsCount?: number;
+  filePath?: string;
 }
 
 export interface AppSettings {
@@ -97,7 +102,7 @@ export function recordRecentProject(
   const s = loadSettings();
   const nextItem: RecentProjectItem = {
     ...item,
-    updatedAt: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+    updatedAt: new Date().toISOString()
   };
   const list = [
     nextItem,
@@ -117,3 +122,20 @@ export function recordRecentProject(
     );
   }
 }
+
+/** Toggles the pinned state of a project in the recent list. */
+export function togglePinRecentProject(id: string): void {
+  const s = loadSettings();
+  const list = (s.recentProjects ?? []).map((p) =>
+    p.id === id ? { ...p, isPinned: !p.isPinned } : p
+  );
+  saveSettings({ ...s, recentProjects: list });
+}
+
+/** Removes a project entry from the recent list. */
+export function removeRecentProject(id: string): void {
+  const s = loadSettings();
+  const list = (s.recentProjects ?? []).filter((p) => p.id !== id);
+  saveSettings({ ...s, recentProjects: list });
+}
+

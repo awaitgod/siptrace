@@ -1,0 +1,787 @@
+{
+  "documents": {
+    "schematic": {
+      "version": "1.0",
+      "filePath": "",
+      "projectName": "СТРЕСС.260001 Э3",
+      "units": "mm",
+      "gridSize": 2.5,
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "sheets": [
+        {
+          "id": "sheet_1",
+          "name": "Фильтры",
+          "format": "A4_L",
+          "titleBlock": {
+            "enabled": true,
+            "form": "Form1",
+            "showZones": true,
+            "showCornerStamp26": true,
+            "designation": "СТРЕСС.260001 Э3",
+            "name": "Двухканальный RC-фильтр",
+            "subName": "Схема электрическая принципиальная",
+            "organization": "",
+            "litera": "",
+            "mass": "—",
+            "scale": "—",
+            "sheetNumber": 1,
+            "totalSheets": 1,
+            "developer": "",
+            "checker": "",
+            "techControl": "",
+            "normControl": "",
+            "approver": "",
+            "date": "17.11.2026",
+            "documentCode": "Э3"
+          },
+          "components": [
+            {
+              "id": "comp_7qjvtdi_8qfd",
+              "componentDefId": "COMP_R_R1_12_0805",
+              "libraryId": "Резисторы (ГОСТ 2.728)",
+              "refDes": "R1",
+              "instanceId": "pkg_qanfgqu_8qfd",
+              "value": "1 кОм",
+              "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 75,
+              "y": 60,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -6
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 6
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            },
+            {
+              "id": "comp_rm2qe1y_8qfe",
+              "componentDefId": "COMP_R_R1_12_0805",
+              "libraryId": "Резисторы (ГОСТ 2.728)",
+              "refDes": "R2",
+              "instanceId": "pkg_fy2umfy_8qfe",
+              "value": "2,2 кОм",
+              "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 120,
+              "y": 60,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -6
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 6
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            },
+            {
+              "id": "comp_bb3nwh2_8qfe",
+              "componentDefId": "COMP_C_K10_17V_0805",
+              "libraryId": "Конденсаторы (ГОСТ 2.728)",
+              "refDes": "C1",
+              "instanceId": "pkg_zgyppaa_8qfe",
+              "value": "100 нФ",
+              "typeName": "К10-17в (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 120,
+              "y": 90,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -8
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 8
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            },
+            {
+              "id": "comp_kz9e1s7_8qfe",
+              "componentDefId": "COMP_R_R1_12_0805",
+              "libraryId": "Резисторы (ГОСТ 2.728)",
+              "refDes": "R3",
+              "instanceId": "pkg_8dm1mzs_8qfe",
+              "value": "1 кОм",
+              "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 75,
+              "y": 135,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -6
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 6
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            },
+            {
+              "id": "comp_pimp37l_8qff",
+              "componentDefId": "COMP_R_R1_12_0805",
+              "libraryId": "Резисторы (ГОСТ 2.728)",
+              "refDes": "R4",
+              "instanceId": "pkg_19rcsoc_8qff",
+              "value": "2,2 кОм",
+              "typeName": "Р1-12-0,125 (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 120,
+              "y": 135,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -6
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 6
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            },
+            {
+              "id": "comp_tuw7207_8qff",
+              "componentDefId": "COMP_C_K10_17V_0805",
+              "libraryId": "Конденсаторы (ГОСТ 2.728)",
+              "refDes": "C2",
+              "instanceId": "pkg_bc13jb8_8qff",
+              "value": "100 нФ",
+              "typeName": "К10-17в (ЧИП 2012М/0805)",
+              "partIndex": 1,
+              "x": 120,
+              "y": 165,
+              "angle": 0,
+              "flipX": false,
+              "flipY": false,
+              "patternId": "PAT_CHIP_2012M",
+              "refDesOffset": {
+                "x": 0,
+                "y": -8
+              },
+              "valueOffset": {
+                "x": 0,
+                "y": 8
+              },
+              "showRefDes": true,
+              "showValue": true,
+              "labelAngle": 0
+            }
+          ],
+          "wires": [
+            {
+              "id": "wire_ucptpyi_a2j1",
+              "points": [
+                {
+                  "x": 65,
+                  "y": 60
+                },
+                {
+                  "x": 50,
+                  "y": 60
+                }
+              ],
+              "netName": "IN_A"
+            },
+            {
+              "id": "wire_6n6an9m_a2j2",
+              "points": [
+                {
+                  "x": 85,
+                  "y": 60
+                },
+                {
+                  "x": 110,
+                  "y": 60
+                }
+              ],
+              "netName": "OUT_A"
+            },
+            {
+              "id": "wire_qu1y757_a2j2",
+              "points": [
+                {
+                  "x": 85,
+                  "y": 60
+                },
+                {
+                  "x": 85,
+                  "y": 45
+                },
+                {
+                  "x": 70,
+                  "y": 45
+                }
+              ],
+              "netName": "OUT_A"
+            },
+            {
+              "id": "wire_cn4wykc_a2j3",
+              "points": [
+                {
+                  "x": 110,
+                  "y": 60
+                },
+                {
+                  "x": 110,
+                  "y": 78
+                },
+                {
+                  "x": 115,
+                  "y": 78
+                },
+                {
+                  "x": 115,
+                  "y": 90
+                }
+              ],
+              "netName": "OUT_A"
+            },
+            {
+              "id": "wire_wyunw9o_a2j3",
+              "points": [
+                {
+                  "x": 65,
+                  "y": 135
+                },
+                {
+                  "x": 50,
+                  "y": 135
+                }
+              ],
+              "netName": "IN_B"
+            },
+            {
+              "id": "wire_8pxv8sy_a2j4",
+              "points": [
+                {
+                  "x": 85,
+                  "y": 135
+                },
+                {
+                  "x": 110,
+                  "y": 135
+                }
+              ],
+              "netName": "OUT_B"
+            },
+            {
+              "id": "wire_o7us4zw_a2j4",
+              "points": [
+                {
+                  "x": 85,
+                  "y": 135
+                },
+                {
+                  "x": 85,
+                  "y": 120
+                },
+                {
+                  "x": 70,
+                  "y": 120
+                }
+              ],
+              "netName": "OUT_B"
+            },
+            {
+              "id": "wire_bk9omst_a2j5",
+              "points": [
+                {
+                  "x": 110,
+                  "y": 135
+                },
+                {
+                  "x": 110,
+                  "y": 152
+                },
+                {
+                  "x": 115,
+                  "y": 152
+                },
+                {
+                  "x": 115,
+                  "y": 165
+                }
+              ],
+              "netName": "OUT_B"
+            }
+          ],
+          "buses": [],
+          "busTaps": [],
+          "junctions": [],
+          "netPorts": [
+            {
+              "id": "port_t98abzb_a2j1",
+              "x": 50,
+              "y": 60,
+              "angle": 0,
+              "netName": "IN_A",
+              "style": "OffPageOut"
+            },
+            {
+              "id": "port_n5i2qgz_a2j2",
+              "x": 70,
+              "y": 45,
+              "angle": 0,
+              "netName": "OUT_A",
+              "style": "OffPageOut"
+            },
+            {
+              "id": "port_z3n004e_a2j3",
+              "x": 50,
+              "y": 135,
+              "angle": 0,
+              "netName": "IN_B",
+              "style": "OffPageOut"
+            },
+            {
+              "id": "port_qld2551_a2j4",
+              "x": 70,
+              "y": 120,
+              "angle": 0,
+              "netName": "OUT_B",
+              "style": "OffPageOut"
+            }
+          ],
+          "diffPairs": [],
+          "hierarchyBlocks": [],
+          "shapes": []
+        }
+      ],
+      "activeSheetId": "sheet_1",
+      "netClasses": [
+        {
+          "id": "nc_default",
+          "name": "Сигнальные",
+          "traceWidth": 0.25,
+          "minWidth": 0.15,
+          "maxWidth": 5,
+          "clearance": 0.2,
+          "viaOuterDiameter": 0.7,
+          "viaHoleDiameter": 0.35
+        }
+      ],
+      "netClassAssignments": {},
+      "customComponentDefs": {
+        "COMP_R_R1_12_0805": {
+          "id": "COMP_R_R1_12_0805",
+          "name": "Р1-12-0,125 (ЧИП 2012М/0805)",
+          "library": "Резисторы (ГОСТ 2.728)",
+          "refDesPrefix": "R",
+          "defaultValue": "10к",
+          "gostStandard": "АЛЯР.434110.005 ТУ",
+          "description": "Резистор чип для поверхностного монтажа Р1-12 (2012М / 0805)",
+          "manufacturer": "АО «НПО Эркон»",
+          "patternId": "PAT_CHIP_2012M",
+          "spiceModel": {
+            "prefix": "R",
+            "params": {
+              "R": 10000
+            }
+          },
+          "parts": [
+            {
+              "partIndex": 1,
+              "name": "Part 1",
+              "primitives": [
+                {
+                  "type": "rect",
+                  "x": -5,
+                  "y": -2,
+                  "w": 10,
+                  "h": 4,
+                  "width": 0.35
+                }
+              ],
+              "pins": [
+                {
+                  "id": "pin_1",
+                  "number": "1",
+                  "name": "1",
+                  "x": -10,
+                  "y": 0,
+                  "length": 5,
+                  "orientation": 0,
+                  "electricalType": "Passive",
+                  "style": "Line",
+                  "showName": false,
+                  "showNumber": false,
+                  "padMapping": "1"
+                },
+                {
+                  "id": "pin_2",
+                  "number": "2",
+                  "name": "2",
+                  "x": 10,
+                  "y": 0,
+                  "length": 5,
+                  "orientation": 180,
+                  "electricalType": "Passive",
+                  "style": "Line",
+                  "showName": false,
+                  "showNumber": false,
+                  "padMapping": "2"
+                }
+              ]
+            }
+          ]
+        },
+        "COMP_C_K10_17V_0805": {
+          "id": "COMP_C_K10_17V_0805",
+          "name": "К10-17в (ЧИП 2012М/0805)",
+          "library": "Конденсаторы (ГОСТ 2.728)",
+          "refDesPrefix": "C",
+          "defaultValue": "0,1 мкФ",
+          "gostStandard": "ОЖ0.460.172 ТУ",
+          "description": "Конденсатор керамический многослойный ЧИП К10-17в (2012М)",
+          "manufacturer": "ОАО «Кулон»",
+          "patternId": "PAT_CHIP_2012M",
+          "spiceModel": {
+            "prefix": "C",
+            "params": {
+              "C": 1e-7
+            }
+          },
+          "parts": [
+            {
+              "partIndex": 1,
+              "name": "Part 1",
+              "primitives": [
+                {
+                  "type": "line",
+                  "x1": -1,
+                  "y1": -4,
+                  "x2": -1,
+                  "y2": 4,
+                  "width": 0.4
+                },
+                {
+                  "type": "line",
+                  "x1": 1,
+                  "y1": -4,
+                  "x2": 1,
+                  "y2": 4,
+                  "width": 0.4
+                }
+              ],
+              "pins": [
+                {
+                  "id": "pin_1",
+                  "number": "1",
+                  "name": "1",
+                  "x": -5,
+                  "y": 0,
+                  "length": 4,
+                  "orientation": 0,
+                  "electricalType": "Passive",
+                  "style": "Line",
+                  "showName": false,
+                  "showNumber": false,
+                  "padMapping": "1"
+                },
+                {
+                  "id": "pin_2",
+                  "number": "2",
+                  "name": "2",
+                  "x": 5,
+                  "y": 0,
+                  "length": 4,
+                  "orientation": 180,
+                  "electricalType": "Passive",
+                  "style": "Line",
+                  "showName": false,
+                  "showNumber": false,
+                  "padMapping": "2"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "customPatternDefs": {
+        "PAT_CHIP_2012M": {
+          "id": "PAT_CHIP_2012M",
+          "name": "ЧИП_2012М (0805)",
+          "library": "Корпуса пассивных ЭРЭ (ГОСТ)",
+          "gostName": "Р1-12-2012М / К10-17в-2012",
+          "ipcName": "ЧИП_2012М (0805)",
+          "description": "Метрический ЧИП-корпус 2.0 × 1.25 мм (Р1-12, К10-17)",
+          "pads": [
+            {
+              "id": "pad_1",
+              "number": "1",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": -0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            },
+            {
+              "id": "pad_2",
+              "number": "2",
+              "type": "SMD",
+              "shape": "RoundedRect",
+              "x": 0.95,
+              "y": 0,
+              "width": 1.05,
+              "height": 1.35,
+              "cornerRadius": 0.08,
+              "layer": "Top"
+            }
+          ],
+          "graphics": [
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": -0.775,
+              "x2": 0.9,
+              "y2": -0.775,
+              "width": 0.15
+            },
+            {
+              "type": "line",
+              "layer": "TopSilk",
+              "x1": -0.9,
+              "y1": 0.775,
+              "x2": 0.9,
+              "y2": 0.775,
+              "width": 0.15
+            },
+            {
+              "type": "rect",
+              "layer": "TopAssembly",
+              "x": -1,
+              "y": -0.625,
+              "w": 2,
+              "h": 1.25,
+              "width": 0.1
+            },
+            {
+              "type": "rect",
+              "layer": "Courtyard",
+              "x": -1.7750000000000001,
+              "y": -1.375,
+              "w": 3.5500000000000003,
+              "h": 2.75,
+              "width": 0.1
+            }
+          ],
+          "courtyard": {
+            "width": 3.5500000000000003,
+            "height": 2.75
+          },
+          "model3d": {
+            "shape": "ChipSMD",
+            "bodyWidth": 1.25,
+            "bodyLength": 2,
+            "bodyHeight": 0.6,
+            "color": "#b88958",
+            "pinCount": 2,
+            "pitch": 1.9
+          }
+        }
+      }
+    }
+  },
+  "plan": "Задание 01-dual-rc «Двухканальный RC-фильтр».\nДокументы: оба — схема Э3 \"СТРЕСС.260001 Э3\" (1 лист \"Фильтры\", A4_L, Form1) + связанная плата.\nНоминалы: R1=1 кОм, R2=2,2 кОм, R3=1 кОм, R4=2,2 кОм, C1=C2=100 нФ. R — библиотечные 0805 резисторы, C — библиотечные 0805 неполярные.\nЦепи (исчерпывающие):\n IN_A: R1.1\n OUT_A: R1.2, R2.1, C1.1\n IN_B: R3.1\n OUT_B: R3.2, R4.1, C2.1\n GND: R2.2, R4.2, C1.2, C2.2\nТопология: канал A — R1 последовательно (IN_A→OUT_A), R2+C1 шунт на GND; канал B — R3 последовательно, R4+C2 шунт.\nПорты на схеме: IN_A, IN_B, OUT_A, OUT_B, GND (именованные).\nПлата: 52×34 мм, 2 слоя, контур прямоугольник (0,0)-(52,0)-(52,34)-(0,34), clearance 0.25. Заливка GND на BottomCopper, зазор 0.25.\nОбязательно: развести OUT_A и OUT_B; обеспечить физическую связность GND с нижней заливкой.\nНе добавлять других корпусов, цепей, зон и заливок. Площадки без сети оставить без сети.\npositions не заданы в явном виде — выбрать координаты самостоятельно; закрепление/сторону/угол выбрать сам, задокументировать допущения.\nОформление: Э3 по ГОСТ 2.701/2.702, рамка и основная надпись через set_frame, обозначения вне УГО.",
+  "targets": {
+    "documents": "both",
+    "designation": "СТРЕСС.260001 Э3",
+    "sheets": [
+      {
+        "name": "Фильтры",
+        "format": "A4_L",
+        "form": "Form1"
+      }
+    ],
+    "values": {
+      "R1": "1 кОм",
+      "R2": "2,2 кОм",
+      "R3": "1 кОм",
+      "R4": "2,2 кОм",
+      "C1": "100 нФ",
+      "C2": "100 нФ"
+    },
+    "board": {
+      "width": 52,
+      "height": 34,
+      "layers": 2,
+      "clearance": 0.25,
+      "keepouts": [],
+      "pours": [
+        {
+          "net": "GND",
+          "layer": "BottomCopper",
+          "clearance": 0.25
+        }
+      ]
+    }
+  },
+  "checks": {
+    "erc": 4,
+    "drc": 0,
+    "outsideFrame": 0,
+    "requirements": [
+      {
+        "requirement": "Обозначение листа 1",
+        "expected": "СТРЕСС.260001 Э3",
+        "actual": "СТРЕСС.260001 Э3",
+        "pass": true
+      },
+      {
+        "requirement": "Номер листа 1",
+        "expected": 1,
+        "actual": 1,
+        "pass": true
+      },
+      {
+        "requirement": "Всего листов",
+        "expected": 1,
+        "actual": 1,
+        "pass": true
+      },
+      {
+        "requirement": "Число листов",
+        "expected": 1,
+        "actual": 1,
+        "pass": true
+      },
+      {
+        "requirement": "Название листа 1",
+        "expected": "Фильтры",
+        "actual": "Фильтры",
+        "pass": true
+      },
+      {
+        "requirement": "Формат листа 1",
+        "expected": "A4_L",
+        "actual": "A4_L",
+        "pass": true
+      },
+      {
+        "requirement": "Форма листа 1",
+        "expected": "Form1",
+        "actual": "Form1",
+        "pass": true
+      },
+      {
+        "requirement": "Номинал R1",
+        "expected": "1 кОм",
+        "actual": "1 кОм",
+        "pass": true
+      },
+      {
+        "requirement": "Номинал R2",
+        "expected": "2,2 кОм",
+        "actual": "2,2 кОм",
+        "pass": true
+      },
+      {
+        "requirement": "Номинал R3",
+        "expected": "1 кОм",
+        "actual": "1 кОм",
+        "pass": true
+      },
+      {
+        "requirement": "Номинал R4",
+        "expected": "2,2 кОм",
+        "actual": "2,2 кОм",
+        "pass": true
+      },
+      {
+        "requirement": "Номинал C1",
+        "expected": "100 нФ",
+        "actual": "100 нФ",
+        "pass": true
+      },
+      {
+        "requirement": "Номинал C2",
+        "expected": "100 нФ",
+        "actual": "100 нФ",
+        "pass": true
+      },
+      {
+        "requirement": "Ширина платы",
+        "expected": 52,
+        "actual": null,
+        "pass": false
+      },
+      {
+        "requirement": "Высота платы",
+        "expected": 34,
+        "actual": null,
+        "pass": false
+      },
+      {
+        "requirement": "Слои платы",
+        "expected": 2,
+        "actual": null,
+        "pass": false
+      },
+      {
+        "requirement": "Минимальный зазор",
+        "expected": 0.25,
+        "actual": null,
+        "pass": false
+      },
+      {
+        "requirement": "Заливка GND",
+        "expected": {
+          "net": "GND",
+          "layer": "BottomCopper",
+          "clearance": 0.25
+        },
+        "actual": null,
+        "pass": false
+      }
+    ],
+    "revision": 16,
+    "errors": 0,
+    "warnings": 4,
+    "blockers": [
+      "Отсутствует обязательная плата.",
+      "Ширина платы: ожидалось 52, получено null",
+      "Высота платы: ожидалось 34, получено null",
+      "Слои платы: ожидалось 2, получено null",
+      "Минимальный зазор: ожидалось 0.25, получено null",
+      "Заливка GND: ожидалось {\"net\":\"GND\",\"layer\":\"BottomCopper\",\"clearance\":0.25}, получено null"
+    ]
+  }
+}

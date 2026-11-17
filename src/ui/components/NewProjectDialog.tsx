@@ -210,7 +210,7 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
                   </label>
                 </div>
                 {nameError && (
-                  <div id="new-project-name-error" role="alert" style={{ fontSize: 11, color: '#b91c1c', marginTop: -4 }}>{nameError}</div>
+                  <div id="new-project-name-error" role="alert" className="dt-error-message" style={{ fontSize: 11, marginTop: -4 }}>{nameError}</div>
                 )}
 
                 {(opts.mode === 'schematic_and_pcb' || opts.mode === 'schematic_only') && (

@@ -1,0 +1,407 @@
+{
+  "version": "1.0",
+  "filePath": "",
+  "projectName": "ТЕСТ.000005",
+  "units": "mm",
+  "gridSize": 2.5,
+  "origin": {
+    "x": 0,
+    "y": 0
+  },
+  "sheets": [
+    {
+      "id": "sheet_1",
+      "name": "Лист 1",
+      "format": "A4_L",
+      "titleBlock": {
+        "enabled": true,
+        "form": "Form1",
+        "showZones": true,
+        "showCornerStamp26": true,
+        "designation": "ТЕСТ.000005",
+        "name": "Межлистовой сигнал",
+        "subName": "Схема электрическая принципиальная",
+        "organization": "",
+        "litera": "",
+        "mass": "—",
+        "scale": "1:1",
+        "sheetNumber": 1,
+        "totalSheets": 2,
+        "developer": "",
+        "checker": "",
+        "techControl": "",
+        "normControl": "",
+        "approver": "",
+        "date": "17.11.2026",
+        "documentCode": "Э3"
+      },
+      "components": [
+        {
+          "id": "comp_7lu9v1c_lkdc",
+          "componentDefId": "COMP_R_MLT025",
+          "libraryId": "Резисторы (ГОСТ 2.728)",
+          "refDes": "R1",
+          "instanceId": "pkg_dcpr1s6_lkdc",
+          "value": "1 кОм",
+          "typeName": "МЛТ-0,25 (выводной)",
+          "partIndex": 1,
+          "x": 120,
+          "y": 95,
+          "angle": 0,
+          "flipX": false,
+          "flipY": false,
+          "patternId": "PAT_MLT_025",
+          "refDesOffset": {
+            "x": 0,
+            "y": -6
+          },
+          "valueOffset": {
+            "x": 0,
+            "y": 6
+          },
+          "showRefDes": true,
+          "showValue": true,
+          "labelAngle": 0
+        }
+      ],
+      "wires": [
+        {
+          "id": "wire_834zmw5_lwqc",
+          "points": [
+            {
+              "x": 110,
+              "y": 95
+            },
+            {
+              "x": 90,
+              "y": 95
+            }
+          ],
+          "netName": "IN"
+        },
+        {
+          "id": "wire_nu2f0ae_lwqd",
+          "points": [
+            {
+              "x": 130,
+              "y": 95
+            },
+            {
+              "x": 160,
+              "y": 95
+            }
+          ],
+          "netName": "LINK"
+        }
+      ],
+      "buses": [],
+      "busTaps": [],
+      "junctions": [],
+      "netPorts": [
+        {
+          "id": "port_un9gkb1_lwqc",
+          "x": 90,
+          "y": 95,
+          "angle": 0,
+          "netName": "IN",
+          "style": "PortLeft"
+        },
+        {
+          "id": "port_58ii0a1_lwqd",
+          "x": 160,
+          "y": 95,
+          "angle": 0,
+          "netName": "LINK",
+          "style": "OffPageOut"
+        }
+      ],
+      "diffPairs": [],
+      "hierarchyBlocks": [],
+      "shapes": []
+    },
+    {
+      "id": "sheet_95b0n0n_lls3",
+      "name": "Нагрузка",
+      "format": "A4_L",
+      "titleBlock": {
+        "enabled": true,
+        "form": "Form2a",
+        "showZones": true,
+        "showCornerStamp26": true,
+        "designation": "ТЕСТ.000005",
+        "name": "Межлистовой сигнал",
+        "subName": "Схема электрическая принципиальная",
+        "organization": "",
+        "litera": "",
+        "mass": "—",
+        "scale": "1:1",
+        "sheetNumber": 2,
+        "totalSheets": 2,
+        "developer": "",
+        "checker": "",
+        "techControl": "",
+        "normControl": "",
+        "approver": "",
+        "date": "17.11.2026",
+        "documentCode": "Э3"
+      },
+      "components": [
+        {
+          "id": "comp_gykc1fe_lqvx",
+          "componentDefId": "COMP_R_MLT025",
+          "libraryId": "Резисторы (ГОСТ 2.728)",
+          "refDes": "R2",
+          "instanceId": "pkg_jilzk2t_lqvx",
+          "value": "2 кОм",
+          "typeName": "МЛТ-0,25 (выводной)",
+          "partIndex": 1,
+          "x": 120,
+          "y": 110,
+          "angle": 0,
+          "flipX": false,
+          "flipY": false,
+          "patternId": "PAT_MLT_025",
+          "refDesOffset": {
+            "x": 0,
+            "y": -6
+          },
+          "valueOffset": {
+            "x": 0,
+            "y": 6
+          },
+          "showRefDes": true,
+          "showValue": true,
+          "labelAngle": 0
+        }
+      ],
+      "wires": [
+        {
+          "id": "wire_1focj1p_m0nf",
+          "points": [
+            {
+              "x": 110,
+              "y": 110
+            },
+            {
+              "x": 90,
+              "y": 110
+            }
+          ],
+          "netName": "LINK"
+        },
+        {
+          "id": "wire_9ef9m2i_m0ng",
+          "points": [
+            {
+              "x": 130,
+              "y": 110
+            },
+            {
+              "x": 160,
+              "y": 110
+            }
+          ],
+          "netName": "GND"
+        }
+      ],
+      "buses": [],
+      "busTaps": [],
+      "junctions": [],
+      "netPorts": [
+        {
+          "id": "port_nqhi5uz_m0nf",
+          "x": 90,
+          "y": 110,
+          "angle": 0,
+          "netName": "LINK",
+          "style": "OffPageIn"
+        },
+        {
+          "id": "port_bl9oley_m0ng",
+          "x": 160,
+          "y": 110,
+          "angle": 0,
+          "netName": "GND",
+          "style": "Ground"
+        }
+      ],
+      "diffPairs": [],
+      "hierarchyBlocks": [],
+      "shapes": []
+    }
+  ],
+  "activeSheetId": "sheet_1",
+  "netClasses": [
+    {
+      "id": "nc_default",
+      "name": "Сигнальные",
+      "traceWidth": 0.25,
+      "minWidth": 0.15,
+      "maxWidth": 5,
+      "clearance": 0.2,
+      "viaOuterDiameter": 0.7,
+      "viaHoleDiameter": 0.35
+    }
+  ],
+  "netClassAssignments": {},
+  "customComponentDefs": {
+    "COMP_R_MLT025": {
+      "id": "COMP_R_MLT025",
+      "name": "МЛТ-0,25 (выводной)",
+      "library": "Резисторы (ГОСТ 2.728)",
+      "refDesPrefix": "R",
+      "defaultValue": "1к",
+      "gostStandard": "ОСТ 11 073.013",
+      "description": "Резистор постоянный непроволочный МЛТ-0,25 Вт (ГОСТ 2.728-74)",
+      "manufacturer": "ОАО «Ресурс»",
+      "patternId": "PAT_MLT_025",
+      "spiceModel": {
+        "prefix": "R",
+        "params": {
+          "R": 1000
+        }
+      },
+      "parts": [
+        {
+          "partIndex": 1,
+          "name": "Part 1",
+          "primitives": [
+            {
+              "type": "rect",
+              "x": -5,
+              "y": -2,
+              "w": 10,
+              "h": 4,
+              "width": 0.35
+            },
+            {
+              "type": "line",
+              "x1": -1.2,
+              "y1": -1.5,
+              "x2": 1.2,
+              "y2": 1.5,
+              "width": 0.28
+            }
+          ],
+          "pins": [
+            {
+              "id": "pin_1",
+              "number": "1",
+              "name": "1",
+              "x": -10,
+              "y": 0,
+              "length": 5,
+              "orientation": 0,
+              "electricalType": "Passive",
+              "style": "Line",
+              "showName": false,
+              "showNumber": false,
+              "padMapping": "1"
+            },
+            {
+              "id": "pin_2",
+              "number": "2",
+              "name": "2",
+              "x": 10,
+              "y": 0,
+              "length": 5,
+              "orientation": 180,
+              "electricalType": "Passive",
+              "style": "Line",
+              "showName": false,
+              "showNumber": false,
+              "padMapping": "2"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "customPatternDefs": {
+    "PAT_MLT_025": {
+      "id": "PAT_MLT_025",
+      "name": "МЛТ-0,25 (шаг 12,5 мм)",
+      "library": "Корпуса пассивных ЭРЭ (ГОСТ)",
+      "gostName": "ОСТ 11 073.013 / МЛТ-0,25",
+      "ipcName": "МЛТ-0,25 (шаг 12,5 мм)",
+      "description": "Выводной осевой резистор МЛТ-0,25 / С2-23, шаг 12.5 мм",
+      "pads": [
+        {
+          "id": "pad_1",
+          "number": "1",
+          "type": "THT",
+          "shape": "Rect",
+          "x": -6.25,
+          "y": 0,
+          "width": 1.8,
+          "height": 1.8,
+          "holeDiameter": 0.9,
+          "layer": "All"
+        },
+        {
+          "id": "pad_2",
+          "number": "2",
+          "type": "THT",
+          "shape": "Round",
+          "x": 6.25,
+          "y": 0,
+          "width": 1.8,
+          "height": 1.8,
+          "holeDiameter": 0.9,
+          "layer": "All"
+        }
+      ],
+      "graphics": [
+        {
+          "type": "rect",
+          "layer": "TopSilk",
+          "x": -3.25,
+          "y": -1.2,
+          "w": 6.5,
+          "h": 2.4,
+          "width": 0.18
+        },
+        {
+          "type": "line",
+          "layer": "TopSilk",
+          "x1": -6.25,
+          "y1": 0,
+          "x2": -3.25,
+          "y2": 0,
+          "width": 0.18
+        },
+        {
+          "type": "line",
+          "layer": "TopSilk",
+          "x1": 3.25,
+          "y1": 0,
+          "x2": 6.25,
+          "y2": 0,
+          "width": 0.18
+        },
+        {
+          "type": "rect",
+          "layer": "Courtyard",
+          "x": -7.45,
+          "y": -1.95,
+          "w": 14.9,
+          "h": 3.9,
+          "width": 0.1
+        }
+      ],
+      "courtyard": {
+        "width": 14.9,
+        "height": 3.9
+      },
+      "model3d": {
+        "shape": "AxialResistor",
+        "bodyWidth": 2.4,
+        "bodyLength": 6.5,
+        "bodyHeight": 2.4,
+        "color": "#a93226",
+        "pinCount": 2,
+        "pitch": 12.5
+      }
+    }
+  }
+}

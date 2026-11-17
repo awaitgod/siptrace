@@ -87,7 +87,7 @@ export const SchFindDialog: React.FC<SchFindDialogProps> = ({
               </button>
             ))}
             {matchingComps.length === 0 && matchingNets.length === 0 && (
-              <div style={{ padding: 8, color: '#666' }}>Ничего не найдено.</div>
+              <div style={{ padding: 8, color: 'var(--ui-muted)' }}>Ничего не найдено.</div>
             )}
           </div>
         </div>

@@ -147,7 +147,7 @@ test.describe('Deep Audit of Schematic Capture (SIPTrace EDA)', () => {
 
     const dialog = page.locator('.dt-modal[role="dialog"]');
     await expect(dialog).toBeVisible();
-    await expect(dialog).toContainText('Цветовая схема рабочего поля');
+    await expect(dialog).toContainText('Цветовая схема интерфейса и схемы');
 
     await page.screenshot({ path: `${SCREENSHOT_DIR}/14_dialog_color_settings.png` });
     await dialog.getByRole('button', { name: 'Отмена' }).click();

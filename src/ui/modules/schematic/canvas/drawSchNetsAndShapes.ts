@@ -15,7 +15,7 @@ export function drawSchNetsAndShapes(ctx: CanvasRenderingContext2D, sheet: Schem
             ctx.lineTo(bus.points[i].x, bus.points[i].y);
         ctx.stroke();
         ctx.fillStyle = palette.busColor;
-        ctx.font = `bold 3px "Segoe UI", Arial`;
+        ctx.font = `bold 3px "OpenGost", Arial`;
         ctx.fillText(bus.busName, bus.points[0].x + 1.5, bus.points[0].y - 1.8);
     }
     for (const tap of sheet.busTaps) {
@@ -30,7 +30,7 @@ export function drawSchNetsAndShapes(ctx: CanvasRenderingContext2D, sheet: Schem
         ctx.lineTo(tap.x + 2.5, tap.y + 2.5);
         ctx.stroke();
         ctx.fillStyle = palette.wireColor;
-        ctx.font = `2.3px "Segoe UI", Arial`;
+        ctx.font = `2.3px "OpenGost", Arial`;
         ctx.fillText(tap.signalName, tap.x + 2.8, tap.y + 2.5);
         ctx.restore();
     }
@@ -80,7 +80,7 @@ export function drawSchNetsAndShapes(ctx: CanvasRenderingContext2D, sheet: Schem
             ctx.lineTo(np.x + 0.7, np.y + 5.4);
             ctx.stroke();
             if (label && label !== 'GND') {
-                ctx.font = `2.6px "Segoe UI", Arial`;
+                ctx.font = `2.6px "OpenGost", Arial`;
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(label, np.x + 3.4, np.y + 3);
@@ -92,7 +92,7 @@ export function drawSchNetsAndShapes(ctx: CanvasRenderingContext2D, sheet: Schem
             ctx.moveTo(np.x - 2.4, np.y - 3.5);
             ctx.lineTo(np.x + 2.4, np.y - 3.5);
             ctx.stroke();
-            ctx.font = `bold 2.8px "Segoe UI", Arial`;
+            ctx.font = `bold 2.8px "OpenGost", Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'bottom';
             ctx.fillText(label, np.x, np.y - 4.2);
@@ -106,7 +106,7 @@ export function drawSchNetsAndShapes(ctx: CanvasRenderingContext2D, sheet: Schem
             ctx.lineTo(np.x + dir * 2.5, np.y + 1.5);
             ctx.closePath();
             ctx.stroke();
-            ctx.font = `2.6px "Segoe UI", Arial`;
+            ctx.font = `2.6px "OpenGost", Arial`;
             ctx.textAlign = dir > 0 ? 'left' : 'right';
             ctx.textBaseline = 'middle';
             ctx.fillText(label, np.x + dir * 9.5, np.y);
@@ -126,7 +126,7 @@ export function drawSchNetsAndShapes(ctx: CanvasRenderingContext2D, sheet: Schem
         ctx.fillRect(hb.x, hb.y, hb.w, hb.h);
         ctx.strokeRect(hb.x, hb.y, hb.w, hb.h);
         ctx.fillStyle = palette.textColor;
-        ctx.font = `bold 3px "Segoe UI", Arial`;
+        ctx.font = `bold 3px "OpenGost", Arial`;
         ctx.textAlign = 'center';
         ctx.fillText(hb.name, hb.x + hb.w / 2, hb.y + hb.h / 2);
         for (const pin of hb.pins) {
@@ -150,7 +150,7 @@ export function drawSchNetsAndShapes(ctx: CanvasRenderingContext2D, sheet: Schem
         ctx.lineWidth = 0.35;
         ctx.strokeRect(dp.x - 4, dp.y - 2, 18, 4);
         ctx.fillStyle = dpColor;
-        ctx.font = `2.4px "Segoe UI", Arial`;
+        ctx.font = `2.4px "OpenGost", Arial`;
         ctx.textAlign = 'left';
         ctx.fillText(`Diff: ${dp.pairName}`, dp.x - 3, dp.y);
         ctx.restore();
@@ -190,7 +190,7 @@ export function drawSchNetsAndShapes(ctx: CanvasRenderingContext2D, sheet: Schem
                 ctx.stroke();
         }
         else if (sh.type === 'text') {
-            ctx.font = `${sh.italic ? 'italic ' : ''}${sh.bold ? 'bold ' : ''}${sh.size}px "Segoe UI", Arial`;
+            ctx.font = `${sh.italic ? 'italic ' : ''}${sh.bold ? 'bold ' : ''}${sh.size}px "OpenGost", Arial`;
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
             ctx.fillText(sh.text, sh.x, sh.y);
@@ -203,7 +203,7 @@ export function drawSchNetsAndShapes(ctx: CanvasRenderingContext2D, sheet: Schem
                 for (let cIdx = 0; cIdx < sh.colWidths.length; cIdx++) {
                     const cw = sh.colWidths[cIdx];
                     ctx.strokeRect(cx, cy, cw, sh.rowHeight);
-                    ctx.font = `${r === 0 ? 'bold ' : ''}2.5px "Segoe UI", Arial`;
+                    ctx.font = `${r === 0 ? 'bold ' : ''}2.5px "OpenGost", Arial`;
                     ctx.textAlign = 'left';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(sh.rows[r][cIdx] ?? '', cx + 1.2, cy + sh.rowHeight / 2, cw - 2);

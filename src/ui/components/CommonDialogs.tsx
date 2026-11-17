@@ -325,7 +325,7 @@ export const SpiceSimDialog: React.FC<{
         </div>
         <div className="dt-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <div style={{ flex: 1, background: '#e8f6ea', border: '1px solid #82c991', padding: '4px 8px' }}>
+            <div className="dt-message-success" style={{ flex: 1, padding: '4px 8px' }}>
               {result.message}
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
@@ -450,12 +450,12 @@ export const ColorSettingsDialog: React.FC<{
     return (<div className="dt-modal-backdrop">
       <div className="dt-modal" style={{ width: 380 }}>
         <div className="dt-modal-title">
-          <span>Цветовая схема рабочего поля</span>
+          <span>Цветовая схема интерфейса и схемы</span>
           <button className="dt-btn" style={{ minWidth: 22, height: 18, padding: 0 }} onClick={onClose}>×</button>
         </div>
         <div className="dt-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <label><input type="radio" checked={val === 'dark'} onChange={() => setVal('dark')}/> Классическая чёрная (как в DipTrace)</label>
-          <label><input type="radio" checked={val === 'light'} onChange={() => setVal('light')}/> Светлая (цветные цепи на белом листе)</label>
+          <label><input type="radio" checked={val === 'dark'} onChange={() => setVal('dark')}/> Тёмная (тёмный интерфейс и чёрное поле)</label>
+          <label><input type="radio" checked={val === 'light'} onChange={() => setVal('light')}/> Светлая (цветные цепи на светло-сером поле)</label>
           <label><input type="radio" checked={val === 'gost-bw'} onChange={() => setVal('gost-bw')}/> Чёрно-белая ЕСКД (строго под печать ГОСТ)</label>
         </div>
         <div className="dt-modal-footer">

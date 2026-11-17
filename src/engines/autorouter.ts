@@ -1,6 +1,8 @@
 import { PcbProject, PcbTrace, PcbVia, Point2D } from '../core/types';
 import { dist, pointInPolygon, pointToSegmentDist, polygonBounds, uid } from '../core/geometry';
-import { computeUnroutedRatlines, getWorldPads } from './drc';
+import { computeUnroutedRatlines, getWorldPads, pointToPadDistance, runPcbDrc } from './drc';
+
+import { fitsBoardMaterial, segmentToPolygon } from './pcbMaterial';
 
 export interface AutorouterSettings {
   gridStepMm: number; // e.g., 0.5 or 0.635
@@ -28,6 +30,15 @@ export interface AutorouterReport {
   addedTraces: number;
   addedVias: number;
   durationMs: number;
+  conflicts?: ReturnType<typeof runPcbDrc>;
+}
+
+export interface AutorouteScope {
+  net?: string;
+  pair?: readonly [string, string];
+  layers?: PcbTrace['layer'][];
+  width?: number;
+  crossing?: { axis: 'x' | 'y'; at: number; layer: PcbTrace['layer'] };
 }
 
 interface GridNode {
@@ -75,12 +86,22 @@ class MinHeap {
 // Multi-layer Shape/Grid-aware A* Autorouter with layer preferred directions, obstacle clearance & 45-degree post-smoothing
 export function runAutorouter(
   pcb: PcbProject,
-  settings: AutorouterSettings = DEFAULT_AUTOROUTER_SETTINGS
+  settings: AutorouterSettings = DEFAULT_AUTOROUTER_SETTINGS,
+  scope: AutorouteScope = {}
 ): { pcb: PcbProject; report: AutorouterReport } {
   const t0 = performance.now();
   const next = structuredClone(pcb);
   const rules = next.designRules;
-  const ratlines = computeUnroutedRatlines(next);
+  const allConnections = computeUnroutedRatlines(next);
+  let ratlines = scope.net ? allConnections.filter(connection => connection.netName === scope.net) : allConnections;
+  if (scope.pair && scope.net) {
+    const pads = getWorldPads(next).filter(pad => pad.netName === scope.net);
+    const [fromLabel, toLabel] = scope.pair;
+    const from = pads.find(pad => pad.refDes + '.' + pad.pad.number === fromLabel);
+    const to = pads.find(pad => pad.refDes + '.' + pad.pad.number === toLabel);
+    if (!from || !to || from === to) throw new Error('Укажите две разные площадки заданной цепи.');
+    ratlines = [{ netName: scope.net, from, to, fromLabel, toLabel }];
+  }
 
   if (ratlines.length === 0) {
     return {
@@ -107,10 +128,11 @@ export function runAutorouter(
   const cols = Math.max(12, Math.floor(spanW / step) + 1);
   const rows = Math.max(12, Math.floor(spanH / step) + 1);
 
-  const layers: ('TopCopper' | 'Inner1' | 'Inner2' | 'BottomCopper')[] =
-    settings.enableInnerLayers && next.layerCount === 4
-      ? ['TopCopper', 'Inner1', 'Inner2', 'BottomCopper']
-      : ['TopCopper', 'BottomCopper'];
+  const enabledLayers: PcbTrace['layer'][] = settings.enableInnerLayers && next.layerCount === 4
+    ? ['TopCopper', 'Inner1', 'Inner2', 'BottomCopper'] : ['TopCopper', 'BottomCopper'];
+  const layers = enabledLayers.filter(layer => next.layers.some(item => item.enabled && item.id === layer) &&
+    (!scope.layers || scope.layers.includes(layer)));
+  if (!layers.length) throw new Error('Нет доступных слоёв для трассировки.');
   const L = layers.length;
 
   const toGridX = (x: number) => Math.max(0, Math.min(cols - 1, Math.round((x - minX) / step)));
@@ -203,7 +225,7 @@ export function runAutorouter(
   // Populate existing pads, traces, vias
   const worldPads = getWorldPads(next);
   const clearance = Math.max(rules.clearanceTraceToTrace, rules.clearanceTraceToPad);
-  const traceW = rules.defaultTraceWidth || 0.25;
+  const traceW = scope.width ?? (rules.defaultTraceWidth || 0.25);
   const gridMargin = step * 0.58;
 
   for (const wp of worldPads) {
@@ -232,7 +254,7 @@ export function runAutorouter(
     const clsId = next.netClassAssignments[netName];
     const cls = clsId ? next.netClasses.find((nc) => nc.id === clsId) : undefined;
     return {
-      width: Math.max(rules.minTraceWidth, cls?.traceWidth ?? traceW),
+      width: Math.max(rules.minTraceWidth, scope.width ?? cls?.traceWidth ?? traceW),
       clearance: Math.max(clearance, cls?.clearance ?? 0)
     };
   };
@@ -260,6 +282,7 @@ export function runAutorouter(
   let failedConnections = 0;
   let addedTraces = 0;
   let addedVias = 0;
+  const conflicts: ReturnType<typeof runPcbDrc> = [];
 
   const totalCells = L * rows * cols;
   const gScore = new Float32Array(totalCells);
@@ -319,17 +342,15 @@ export function runAutorouter(
     const foreignPads = worldPads.filter((wp) => wp.netName !== netName);
     const foreignTraces = next.traces.filter((t) => t.netName !== netName);
     const foreignVias = next.vias.filter((v) => v.netName !== netName);
-    const routeKeepouts = next.keepouts.filter(
-      (k) => k.kind === 'RouteKeepout' && k.points.length >= 3
-    );
+    const materialMargin = rules.clearanceCopperToBoard;
+    const smdPads = worldPads.filter(pad => pad.pad.type === 'SMD');
+    const outerDiameter = Math.max(rules.minViaOuter, rules.minViaHole + rules.minAnnularRing * 2);
 
     let goalIdx = -1;
     let expansions = 0;
     const manhattanDist = Math.abs(tc - sc) + Math.abs(tr - sr);
     const maxExpansions = Math.min(24000, Math.max(5000, manhattanDist * 220));
-    const viaR =
-      Math.max(rules.minViaOuter, rules.minViaHole + rules.minAnnularRing * 2) * 0.5 +
-      Math.max(rules.clearanceViaToAny, netClr);
+    const viaR = outerDiameter / 2 + Math.max(rules.clearanceViaToAny, netClr);
 
     while (open.size > 0 && expansions < maxExpansions) {
       const cur = open.pop()!;
@@ -372,6 +393,12 @@ export function runAutorouter(
         // Guard exact segment endpoints near start/end pads against foreign pad clearance violations
         const segA = (cc === sc && cr === sr) ? startPt : { x: toWorldX(cc), y: toWorldY(cr) };
         const segB = isGoalCell ? endPt : { x: toWorldX(nc), y: toWorldY(nr) };
+        const crossing = scope.crossing;
+        if (crossing && layers[cl] !== crossing.layer &&
+          (segA[crossing.axis] < crossing.at) !== (segB[crossing.axis] < crossing.at)) continue;
+        if (!fitsBoardMaterial(next, segA, segB, materialMargin + netW / 2 + 0.002) ||
+          routeKeepouts.some(zone => (zone.layer === 'AllCopper' || zone.layer === layers[cl]) &&
+            segmentToPolygon(segA, segB, zone.points) <= netW / 2 + 0.002)) continue;
         const segMinX = Math.min(segA.x, segB.x);
         const segMaxX = Math.max(segA.x, segB.x);
         const segMinY = Math.min(segA.y, segB.y);
@@ -421,7 +448,9 @@ export function runAutorouter(
           const vwy = toWorldY(cr);
           const vPt = { x: vwx, y: vwy };
           const viaClear =
-            !routeKeepouts.some((k) => pointInPolygon(vPt, k.points)) &&
+            fitsBoardMaterial(next, vPt, vPt, materialMargin + outerDiameter / 2 + 0.002) &&
+            !routeKeepouts.some(zone => segmentToPolygon(vPt, vPt, zone.points) <= outerDiameter / 2 + 0.002) &&
+            !smdPads.some(pad => pointToPadDistance(vPt, pad) < rules.minViaHole / 2 + 0.002) &&
             !foreignPads.some((wp) => dist(vPt, wp) < viaR + wp.radius) &&
             !foreignVias.some((v) => dist(vPt, v) < viaR + v.outerDiameter * 0.5) &&
             !foreignTraces.some((trOther) =>
@@ -469,6 +498,8 @@ export function runAutorouter(
     pathNodes.reverse();
 
     // Group contiguous segments on same layer, inserting Vias on layer switches
+    const candidateTraces: PcbTrace[] = [];
+    const candidateVias: PcbVia[] = [];
     let segPts: Point2D[] = [];
     let segLayer = pathNodes[0].l;
 
@@ -482,11 +513,7 @@ export function runAutorouter(
         points: simplified,
         width: netW
       };
-      next.traces.push(trace);
-      addedTraces++;
-      for (let k = 1; k < simplified.length; k++) {
-        paintSegment(layerIdx, simplified[k - 1], simplified[k], (netW + traceW) * 0.5 + netClr + gridMargin, nid);
-      }
+      candidateTraces.push(trace);
     };
 
     pathNodes.forEach((node, idx) => {
@@ -496,7 +523,7 @@ export function runAutorouter(
 
       if (node.l !== segLayer) {
         const viaPt = segPts[segPts.length - 1] ?? pt;
-        flushSegment([...segPts, viaPt], segLayer);
+        flushSegment(segPts, segLayer);
         const via: PcbVia = {
           id: uid('via'),
           x: viaPt.x,
@@ -508,9 +535,7 @@ export function runAutorouter(
           endLayer: 'BottomCopper',
           viaStyle: 'Through'
         };
-        next.vias.push(via);
-        addedVias++;
-        for (let l = 0; l < L; l++) paintCircle(l, via.x, via.y, via.outerDiameter * 0.5 + traceW * 0.5 + clearance + gridMargin, nid, false);
+        candidateVias.push(via);
         segLayer = node.l;
         segPts = [viaPt];
       } else {
@@ -518,6 +543,30 @@ export function runAutorouter(
       }
     });
     flushSegment(segPts, segLayer);
+    const ids = new Set([...candidateTraces, ...candidateVias].map(item => item.id));
+    const candidate = { ...next, designRules: { ...rules, checkUnroutedNets: false },
+      traces: [...next.traces, ...candidateTraces], vias: [...next.vias, ...candidateVias] };
+    const errors = runPcbDrc(candidate).filter(issue =>
+      (issue.severity === 'Error' || issue.code === 'DRC-EDGE') && issue.objectIds.some(id => ids.has(id)));
+    if (!ids.size || errors.length) {
+      conflicts.push(...errors.slice(0, 8));
+      return false;
+    }
+    next.traces.push(...candidateTraces);
+    next.vias.push(...candidateVias);
+    addedTraces += candidateTraces.length;
+    addedVias += candidateVias.length;
+    for (const trace of candidateTraces) {
+      for (let k = 1; k < trace.points.length; k++) {
+        paintSegment(layers.indexOf(trace.layer), trace.points[k - 1], trace.points[k],
+          (netW + traceW) / 2 + netClr + gridMargin, nid);
+      }
+    }
+    for (const via of candidateVias) {
+      for (let l = 0; l < L; l++) {
+        paintCircle(l, via.x, via.y, via.outerDiameter / 2 + traceW / 2 + clearance + gridMargin, nid, false);
+      }
+    }
     return true;
   };
 
@@ -550,7 +599,8 @@ export function runAutorouter(
       failedConnections,
       addedTraces,
       addedVias,
-      durationMs: Math.round(performance.now() - t0)
+      durationMs: Math.round(performance.now() - t0),
+      ...(conflicts.length ? { conflicts: conflicts.slice(-16) } : {})
     }
   };
 }

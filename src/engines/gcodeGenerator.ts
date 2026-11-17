@@ -125,18 +125,36 @@ export function generatePcbGCode(pcb: PcbProject, opts: Partial<GCodeOptions> = 
       }
       const rx = wp.pad.width / 2 + halfTool;
       const ry = wp.pad.height / 2 + halfTool;
-      emitLoop(
-        [
-          { x: wp.x - rx, y: wp.y - ry },
-          { x: wp.x + rx, y: wp.y - ry },
-          { x: wp.x + rx, y: wp.y + ry },
-          { x: wp.x - rx, y: wp.y + ry }
-        ],
-        o.engraveDepth,
-        'isolation',
-        mirrorX
+      const rad = ((wp.padAngleDeg || 0) * Math.PI) / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      const rotatePt = (lx: number, ly: number) => ({
+        x: wp.x + lx * cos - ly * sin,
+        y: wp.y + lx * sin + ly * cos
+      });
+
+      const connectedTraces = pcb.traces.filter(
+        (tr) =>
+          tr.layer === copperLayer &&
+          tr.netName &&
+          tr.netName === wp.netName &&
+          tr.points.some((p) => Math.hypot(p.x - wp.x, p.y - wp.y) <= Math.max(wp.pad.width, wp.pad.height) * 0.75)
       );
-      isolationLoops++;
+
+      if (connectedTraces.length === 0) {
+        emitLoop(
+          [
+            rotatePt(-rx, -ry),
+            rotatePt(rx, -ry),
+            rotatePt(rx, ry),
+            rotatePt(-rx, ry)
+          ],
+          o.engraveDepth,
+          'isolation',
+          mirrorX
+        );
+        isolationLoops++;
+      }
     }
 
     // 2. Trace capsule / offset perimeter isolation

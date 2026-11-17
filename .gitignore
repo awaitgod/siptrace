@@ -9,6 +9,7 @@ tests/screenshots/
 audit-ui-results/
 audit/screenshots/
 audit/diptrace-samples/
+audit/format-corpus/
 *.log
 .env
 .env.*

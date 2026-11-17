@@ -87,6 +87,8 @@ export interface SchNetPort {
     y: number;
     angle: 0 | 90 | 180 | 270;
     netName: string;
+    /** Optional display text when the source symbol has a different label from its net. */
+    label?: string;
     style: 'Ground' | 'Power' | 'PortLeft' | 'PortRight' | 'OffPageIn' | 'OffPageOut';
     electricalType?: 'Input' | 'Output' | 'Bidirectional' | 'Power';
 }

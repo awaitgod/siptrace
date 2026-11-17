@@ -1,4 +1,4 @@
-import { PcbPlacedComponent, PcbProject, PlacedComponent, SchWire, SchematicProject } from '../../core/types';
+import { ComponentDef, PcbPlacedComponent, PcbProject, PlacedComponent, SchWire, SchematicProject } from '../../core/types';
 import { uid } from '../../core/geometry';
 import { createDefaultGostTitleBlock } from '../../gost/gostTitleBlock';
 import { createGostDesignRules } from '../../gost/gostRules';
@@ -12,6 +12,7 @@ export function createImportedSchematicProject(opts: {
   titleName: string;
   components: PlacedComponent[];
   wires?: SchWire[];
+  customDefs?: Record<string, ComponentDef>;
 }): SchematicProject {
   return {
     version: '1.0',
@@ -25,7 +26,7 @@ export function createImportedSchematicProject(opts: {
       { id: 'nc_default', name: 'Сигнальные', traceWidth: 0.25, minWidth: 0.15, maxWidth: 5, clearance: 0.2, viaOuterDiameter: 0.7, viaHoleDiameter: 0.35 }
     ],
     netClassAssignments: {},
-    customComponentDefs: {},
+    customComponentDefs: opts.customDefs ?? {},
     customPatternDefs: {},
     sheets: [
       {

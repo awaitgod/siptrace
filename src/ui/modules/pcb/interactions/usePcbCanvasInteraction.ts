@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { PatternDef, PcbCopperPour, PcbProject, Point2D } from '../../../../core/types';
+import { PatternDef, PcbProject, Point2D } from '../../../../core/types';
 import { dist, pointInPolygon, pointToSegmentDist, polygonBounds, uid } from '../../../../core/geometry';
 import { broadcastEdaEvent } from '../../../../core/store';
 import { snapPoint, snapToGrid } from '../../../../core/units';
@@ -10,7 +10,8 @@ import { INITIAL_DRAG_STATE } from '../constants';
 import {
   buildDefaultPcbVia,
   buildPcbCopperPour,
-  buildPlacedPcbComponent
+  buildPlacedPcbComponent,
+  PcbCopperPourSettings
 } from '../services/pcbActionsService';
 import {
   CopperLayerId,
@@ -46,8 +47,7 @@ export interface UsePcbCanvasInteractionParams {
   routeElbowFlip: boolean;
   lineStartPt: Point2D | null;
   setLineStartPt: React.Dispatch<React.SetStateAction<Point2D | null>>;
-  newPourNet: string;
-  newPourFill: PcbCopperPour['fillType'];
+  pourDraft: PcbCopperPourSettings | null;
   setMeasurePts: React.Dispatch<React.SetStateAction<MeasureRulerState | null>>;
   setStatusMessage: React.Dispatch<React.SetStateAction<string>>;
   commitPcb: (updater: (prev: PcbProject) => PcbProject, pushUndo?: boolean) => void;
@@ -129,7 +129,7 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
   };
 
   const finalizeRightClickDrafts = () => {
-    if (p.routeDraftPts.length >= 2) {
+    if (p.tool === 'routeManual' && p.routeDraftPts.length >= 2) {
       p.commitPcb((prev) => ({
         ...prev,
         traces: [
@@ -160,16 +160,16 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
             keepouts: [...prev.keepouts, { id: uid('ko'), layer: 'AllCopper', kind: 'RouteKeepout', points: p.polyDraftPts }]
           })
         );
-      } else if (p.tool === 'copperPour') {
+      } else if (p.tool === 'copperPour' && p.pourDraft) {
         const newPour = buildPcbCopperPour({
           pcb: p.pcb,
-          layer: p.activeLayer,
-          netName: p.newPourNet || 'GND',
           outline: p.polyDraftPts,
           dependOnBoardOutline: false,
-          fillType: p.newPourFill
+          settings: p.pourDraft
         });
         p.commitPcb((prev) => updateAllCopperPours({ ...prev, copperPours: [...prev.copperPours, newPour] }));
+        p.setTool('select');
+        p.setStatusMessage(`Полигон «${newPour.netName}» добавлен на слой ${newPour.layer}.`);
       }
     }
     p.setPolyDraftPts([]);
@@ -248,20 +248,37 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
           ...(dist(midPt, last) > 0.05 && dist(midPt, clickPt) > 0.05 ? [midPt] : []),
           clickPt
         ];
-        if (nearestPad && nearestPad.netName && nearestPad.netName === p.routeNetName) {
-          p.commitPcb((prev) => ({
-            ...prev,
-            traces: [
-              ...prev.traces,
-              {
-                id: uid('tr'),
-                layer: p.activeLayer,
-                netName: p.routeNetName,
-                points: pts,
-                width: prev.designRules.defaultTraceWidth
-              }
-            ]
-          }));
+        const hitSameNetVia = p.pcb.vias.find(
+          (v) => v.netName && v.netName === p.routeNetName && dist(v, clickPt) <= v.outerDiameter / 2 + 0.5
+        );
+        const hitSameNetTrace = p.pcb.traces.find(
+          (tr) =>
+            tr.layer === p.activeLayer &&
+            tr.netName &&
+            tr.netName === p.routeNetName &&
+            tr.points.some((pt, idx) => idx > 0 && pointToSegmentDist(clickPt, tr.points[idx - 1], pt) <= tr.width / 2 + 0.5)
+        );
+        const shouldFinish = (nearestPad && nearestPad.netName && nearestPad.netName === p.routeNetName) || hitSameNetVia || hitSameNetTrace;
+
+        if (shouldFinish) {
+          p.commitPcb((prev) => {
+            const ncId = prev.netClassAssignments?.[p.routeNetName];
+            const netClass = prev.netClasses?.find((nc) => nc.id === ncId);
+            const traceWidth = netClass?.traceWidth ?? prev.designRules.defaultTraceWidth;
+            return {
+              ...prev,
+              traces: [
+                ...prev.traces,
+                {
+                  id: uid('tr'),
+                  layer: p.activeLayer,
+                  netName: p.routeNetName,
+                  points: pts,
+                  width: traceWidth
+                }
+              ]
+            };
+          });
           p.setRouteDraftPts([]);
           p.setStatusMessage(`Соединение цепи «${p.routeNetName}» завершено.`);
         } else {

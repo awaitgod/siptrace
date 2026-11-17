@@ -43,7 +43,7 @@ export interface SchematicToolbarProps {
 /** Main DipTrace-style horizontal schematic toolbar. */
 export const SchematicToolbar: React.FC<SchematicToolbarProps> = (p) => (<div className="dt-toolbar-row">
     <button className="dt-tb-btn" title="Новая схема" onClick={p.handleNewProject}><DipIcon name="new"/></button>
-    <button className="dt-tb-btn" title="Открыть схему (.gostsch / .dch)" onClick={p.handleOpenFile}><DipIcon name="open"/></button>
+    <button className="dt-tb-btn" title="Открыть схему (Ctrl+O)" onClick={p.handleOpenFile}><DipIcon name="open"/></button>
     <button className="dt-tb-btn" title={`Сохранить схему (${p.hotkeys.save})`} onClick={p.handleSaveFile}><DipIcon name="save"/></button>
     <button className="dt-tb-btn" title="Настройка листа / Штамп ГОСТ 2.104" onClick={() => p.setShowTitleDialog(true)}><DipIcon name="preview"/></button>
     <button className="dt-tb-btn" title="Перечень элементов ПЭ3 (ГОСТ 2.701)" onClick={() => p.setShowBomDialog(true)}><DipIcon name="bom"/></button>

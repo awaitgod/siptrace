@@ -260,3 +260,76 @@ export function getUserPatternLibraries(): PatternLibrary[] {
   }
   return libs;
 }
+
+/**
+ * Creates an empty user-defined library bundle.
+ */
+export function createUserLibrary(name: string, category: string = 'Пользовательские'): CadLibraryBundle {
+  const libName = name.trim() || 'Новая_библиотека';
+  const bundleId = `cadlib_custom_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  const bundle: CadLibraryBundle = {
+    id: bundleId,
+    name: libName,
+    sourceFormat: 'SIPTrace',
+    sourceFile: `${libName}.gostlib`,
+    category,
+    gostAdapted: true,
+    importedAt: new Date().toISOString(),
+    componentIds: [],
+    patternIds: []
+  };
+  const bundles = [...loadImportedLibraryBundles(), bundle];
+  saveImportedLibraryBundles(bundles);
+  broadcastEdaEvent('libraries:updated', { kind: 'all', bundleId });
+  return bundle;
+}
+
+/**
+ * Removes an individual component from user storage and removes its reference from library bundles.
+ */
+export function deleteUserComponent(componentId: string): void {
+  const comps = loadUserComponents().filter((c) => c.id !== componentId);
+  saveUserComponents(comps);
+  const bundles = loadImportedLibraryBundles().map((b) => ({
+    ...b,
+    componentIds: b.componentIds.filter((id) => id !== componentId)
+  }));
+  saveImportedLibraryBundles(bundles);
+  broadcastEdaEvent('libraries:updated', { kind: 'components', deletedId: componentId });
+}
+
+/**
+ * Renames an individual component in user storage.
+ */
+export function renameUserComponent(componentId: string, newName: string): void {
+  const trimmed = newName.trim();
+  if (!trimmed) return;
+  const comps = loadUserComponents().map((c) => (c.id === componentId ? { ...c, name: trimmed, defaultValue: trimmed } : c));
+  saveUserComponents(comps);
+  broadcastEdaEvent('libraries:updated', { kind: 'components', updatedId: componentId });
+}
+
+/**
+ * Removes an individual pattern from user storage and removes its reference from library bundles.
+ */
+export function deleteUserPattern(patternId: string): void {
+  const pats = loadUserPatterns().filter((p) => p.id !== patternId);
+  saveUserPatterns(pats);
+  const bundles = loadImportedLibraryBundles().map((b) => ({
+    ...b,
+    patternIds: b.patternIds.filter((id) => id !== patternId)
+  }));
+  saveImportedLibraryBundles(bundles);
+  broadcastEdaEvent('libraries:updated', { kind: 'patterns', deletedId: patternId });
+}
+
+/**
+ * Renames an individual pattern in user storage.
+ */
+export function renameUserPattern(patternId: string, newName: string): void {
+  const trimmed = newName.trim();
+  if (!trimmed) return;
+  const pats = loadUserPatterns().map((p) => (p.id === patternId ? { ...p, name: trimmed, ipcName: trimmed } : p));
+  saveUserPatterns(pats);
+  broadcastEdaEvent('libraries:updated', { kind: 'patterns', updatedId: patternId });
+}

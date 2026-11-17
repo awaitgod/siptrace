@@ -94,9 +94,13 @@ function parsePowerRailVoltage(net: string): number | null {
         diodes.push({ n1: i1, n2: i2, vf: c.refDes.startsWith('HL') ? 1.9 : 0.7 });
       } else if (c.refDes.startsWith('VT')) {
         activeStages.push({ nCtrlPos: i1, nCtrlNeg: i3, nOut: i2, nRef: i3, gm: 0.04, rOut: 1e4 });
-      } else if (c.refDes.startsWith('U')) {
+      } else if (c.refDes.startsWith('U') || c.refDes.startsWith('VU')) {
         diodes.push({ n1: i1, n2: i2, vf: 1.25 });
         activeStages.push({ nCtrlPos: i1, nCtrlNeg: i2, nOut: i5 >= 0 ? i5 : i4, nRef: i4, gm: 0.025, rOut: 5e3 });
+      } else if (c.refDes.startsWith('DA')) {
+        activeStages.push({ nCtrlPos: i1, nCtrlNeg: i2, nOut: i3 >= 0 ? i3 : i4, nRef: -1, gm: 0.1, rOut: 50 });
+      } else if (c.refDes.startsWith('DD')) {
+        activeStages.push({ nCtrlPos: i1, nCtrlNeg: -1, nOut: i2 >= 0 ? i2 : i3, nRef: -1, gm: 0.05, rOut: 100 });
       } else {
         if (i1 >= 0) resistors.push({ n1: i1, n2: -1, r: 2e5 });
         if (i2 >= 0) resistors.push({ n1: i2, n2: -1, r: 2e5 });

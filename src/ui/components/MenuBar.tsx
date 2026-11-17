@@ -8,6 +8,7 @@ export interface MenuItemSpec {
   disabled?: boolean;
   separator?: boolean;
   submenu?: MenuItemSpec[];
+  submenuBelow?: boolean;
   onClick?: () => void;
 }
 
@@ -17,67 +18,90 @@ export interface TopMenuSpec {
   items: MenuItemSpec[];
 }
 
+const menuRowSelector = '[role="menuitem"], [role="menuitemcheckbox"]';
+
+function focusMenuEdge(menu: Element | null | undefined, last = false) {
+  const rows = Array.from(menu?.children ?? []).filter(
+    (row): row is HTMLElement => row instanceof HTMLElement && row.matches(menuRowSelector)
+  );
+  if (rows?.length) rows[last ? rows.length - 1 : 0].focus();
+}
+
 export const MenuDropdownList: React.FC<{
   items: MenuItemSpec[];
   onCloseAll: () => void;
+  onCloseSubmenu?: () => void;
+  inline?: boolean;
   style?: React.CSSProperties;
-}> = ({ items, onCloseAll, style }) => {
-  const [hoveredSubIdx, setHoveredSubIdx] = useState<number | null>(null);
+}> = ({ items, onCloseAll, onCloseSubmenu, inline, style }) => {
+  const [openSubIdx, setOpenSubIdx] = useState<number | null>(null);
 
   return (
-    <div className="dt-dropdown" style={style} role="menu">
+    <div className={inline ? 'dt-dropdown dt-dropdown-inline' : 'dt-dropdown'} style={style} role="menu">
       {items.map((item, idx) => {
         if (item.separator) {
           return <div key={`sep_${idx}`} className="dt-dropdown-sep" role="separator" />;
         }
         const hasSub = Boolean(item.submenu && item.submenu.length > 0);
-        const isSubOpen = hasSub && hoveredSubIdx === idx;
+        const isSubOpen = hasSub && openSubIdx === idx;
+        const submenuBelow = hasSub && item.submenuBelow;
+        const openSubmenu = (row: HTMLElement) => {
+          setOpenSubIdx(idx);
+          requestAnimationFrame(() => focusMenuEdge(row.querySelector(':scope > [role="menu"]')));
+        };
         return (
           <div
             key={item.id ?? `item_${idx}`}
-            className={`dt-dropdown-row ${item.disabled ? 'disabled' : ''} ${isSubOpen ? 'sub-open' : ''}`}
+            className={`dt-dropdown-row ${item.disabled ? 'disabled' : ''} ${isSubOpen ? 'sub-open' : ''} ${submenuBelow ? 'dt-dropdown-row-inline' : ''}`}
             role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+            aria-label={submenuBelow ? item.label : undefined}
             aria-checked={item.checked === undefined ? undefined : item.checked}
             aria-disabled={item.disabled || undefined}
             aria-haspopup={hasSub ? 'menu' : undefined}
             aria-expanded={hasSub ? isSubOpen : undefined}
-            tabIndex={item.disabled ? -1 : 0}
-            onMouseEnter={() => setHoveredSubIdx(hasSub ? idx : null)}
+            tabIndex={-1}
+            onMouseEnter={() => {
+              if (openSubIdx !== null && items[openSubIdx]?.submenuBelow) return;
+              setOpenSubIdx(hasSub && !submenuBelow && !item.disabled ? idx : null);
+            }}
             onKeyDown={(e) => {
-              if (item.disabled) return;
-              if (e.key === 'Enter' || e.key === ' ' || (e.key === 'ArrowRight' && hasSub)) {
+              if (hasSub && (e.key === 'ArrowRight' || (submenuBelow && isSubOpen && e.key === 'ArrowDown'))) {
                 e.preventDefault();
                 e.stopPropagation();
-                if (hasSub) {
-                  setHoveredSubIdx(idx);
-                  const row = e.currentTarget;
-                  requestAnimationFrame(() => row.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"]), [role="menuitemcheckbox"]:not([aria-disabled="true"])')?.focus());
+                if (!item.disabled) openSubmenu(e.currentTarget);
+              } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (item.disabled) return;
+                if (hasSub && !item.onClick) {
+                  openSubmenu(e.currentTarget);
                 } else {
                   onCloseAll();
                   item.onClick?.();
                 }
-              } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+              } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'End') {
                 e.preventDefault();
                 e.stopPropagation();
                 const rows = Array.from(e.currentTarget.parentElement?.children ?? []).filter(
-                  (row): row is HTMLElement => row instanceof HTMLElement && row.getAttribute('role')?.startsWith('menuitem') === true && row.getAttribute('aria-disabled') !== 'true'
+                  (row): row is HTMLElement => row instanceof HTMLElement && row.matches(menuRowSelector)
                 );
-                const next = (rows.indexOf(e.currentTarget) + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length;
+                setOpenSubIdx(null);
+                const next = e.key === 'Home' ? 0 : e.key === 'End' ? rows.length - 1
+                  : (rows.indexOf(e.currentTarget) + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length;
                 rows[next]?.focus();
-              } else if (e.key === 'ArrowLeft') {
+              } else if ((e.key === 'ArrowLeft' || e.key === 'Escape') && onCloseSubmenu) {
                 const parentRow = e.currentTarget.parentElement?.parentElement;
-                if (parentRow?.getAttribute('role')?.startsWith('menuitem')) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  parentRow.focus();
-                }
+                e.preventDefault();
+                e.stopPropagation();
+                parentRow?.focus();
+                onCloseSubmenu();
               }
             }}
             onClick={(e) => {
               e.stopPropagation();
               if (item.disabled) return;
-              if (hasSub) {
-                setHoveredSubIdx(idx);
+              if (hasSub && !item.onClick) {
+                setOpenSubIdx(idx);
                 return;
               }
               onCloseAll();
@@ -86,7 +110,23 @@ export const MenuDropdownList: React.FC<{
           >
             {item.checked && <span className="dt-dropdown-check">✓</span>}
             <span>{item.label}</span>
-            {hasSub ? (
+            {submenuBelow ? (
+              <button
+                type="button"
+                className="dt-dropdown-arrow dt-dropdown-toggle"
+                tabIndex={-1}
+                aria-label={`Подменю «${item.label}»`}
+                aria-expanded={isSubOpen}
+                disabled={item.disabled}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.currentTarget.parentElement?.focus();
+                  setOpenSubIdx(isSubOpen ? null : idx);
+                }}
+              >
+                {isSubOpen ? '▼' : '►'}
+              </button>
+            ) : hasSub ? (
               <span className="dt-dropdown-arrow">►</span>
             ) : item.shortcut ? (
               <span className="dt-dropdown-shortcut">{item.shortcut}</span>
@@ -95,7 +135,9 @@ export const MenuDropdownList: React.FC<{
               <MenuDropdownList
                 items={item.submenu}
                 onCloseAll={onCloseAll}
-                style={{ left: '100%', top: -2, zIndex: 1100 }}
+                onCloseSubmenu={() => setOpenSubIdx(null)}
+                inline={submenuBelow}
+                style={submenuBelow ? undefined : { left: '100%', top: -2, zIndex: 1100 }}
               />
             )}
           </div>
@@ -111,6 +153,10 @@ export const MenuBar: React.FC<{ menus: TopMenuSpec[]; onBrandClick?: () => void
 }) => {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
+  const closeAndRestoreFocus = () => {
+    barRef.current?.querySelector<HTMLElement>('.dt-menu-item.open')?.focus();
+    setOpenMenuId(null);
+  };
 
   useEffect(() => {
     const onDocDown = (e: MouseEvent) => {
@@ -118,37 +164,9 @@ export const MenuBar: React.FC<{ menus: TopMenuSpec[]; onBrandClick?: () => void
         setOpenMenuId(null);
       }
     };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && openMenuId !== null) {
-        setOpenMenuId(null);
-        barRef.current?.querySelector<HTMLElement>('.dt-menu-item.open')?.focus();
-        e.preventDefault();
-        e.stopPropagation();
-      } else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && openMenuId !== null) {
-        const activeEl = document.activeElement as HTMLElement | null;
-        if (activeEl && activeEl.getAttribute('aria-haspopup') === 'true' && e.key === 'ArrowRight') return;
-        const idx = menus.findIndex((m) => m.id === openMenuId);
-        if (idx >= 0) {
-          const nextIdx = (idx + (e.key === 'ArrowRight' ? 1 : -1) + menus.length) % menus.length;
-          const nextId = menus[nextIdx].id;
-          e.preventDefault();
-          e.stopPropagation();
-          setOpenMenuId(nextId);
-          requestAnimationFrame(() => {
-            const trigger = barRef.current?.querySelectorAll<HTMLElement>('.dt-menu-item')[nextIdx];
-            const firstItem = trigger?.parentElement?.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"]), [role="menuitemcheckbox"]:not([aria-disabled="true"])');
-            (firstItem ?? trigger)?.focus();
-          });
-        }
-      }
-    };
     window.addEventListener('mousedown', onDocDown);
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      window.removeEventListener('mousedown', onDocDown);
-      window.removeEventListener('keydown', onKeyDown);
-    };
-  }, [openMenuId, menus]);
+    return () => window.removeEventListener('mousedown', onDocDown);
+  }, []);
 
   const activeMenu = menus.find((m) => m.id === openMenuId);
   const logoSrc = `${import.meta.env?.BASE_URL ?? './'}logo.svg`;
@@ -158,9 +176,20 @@ export const MenuBar: React.FC<{ menus: TopMenuSpec[]; onBrandClick?: () => void
       if (e.key === 'Escape' && openMenuId !== null) {
         e.preventDefault();
         e.stopPropagation();
-        barRef.current?.querySelector<HTMLElement>('.dt-menu-item.open')?.focus();
-        setOpenMenuId(null);
+        closeAndRestoreFocus();
+      } else if (e.key === 'Tab' && openMenuId !== null) {
+        closeAndRestoreFocus();
+      } else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && openMenuId !== null) {
+        e.preventDefault();
+        e.stopPropagation();
+        const idx = menus.findIndex((menu) => menu.id === openMenuId);
+        const next = (idx + menus.length + (e.key === 'ArrowRight' ? 1 : -1)) % menus.length;
+        const trigger = barRef.current?.querySelectorAll<HTMLElement>('.dt-menu-item')[next];
+        setOpenMenuId(menus[next].id);
+        requestAnimationFrame(() => focusMenuEdge(trigger?.parentElement?.querySelector('[role="menu"]')));
       }
+    }} onBlur={(e) => {
+      if (!e.currentTarget.contains(e.relatedTarget)) setOpenMenuId(null);
     }}>
       {menus.map((m) => {
         const isOpen = openMenuId === m.id;
@@ -173,12 +202,13 @@ export const MenuBar: React.FC<{ menus: TopMenuSpec[]; onBrandClick?: () => void
               aria-haspopup="menu"
               aria-expanded={isOpen}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+                if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                   e.preventDefault();
                   e.stopPropagation();
                   setOpenMenuId(m.id);
                   const menu = e.currentTarget.parentElement;
-                  requestAnimationFrame(() => menu?.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"]), [role="menuitemcheckbox"]:not([aria-disabled="true"])')?.focus());
+                  const last = e.key === 'ArrowUp';
+                  requestAnimationFrame(() => focusMenuEdge(menu?.querySelector('[role="menu"]'), last));
                 } else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && openMenuId === null) {
                   e.preventDefault();
                   const triggers = Array.from(barRef.current?.querySelectorAll<HTMLElement>('.dt-menu-item') ?? []);
@@ -186,7 +216,15 @@ export const MenuBar: React.FC<{ menus: TopMenuSpec[]; onBrandClick?: () => void
                   if (curIdx >= 0) triggers[(curIdx + (e.key === 'ArrowRight' ? 1 : -1) + triggers.length) % triggers.length]?.focus();
                 }
               }}
-              onClick={() => setOpenMenuId(isOpen ? null : m.id)}
+              onClick={(e) => {
+                setOpenMenuId(isOpen ? null : m.id);
+                if (!isOpen) {
+                  const trigger = e.currentTarget;
+                  requestAnimationFrame(() => {
+                    if (document.activeElement === trigger) focusMenuEdge(trigger.parentElement?.querySelector('[role="menu"]'));
+                  });
+                }
+              }}
               onMouseEnter={() => {
                 if (openMenuId !== null) setOpenMenuId(m.id);
               }}
@@ -196,7 +234,7 @@ export const MenuBar: React.FC<{ menus: TopMenuSpec[]; onBrandClick?: () => void
             {isOpen && activeMenu && (
               <MenuDropdownList
                 items={activeMenu.items}
-                onCloseAll={() => setOpenMenuId(null)}
+                onCloseAll={closeAndRestoreFocus}
                 style={{ left: 0 }}
               />
             )}

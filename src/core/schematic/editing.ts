@@ -84,6 +84,17 @@ export function normalizePoints(points: Point2D[]): Point2D[] {
     return out;
 }
 export function onWire(p: Point2D, wire: SchWire, eps = 0.01): boolean { return wire.points.some((q, i) => i > 0 && pointToSegmentDist(p, wire.points[i - 1], q) < eps); }
+export function deriveWireJunctions(wires: SchWire[], existing: SchematicSheet['junctions'] = []): SchematicSheet['junctions'] {
+    const candidates = [...existing, ...wires.flatMap(w => [w.points[0], w.points[w.points.length - 1]].map(p => ({ ...p, id: uid('junc'), netName: w.netName })))];
+    const junctions: SchematicSheet['junctions'] = [];
+    for (const j of candidates) {
+        const touching = wires.filter(w => onWire(j, w));
+        const arms = touching.reduce((n, w) => n + (dist(j, w.points[0]) < .01 || dist(j, w.points[w.points.length - 1]) < .01 ? 1 : 2), 0);
+        if (touching.length >= 2 && arms >= 3 && !junctions.some(q => dist(q, j) < .01))
+            junctions.push(j);
+    }
+    return junctions;
+}
 /** Preserve explicit crossings; remove dangling dots; derive T junctions from real endpoints. */
 export function normalizeSheet(sheet: SchematicSheet): SchematicSheet {
     const keys = new Set<string>();
@@ -97,14 +108,7 @@ export function normalizeSheet(sheet: SchematicSheet): SchematicSheet {
         keys.add(key);
         return true;
     });
-    const candidates = [...sheet.junctions, ...wires.flatMap(w => [w.points[0], w.points[w.points.length - 1]].map(p => ({ ...p, id: uid('junc'), netName: w.netName })))];
-    const junctions: SchematicSheet['junctions'] = [];
-    for (const j of candidates) {
-        const touching = wires.filter(w => onWire(j, w));
-        const arms = touching.reduce((n, w) => n + (dist(j, w.points[0]) < .01 || dist(j, w.points[w.points.length - 1]) < .01 ? 1 : 2), 0);
-        if (touching.length >= 2 && arms >= 3 && !junctions.some(q => dist(q, j) < .01))
-            junctions.push(j);
-    }
+    const junctions = deriveWireJunctions(wires, sheet.junctions);
     return { ...sheet, wires, junctions, busTaps: sheet.busTaps.filter(t => wires.some(w => w.id === t.wireId) && sheet.buses.some(b => b.id === t.busId)) };
 }
 export function commitWire(sheet: SchematicSheet, points: Point2D[], bus = false, netName = ''): SchematicSheet {
@@ -244,7 +248,7 @@ export interface SchematicClipboard {
     patternDefs: SchematicProject['customPatternDefs'];
 }
 let clipboard: SchematicClipboard | null = null;
-export function copyFragment(project: SchematicProject, sheet: SchematicSheet, ids: string[]): SchematicClipboard {
+function createFragment(project: SchematicProject, sheet: SchematicSheet, ids: string[]): SchematicClipboard {
     const fragment = structuredClone(sheet);
     for (const k of collections)
         (fragment as any)[k] = fragment[k].filter(o => ids.includes(o.id));
@@ -258,7 +262,10 @@ export function copyFragment(project: SchematicProject, sheet: SchematicSheet, i
             }
         }
     }
-    clipboard = { sheet: fragment, componentDefs: structuredClone(project.customComponentDefs), patternDefs: structuredClone(project.customPatternDefs) };
+    return { sheet: fragment, componentDefs: structuredClone(project.customComponentDefs), patternDefs: structuredClone(project.customPatternDefs) };
+}
+export function copyFragment(project: SchematicProject, sheet: SchematicSheet, ids: string[]): SchematicClipboard {
+    clipboard = createFragment(project, sheet, ids);
     return clipboard;
 }
 export function getClipboard(): SchematicClipboard | null { return clipboard; }
@@ -315,6 +322,13 @@ export function pasteFragment(project: SchematicProject, source: SchematicClipbo
     const mergedDefs = { ...defs, ...componentDefs };
     const ids = allIds(sheet), b = selectionBounds(sheet, ids, mergedDefs);
     return { sheet: transformEntities(sheet, ids, { dx: point.x - b.minX, dy: point.y - b.minY, preserveConnections: false }, mergedDefs), ids, componentDefs, patternDefs };
+}
+export function duplicateSchematicSheet(project: SchematicProject, source: SchematicSheet): SchematicSheet {
+    const ids = allIds(source);
+    const defs = project.customComponentDefs;
+    const { minX, minY } = selectionBounds(source, ids, defs);
+    const { sheet } = pasteFragment(project, createFragment(project, source, ids), { x: minX, y: minY }, defs);
+    return { ...sheet, id: uid('sheet'), name: source.name + ' — копия' };
 }
 export function mergeFragment(sheet: SchematicSheet, fragment: SchematicSheet): SchematicSheet {
     const next = { ...sheet };

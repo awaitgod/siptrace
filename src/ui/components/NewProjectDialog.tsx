@@ -97,6 +97,7 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
     e.preventDefault();
     if (!isDemo && !opts.projectName.trim()) {
       setNameError('Введите непустое название проекта.');
+      nameInputRef.current?.focus();
       return;
     }
     const finalOpts: NewProjectOptions = {
@@ -132,27 +133,39 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
           <div className="dt-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 11.5 }}>
             <div>
               <div style={{ fontWeight: 600, marginBottom: 4 }}>Тип создания:</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.8fr)', gap: 4 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
                 <button
                   type="button"
+                  aria-pressed={opts.mode === 'schematic_and_pcb'}
                   className={`dt-btn ${opts.mode === 'schematic_and_pcb' ? 'primary' : ''}`}
-                  style={{ height: 24, fontSize: 11, minWidth: 0 }}
+                  style={{ height: 24, fontSize: 10.5, minWidth: 0, padding: '0 4px' }}
                   onClick={() => upd('mode', 'schematic_and_pcb')}
                 >
                   Схема + Плата
                 </button>
                 <button
                   type="button"
+                  aria-pressed={opts.mode === 'schematic_only'}
+                  className={`dt-btn ${opts.mode === 'schematic_only' ? 'primary' : ''}`}
+                  style={{ height: 24, fontSize: 10.5, minWidth: 0, padding: '0 4px' }}
+                  onClick={() => upd('mode', 'schematic_only')}
+                >
+                  Только Схема
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={opts.mode === 'pcb_only'}
                   className={`dt-btn ${opts.mode === 'pcb_only' ? 'primary' : ''}`}
-                  style={{ height: 24, fontSize: 11, minWidth: 0 }}
+                  style={{ height: 24, fontSize: 10.5, minWidth: 0, padding: '0 4px' }}
                   onClick={() => upd('mode', 'pcb_only')}
                 >
                   Только плата
                 </button>
                 <button
                   type="button"
+                  aria-pressed={isDemo}
                   className={`dt-btn ${isDemo ? 'primary' : ''}`}
-                  style={{ height: 24, fontSize: 11, minWidth: 0 }}
+                  style={{ height: 24, fontSize: 10.5, minWidth: 0, padding: '0 4px' }}
                   onClick={() => upd('mode', isDemo ? opts.mode : 'demo_rs485')}
                 >
                   Демо
@@ -181,6 +194,8 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
                       className="dt-input"
                       ref={nameInputRef}
                       required
+                      aria-invalid={nameError ? true : undefined}
+                      aria-describedby={nameError ? 'new-project-name-error' : undefined}
                       value={opts.projectName}
                       onChange={(e) => handleNameChange(e.target.value)}
                     />
@@ -195,10 +210,10 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
                   </label>
                 </div>
                 {nameError && (
-                  <div style={{ fontSize: 11, color: '#b91c1c', marginTop: -4 }}>{nameError}</div>
+                  <div id="new-project-name-error" role="alert" style={{ fontSize: 11, color: '#b91c1c', marginTop: -4 }}>{nameError}</div>
                 )}
 
-                {opts.mode === 'schematic_and_pcb' && (
+                {(opts.mode === 'schematic_and_pcb' || opts.mode === 'schematic_only') && (
                   <>
                     <label style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                       <span>Наименование изделия (Графа 1 штампа):</span>
@@ -212,9 +227,9 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
                       />
                     </label>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 8 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: opts.mode === 'schematic_and_pcb' ? 'minmax(0, 1fr) minmax(0, 1fr)' : '1fr', gap: 8 }}>
                       <label style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                        <span>Формат первого листа:</span>
+                        <span>Формат первого листа (ГОСТ 2.301-68):</span>
                         <select
                           className="dt-select"
                           value={opts.sheetFormat}
@@ -227,17 +242,19 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
                           ))}
                         </select>
                       </label>
-                      <label style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                        <span>Слоёв меди платы:</span>
-                        <select
-                          className="dt-select"
-                          value={opts.boardLayers}
-                          onChange={(e) => upd('boardLayers', Number(e.target.value) === 4 ? 4 : 2)}
-                        >
-                          <option value={2}>2 слоя (Верх / Низ)</option>
-                          <option value={4}>4 слоя (Многослойная)</option>
-                        </select>
-                      </label>
+                      {opts.mode === 'schematic_and_pcb' && (
+                        <label style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                          <span>Слоёв меди платы:</span>
+                          <select
+                            className="dt-select"
+                            value={opts.boardLayers}
+                            onChange={(e) => upd('boardLayers', Number(e.target.value) === 4 ? 4 : 2)}
+                          >
+                            <option value={2}>2 слоя (Верх / Низ)</option>
+                            <option value={4}>4 слоя (Многослойная)</option>
+                          </select>
+                        </label>
+                      )}
                     </div>
                   </>
                 )}
@@ -251,6 +268,7 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
                           type="number"
                           min={10}
                           max={1000}
+                          step="any"
                           className="dt-input"
                           value={widthDraft}
                           onChange={(e) => setWidthDraft(e.target.value)}
@@ -267,6 +285,7 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
                           type="number"
                           min={10}
                           max={1000}
+                          step="any"
                           className="dt-input"
                           value={heightDraft}
                           onChange={(e) => setHeightDraft(e.target.value)}
@@ -278,12 +297,12 @@ export const NewProjectDialog: React.FC<NewProjectDialogProps> = ({
                         />
                       </label>
                       <label style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                        <span>Скругл. (мм):</span>
+                        <span>Радиус угла (мм):</span>
                         <input
                           type="number"
                           min={0}
                           max={200}
-                          step={0.5}
+                          step="any"
                           disabled={opts.boardIsCircle}
                           className="dt-input"
                           value={opts.boardIsCircle ? '0' : radiusDraft}

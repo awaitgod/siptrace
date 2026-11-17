@@ -7,11 +7,8 @@ import {
   parseGerberPreview
 } from './camExport';
 
-export interface ParsedDrillHole {
-  x: number;
-  y: number;
-  diameter: number;
-}
+import { parseExcellonPreview, ParsedDrillHole } from './importers/cam/gerberExcellonImporter';
+export { parseExcellonPreview, type ParsedDrillHole };
 
 export interface GerberLayerInspect {
   key: string;
@@ -37,59 +34,19 @@ function findGerberEntry(files: Record<string, string>, extRegex: RegExp): { nam
   return null;
 }
 
-/** Packages all Gerber RS-274X/X2 layers + Excellon drill into a single PKZIP binary ready for manufacturing. */
-export function exportGerberZipBytes(pcb: PcbProject, x2Attributes = true, includeDrills = true): Uint8Array {
+export function getGerberExportEntries(pcb: PcbProject, x2Attributes = true, includeDrills = true): Record<string, string> {
   const { files } = exportGerberSet(pcb, x2Attributes);
-  const safeName = (pcb.projectName || 'gosttrace_pcb').replace(/[^\wА-Яа-яЁё-]+/g, '_');
-  const entries: Record<string, string> = {};
-
-  for (const [fn, content] of Object.entries(files)) {
-    if (/\.(GTL|GBL|G2L|G3L|GTS|GBS|GTO|GBO|GTP|GBP|GKO)$/i.test(fn)) {
-      entries[fn] = content;
-    }
-  }
-  if (includeDrills) {
-    const drlEntry = findGerberEntry(files, /\.drl$/i);
-    entries[drlEntry?.name ?? `${safeName}-PTH.drl`] = drlEntry?.content ?? exportExcellonDrill(pcb);
-  }
-  return createZipArchive(entries);
+  return Object.fromEntries(Object.entries(files).filter(([name]) => (
+    /\.(GTL|GBL|G2L|G3L|GTS|GBS|GTO|GBO|GTP|GBP|GKO)$/i.test(name) || (includeDrills && /\.drl$/i.test(name))
+  )));
 }
 
-/** Parses Excellon NC drill file (.drl / .xln) in METRIC/INCH mode to visualizable hole coordinates. */
-export function parseExcellonPreview(drlText: string): ParsedDrillHole[] {
-  const tools = new Map<string, number>();
-  let currentDia = 0.8;
-  let isMetric = true;
-  const holes: ParsedDrillHole[] = [];
-
-  for (const raw of drlText.split(/\r?\n/)) {
-    const line = raw.trim();
-    if (!line || line.startsWith(';')) continue;
-    if (line.includes('INCH')) isMetric = false;
-    if (line.includes('METRIC')) isMetric = true;
-
-    const toolDef = /^(T\d+)C([\d.]+)/.exec(line);
-    if (toolDef) {
-      tools.set(toolDef[1], parseFloat(toolDef[2]) * (isMetric ? 1 : 25.4));
-      continue;
-    }
-    const toolSel = /^(T\d+)$/.exec(line);
-    if (toolSel && tools.has(toolSel[1])) {
-      currentDia = tools.get(toolSel[1])!;
-      continue;
-    }
-    const coord = /^X([-\d.]+)Y([-\d.]+)/.exec(line);
-    if (coord) {
-      const mul = isMetric ? 1 : 25.4;
-      holes.push({
-        x: parseFloat(coord[1]) * mul,
-        y: parseFloat(coord[2]) * mul,
-        diameter: currentDia
-      });
-    }
-  }
-  return holes;
+/** Packages the selected Gerber RS-274X/X2 and Excellon files into one ZIP archive. */
+export function exportGerberZipBytes(pcb: PcbProject, x2Attributes = true, includeDrills = true): Uint8Array {
+  return createZipArchive(getGerberExportEntries(pcb, x2Attributes, includeDrills));
 }
+
+// parseExcellonPreview is imported and re-exported from ./importers/cam/gerberExcellonImporter
 
 /** Inspects either the current PcbProject's generated Gerber+Excellon set or an external ZIP/Gerber/Drill file. */
 export async function inspectGerberProjectOrBytes(
@@ -107,7 +64,7 @@ export async function inspectGerberProjectOrBytes(
         const txt = utf8Decode(bytes);
         const low = fn.toLowerCase();
         if (/\.(drl|xln)$/.test(low) || txt.includes('M48')) {
-          layers.push({ key: 'drill', label: fn, filename: fn, color: '#38bdf8', entities: [], drills: parseExcellonPreview(txt) });
+          layers.push({ key: fn, label: fn, filename: fn, color: '#38bdf8', entities: [], drills: parseExcellonPreview(txt) });
         } else if (/\.(gbr|gtl|gbl|gts|gbs|gto|gbo|gtp|gbp|gko|gm1|g2l|g3l)$/i.test(low)) {
           const color = /gbl|b_cu|bot/.test(low)
             ? '#3b82f6'
@@ -137,9 +94,14 @@ export async function inspectGerberProjectOrBytes(
       { key: 'boardOutline', regex: /\.GKO$/i, label: 'Контур платы (.gko)', color: '#eab308' },
       { key: 'bottomCopper', regex: /\.GBL$/i, label: 'Медь низ (.gbl)', color: '#3b82f6' },
       { key: 'topCopper', regex: /\.GTL$/i, label: 'Медь верх (.gtl)', color: '#ef4444' },
+      { key: 'inner1', regex: /\.G2L$/i, label: 'Медь внутренний 1 (.g2l)', color: '#f97316' },
+      { key: 'inner2', regex: /\.G3L$/i, label: 'Медь внутренний 2 (.g3l)', color: '#a78bfa' },
       { key: 'topMask', regex: /\.GTS$/i, label: 'Маска верх (.gts)', color: '#22c55e' },
       { key: 'bottomMask', regex: /\.GBS$/i, label: 'Маска низ (.gbs)', color: '#a855f7' },
-      { key: 'topSilk', regex: /\.GTO$/i, label: 'Шелкография верх (.gto)', color: '#f8fafc' }
+      { key: 'topSilk', regex: /\.GTO$/i, label: 'Шелкография верх (.gto)', color: '#f8fafc' },
+      { key: 'bottomSilk', regex: /\.GBO$/i, label: 'Шелкография низ (.gbo)', color: '#cbd5e1' },
+      { key: 'topPaste', regex: /\.GTP$/i, label: 'Паста верх (.gtp)', color: '#f472b6' },
+      { key: 'bottomPaste', regex: /\.GBP$/i, label: 'Паста низ (.gbp)', color: '#67e8f9' }
     ];
     for (const def of layerDefs) {
       const found = findGerberEntry(files, def.regex);

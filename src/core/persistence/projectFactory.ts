@@ -27,7 +27,7 @@ import { loadActivePcb, loadActiveSchematic, saveActivePcb, saveActiveSchematic 
 import { loadSettings, recordRecentProject } from './settingsStore';
 import { STORAGE_KEYS } from './storageKeys';
 
-export type NewProjectMode = 'schematic_and_pcb' | 'pcb_only' | 'demo_rs485' | 'demo_mcu';
+export type NewProjectMode = 'schematic_and_pcb' | 'schematic_only' | 'pcb_only' | 'demo_rs485' | 'demo_mcu';
 
 export interface NewProjectOptions {
   mode: NewProjectMode;
@@ -211,6 +211,82 @@ export function createProjectFromOptions(
       schematic: sch,
       pcb,
       statusMessage: 'Открыт демонстрационный проект «Контроллер К1986ВЕ92QI».'
+    };
+  }
+
+  if (opts.mode === 'schematic_only') {
+    const schDesignation = /\sЭ3$/i.test(baseDes) ? baseDes : `${baseDes} Э3`;
+    const schematic: SchematicProject = {
+      version: '1.0',
+      filePath: '',
+      projectName: safeName,
+      units: opts.units,
+      gridSize: 2.5,
+      origin: { x: 0, y: 0 },
+      sheets: [
+        {
+          id: 'sheet_1',
+          name: 'Лист 1',
+          format: opts.sheetFormat,
+          titleBlock: createDefaultGostTitleBlock({
+            name: safeTitle,
+            designation: schDesignation,
+            developer: opts.developer,
+            checker: opts.checker,
+            normControl: opts.normControl,
+            organization: opts.organization,
+            date: formatTodayDate()
+          }),
+          components: [],
+          wires: [],
+          buses: [],
+          busTaps: [],
+          junctions: [],
+          netPorts: [],
+          diffPairs: [],
+          hierarchyBlocks: [],
+          shapes: []
+        }
+      ],
+      activeSheetId: 'sheet_1',
+      netClasses: [
+        {
+          id: 'nc_default',
+          name: 'Сигнальные',
+          traceWidth: 0.25,
+          minWidth: 0.15,
+          maxWidth: 5,
+          clearance: 0.2,
+          viaOuterDiameter: 0.7,
+          viaHoleDiameter: 0.35
+        }
+      ],
+      netClassAssignments: {},
+      customComponentDefs: {},
+      customPatternDefs: {}
+    };
+
+    saveActiveSchematic(schematic);
+    const blankPcb = createBlankPcbProject({
+      projectName: safeName,
+      units: opts.units,
+      accuracyClass: opts.accuracyClass
+    });
+    recordRecentProject(
+      {
+        id: `proj_sch_${safeName}`,
+        name: safeName,
+        designation: schDesignation,
+        module: 'schematic'
+      },
+      { schematic }
+    );
+
+    return {
+      targetModule: 'schematic',
+      schematic,
+      pcb: blankPcb,
+      statusMessage: `Создана новая схема «${safeName}» (${schDesignation}, ${opts.sheetFormat}).`
     };
   }
 

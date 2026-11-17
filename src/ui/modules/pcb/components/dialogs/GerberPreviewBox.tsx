@@ -1,23 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Point2D } from '../../../../../core/types';
-import { GerberInspectionSummary } from '../../../../../engines/camBundle';
-import { parseGerberPreview } from '../../../../../engines/camExport';
+import { GerberLayerInspect } from '../../../../../engines/camBundle';
 
 export interface GerberPreviewBoxProps {
-  gerberContent: string;
-  outline: Point2D[];
-  multiLayerSummary?: GerberInspectionSummary | null;
-  visibleLayers?: Record<string, boolean>;
-  showComposite?: boolean;
+  layers: GerberLayerInspect[];
+  viewId: string;
 }
 
 /** Built-in multi-layer interactive Gerber RS-274X + Excellon viewer with zoom and pan. */
 export const GerberPreviewBox: React.FC<GerberPreviewBoxProps> = ({
-  gerberContent,
-  outline,
-  multiLayerSummary,
-  visibleLayers,
-  showComposite = false
+  layers,
+  viewId
 }) => {
   const ref = useRef<HTMLCanvasElement>(null);
   const [zoomMul, setZoomMul] = useState(1);
@@ -28,7 +21,19 @@ export const GerberPreviewBox: React.FC<GerberPreviewBoxProps> = ({
   useEffect(() => {
     setZoomMul(1);
     setPan({ x: 0, y: 0 });
-  }, [gerberContent, showComposite, multiLayerSummary]);
+  }, [viewId]);
+
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const zoomOnWheel = (event: WheelEvent) => {
+      if (event.deltaY === 0) return;
+      event.preventDefault();
+      setZoomMul((zoom) => Math.max(0.3, Math.min(12, zoom * (event.deltaY < 0 ? 1.15 : 0.87))));
+    };
+    canvas.addEventListener('wheel', zoomOnWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', zoomOnWheel);
+  }, []);
 
   useEffect(() => {
     const canvas = ref.current;
@@ -53,42 +58,31 @@ export const GerberPreviewBox: React.FC<GerberPreviewBoxProps> = ({
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
 
-    const xs: number[] = [];
-    const ys: number[] = [];
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
     const collectPts = (pts: Point2D[]) => {
       for (const p of pts) {
         if (Number.isFinite(p.x) && Number.isFinite(p.y)) {
-          xs.push(p.x);
-          ys.push(p.y);
+          minX = Math.min(minX, p.x);
+          maxX = Math.max(maxX, p.x);
+          minY = Math.min(minY, p.y);
+          maxY = Math.max(maxY, p.y);
         }
       }
     };
 
-    collectPts(outline);
-
-    const activeLayers =
-      showComposite && multiLayerSummary
-        ? multiLayerSummary.layers.filter((l) => (visibleLayers ? visibleLayers[l.key] !== false : true))
-        : [
-            {
-              key: 'single',
-              label: 'Layer',
-              filename: 'layer.gbr',
-              color: '#34d399',
-              entities: parseGerberPreview(gerberContent),
-              drills: []
-            }
-          ];
-
-    for (const lay of activeLayers) {
+    for (const lay of layers) {
       for (const ent of lay.entities) collectPts(ent.pts);
       for (const dr of lay.drills) collectPts([dr]);
     }
 
-    const minX = xs.length ? Math.min(...xs) - 4 : 0;
-    const maxX = xs.length ? Math.max(...xs) + 4 : 100;
-    const minY = ys.length ? Math.min(...ys) - 4 : 0;
-    const maxY = ys.length ? Math.max(...ys) + 4 : 70;
+    if (!Number.isFinite(minX)) return;
+    minX -= 4;
+    maxX += 4;
+    minY -= 4;
+    maxY += 4;
     const baseScale = Math.min((w - 28) / Math.max(10, maxX - minX), (h - 28) / Math.max(10, maxY - minY));
     baseScaleRef.current = baseScale;
     const sc = baseScale * zoomMul;
@@ -99,23 +93,10 @@ export const GerberPreviewBox: React.FC<GerberPreviewBoxProps> = ({
       y: h / 2 + (pt.y - cy) * sc + pan.y
     });
 
-    if (outline.length >= 3) {
-      ctx.strokeStyle = 'rgba(234, 179, 8, 0.5)';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      outline.forEach((p, idx) => {
-        const px = toPx(p);
-        if (idx === 0) ctx.moveTo(px.x, px.y);
-        else ctx.lineTo(px.x, px.y);
-      });
-      ctx.closePath();
-      ctx.stroke();
-    }
-
-    for (const lay of activeLayers) {
+    for (const lay of layers) {
       ctx.strokeStyle = lay.color;
       ctx.fillStyle = lay.color;
-      ctx.globalAlpha = showComposite && (lay.key === 'topMask' || lay.key === 'bottomMask') ? 0.35 : 0.9;
+      ctx.globalAlpha = layers.length > 1 && (lay.key === 'topMask' || lay.key === 'bottomMask') ? 0.35 : 0.9;
 
       for (const e of lay.entities) {
         if (e.kind === 'line' && e.pts.length >= 2) {
@@ -174,18 +155,16 @@ export const GerberPreviewBox: React.FC<GerberPreviewBoxProps> = ({
       }
     }
     ctx.globalAlpha = 1;
-  }, [gerberContent, outline, multiLayerSummary, visibleLayers, showComposite, zoomMul, pan]);
+  }, [layers, zoomMul, pan]);
 
   return (
     <div style={{ position: 'relative' }}>
       <canvas
         ref={ref}
+        aria-label="Предпросмотр слоёв Gerber и отверстий"
         style={{ width: '100%', height: 270, border: '1px solid #475569', display: 'block', cursor: 'grab' }}
-        onWheel={(e) => {
-          e.preventDefault();
-          setZoomMul((z) => Math.max(0.3, Math.min(12, z * (e.deltaY < 0 ? 1.15 : 0.87))));
-        }}
         onMouseDown={(e) => {
+          if (e.button !== 0) return;
           dragRef.current = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y };
         }}
         onMouseMove={(e) => {
@@ -196,12 +175,12 @@ export const GerberPreviewBox: React.FC<GerberPreviewBoxProps> = ({
         onMouseLeave={() => { dragRef.current = null; }}
       />
       <div style={{ position: 'absolute', right: 6, top: 6, display: 'flex', gap: 4 }}>
-        <button type="button" className="dt-btn" style={{ minWidth: 24, height: 20, padding: '0 6px' }} onClick={() => setZoomMul((z) => Math.min(12, z * 1.25))}>+</button>
-        <button type="button" className="dt-btn" style={{ minWidth: 24, height: 20, padding: '0 6px' }} onClick={() => setZoomMul((z) => Math.max(0.3, z * 0.8))}>-</button>
+        <button type="button" className="dt-btn" aria-label="Приблизить предпросмотр" style={{ minWidth: 24, height: 20, padding: '0 6px' }} onClick={() => setZoomMul((z) => Math.min(12, z * 1.25))}>+</button>
+        <button type="button" className="dt-btn" aria-label="Отдалить предпросмотр" style={{ minWidth: 24, height: 20, padding: '0 6px' }} onClick={() => setZoomMul((z) => Math.max(0.3, z * 0.8))}>−</button>
         <button
           type="button"
           className="dt-btn"
-          title="Реальный физический масштаб 1:1 (96 DPI ≈ 3.78 px/мм)"
+          title="Масштаб по CSS: 96 пикселей на дюйм"
           style={{ minWidth: 28, height: 20, padding: '0 6px' }}
           onClick={() => {
             const truePxPerMm = 96 / 25.4;

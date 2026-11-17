@@ -94,7 +94,8 @@ export function useSchematicProjectState({ setSelectedCompIds, setStatusMessage 
     }, [state, setStatusMessage]);
     useEffect(() => () => { session = stateRef.current; saveActiveSchematic(stateRef.current.project); }, []);
     useEffect(() => {
-        document.title = `Схемотехника - [${activeSheet.titleBlock.designation || ''} ${project.projectName}${isDirty ? ' *' : ''}] — SIPTrace`;
+        const desPrefix = activeSheet.titleBlock.designation ? `${activeSheet.titleBlock.designation} ` : '';
+        document.title = `Схемотехника - [${desPrefix}${project.projectName}${isDirty ? ' *' : ''}] — SIPTrace`;
         const beforeUnload = (e: BeforeUnloadEvent) => { saveActiveSchematic(stateRef.current.project); if (stamp(stateRef.current.project) !== stateRef.current.saved) {
             e.preventDefault();
             e.returnValue = '';

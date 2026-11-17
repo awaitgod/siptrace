@@ -49,14 +49,16 @@ export const PcbToolbar: React.FC<PcbToolbarProps> = (p) => (
     <button className="dt-tb-btn" title="Показать всю плату (Home)" onClick={p.zoomToFit}><DipIcon name="zoomAll" /></button>
     <button className="dt-tb-btn" title="Приблизить" onClick={() => p.setZoomPercent(Math.round(p.zoomPercent * 1.25))}><DipIcon name="zoomIn" /></button>
     <button className="dt-tb-btn" title="Отдалить" onClick={() => p.setZoomPercent(Math.max(20, Math.round(p.zoomPercent / 1.25)))}><DipIcon name="zoomOut" /></button>
-    <select className="dt-tb-select" style={{ width: 60 }} value={PCB_ZOOM_OPTIONS.includes(p.zoomPercent) ? p.zoomPercent : 'c'} onChange={(e) => e.target.value !== 'c' && p.setZoomPercent(Number(e.target.value))}>
+    <select aria-label="Масштаб платы" className="dt-tb-select" style={{ width: 60 }} value={PCB_ZOOM_OPTIONS.includes(p.zoomPercent) ? p.zoomPercent : 'c'} onChange={(e) => e.target.value !== 'c' && p.setZoomPercent(Number(e.target.value))}>
       {!PCB_ZOOM_OPTIONS.includes(p.zoomPercent) && <option value="c">{p.zoomPercent}%</option>}
       {PCB_ZOOM_OPTIONS.map((z) => <option key={z} value={z}>{z}%</option>)}
     </select>
-    <select className="dt-tb-select" style={{ width: 68 }} value={p.pcb.gridSize} onChange={(e) => p.commitPcb((prev) => ({ ...prev, gridSize: parseFloat(e.target.value) }), false)}>
+    <select aria-label="Шаг сетки платы" className="dt-tb-select" style={{ width: 68 }} value={p.pcb.gridSize} onChange={(e) => p.commitPcb((prev) => ({ ...prev, gridSize: parseFloat(e.target.value) }), false)}>
+      {!PCB_GRID_STEPS.includes(p.pcb.gridSize) && <option value={p.pcb.gridSize}>{formatGridValue(p.pcb.gridSize, p.pcb.units)}</option>}
       {PCB_GRID_STEPS.map((g) => <option key={g} value={g}>{formatGridValue(g, p.pcb.units)}</option>)}
     </select>
     <select
+      aria-label="Активный слой меди"
       className="dt-tb-select"
       style={{ width: 155 }}
       value={p.activeLayer}

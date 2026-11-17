@@ -9,7 +9,7 @@ import { AppModuleId, ComponentLibrary, ErcError, PlacedComponent, Point2D, SchN
 import { broadcastEdaEvent, consumePendingConversionReport, createProjectFromOptions, getUserComponentLibraries, loadActivePcb, NewProjectOptions, openAppModule, recordRecentProject, saveActivePcb, saveHotkeys, saveSettings } from '../../../core/store';
 import { DEFAULT_ERC_SETTINGS, ErcSettings, extractSchematicNets, runSchematicErc } from '../../../engines/erc';
 import { GostConversionReport, importCadSchematic, serializeSchematic } from '../../../engines/importers';
-import { clearSavedFileHandle, pickCadFile, saveTextFile } from '../../../core/utils/fileIo';
+import { clearSavedFileHandle, exportTextFile, nativeCadFilename, pickCadFile, saveTextFile } from '../../../core/utils/fileIo';
 import { GostConversionDialog } from '../../components/GostConversionDialog';
 import { NewProjectDialog } from '../../components/NewProjectDialog';
 import { convertSchematicToPcb } from '../../../engines/netlist';
@@ -23,8 +23,9 @@ import { StatusBar } from '../../components/StatusBar';
 import { renderSchematicCanvas } from './canvas/renderSchematicCanvas';
 import { SchematicContextMenu } from './components/SchematicContextMenu';
 import { SchematicLeftSidebar } from './components/SchematicLeftSidebar';
+import { SchematicPanelSplitter } from './components/SchematicPanelSplitter';
 import { SchematicRightSidebar } from './components/SchematicRightSidebar';
-import { SchematicSheetBar } from './components/SchematicSheetBar';
+import { SchematicSheetBar, schematicSheetLabel, schematicSheetTabId, schematicSheetPanelId } from './components/SchematicSheetBar';
 import { SchematicToolbar } from './components/SchematicToolbar';
 import { SchErcSettingsDialog } from './components/dialogs/SchErcSettingsDialog';
 import { SchFindDialog } from './components/dialogs/SchFindDialog';
@@ -33,7 +34,7 @@ import { useSchematicHotkeys } from './hooks/useSchematicHotkeys';
 import { useSchematicProjectState } from './hooks/useSchematicProjectState';
 import { useSchematicInteraction } from './interactions/useSchematicInteraction';
 import { createSchematicTopMenus } from './menus/schematicMenuSpec';
-import { buildBomTableShape, createBlankSchematicProject, exportTextFileViaNativeOrBrowser } from './services/schematicActionsService';
+import { buildBomTableShape, createBlankSchematicProject } from './services/schematicActionsService';
 import { SchContextMenu, SchMarqueeBox, SchToolId } from './types';
 export interface SchematicModuleProps {
     onSwitchModule?: (m: AppModuleId) => void;
@@ -104,6 +105,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
     const [marqueeBox, setMarqueeBox] = useState<SchMarqueeBox | null>(null);
     const [clipboardComps, setClipboardComps] = useState<PlacedComponent[]>([]);
     const [contextMenu, setContextMenu] = useState<SchContextMenu | null>(null);
+    const closeContextMenu = useCallback(() => setContextMenu(null), []);
     // Modal dialogs
     const [showTitleDialog, setShowTitleDialog] = useState<boolean>(false);
     const [showBomDialog, setShowBomDialog] = useState<boolean>(false);
@@ -121,14 +123,6 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
         setPlaceFlipY(false);
     }, [selectedLibCompId]);
     const [panelWidths, setPanelWidths] = useEditorSession('schematic-panels', { left: 195, right: 240 });
-    const resizePanel = (side: 'left' | 'right', e: React.PointerEvent) => {
-        const start = e.clientX, width = panelWidths[side];
-        e.currentTarget.setPointerCapture(e.pointerId);
-        const move = (ev: PointerEvent) => setPanelWidths(p => ({ ...p, [side]: Math.max(150, Math.min(500, width + (ev.clientX - start) * (side === 'left' ? 1 : -1))) }));
-        const end = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', end); };
-        window.addEventListener('pointermove', move);
-        window.addEventListener('pointerup', end);
-    };
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasWrapRef = useRef<HTMLDivElement | null>(null);
     // Library browser derivations
@@ -200,12 +194,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
     const handleOpenFile = useCallback(async () => {
         if (!confirmDiscardIfDirty())
             return;
-        const picked = await pickCadFile('.gostsch,.dch,.dchxml,.asc,.xml,.pdsprj,.sec,.sdf,.kicad_sch,.sch,.json,.esch,.schdoc,.edf,.cir,.dxf,.zip', [
-            {
-                name: 'Все поддерживаемые САПР (SIPTrace / DipTrace / Proteus / KiCad / Eagle / EasyEDA / Altium / ZIP)',
-                extensions: ['gostsch', 'dch', 'dchxml', 'asc', 'xml', 'pdsprj', 'sec', 'sdf', 'kicad_sch', 'sch', 'json', 'esch', 'schdoc', 'edf', 'cir', 'dxf', 'zip']
-            }
-        ]);
+        const picked = await pickCadFile();
         if (!picked)
             return;
         try {
@@ -229,17 +218,26 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
             }
         }
         catch (err) {
-            setStatusMessage(`Ошибка импорта файла: ${(err as Error).message}`);
+            setStatusMessage(`Ошибка открытия файла: ${(err as Error).message}`);
         }
     }, [confirmDiscardIfDirty, replaceProject]);
     const handleExportTextFile = useCallback(async (filename: string, content: string, ext: string, desc = 'Файл SIPTrace') => {
-        const msg = await exportTextFileViaNativeOrBrowser(filename, content, ext, desc);
-        if (msg)
-            setStatusMessage(msg);
+        try {
+            const result = await exportTextFile(filename, content, ext, desc);
+            if (!result) {
+                setStatusMessage('Экспорт отменён.');
+            } else if (result.method === 'saved') {
+                setStatusMessage(`Файл сохранён: ${result.name}`);
+            } else {
+                setStatusMessage(`Начата загрузка файла ${result.name}.`);
+            }
+        } catch (error) {
+            setStatusMessage(`Не удалось экспортировать ${filename}: ${String(error)}`);
+        }
     }, []);
     const handleSaveFile = useCallback(async (saveAs = false) => {
         const json = serializeSchematic(project);
-        const savedName = await saveTextFile(project.filePath || `${project.projectName}.gostsch`, json, [{ name: 'Схема SIPTrace', extensions: ['gostsch', 'json'] }], { saveKey: 'schematic', saveAs });
+        const savedName = await saveTextFile(nativeCadFilename(project.filePath, project.projectName, 'gostsch'), json, [{ name: 'Схема SIPTrace', extensions: ['gostsch', 'json'] }], { saveKey: 'schematic', saveAs });
         if (!savedName)
             return;
         commitProject((prev) => ({ ...prev, filePath: savedName }), false);
@@ -358,7 +356,7 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
     }, [project, activeSheet, selectedIds]);
     useSchematicCrossprobe({ project, selectedIds, setSelectedIds, commitProject });
     // Canvas interactions & viewport
-    const { viewport, displaySheet, isPanning, cursorMm, zoomPercent, setZoomByPercent, zoomToFit, centerOnWorldPt, snapWorldSmart, hoverTarget, handleCanvasMouseDown, handleCanvasMouseMove, handleCanvasMouseUp, handleCanvasDoubleClick, handleCanvasWheel, handleContextMenu } = useSchematicInteraction({
+    const { viewport, displaySheet, isPanning, cursorMm, zoomPercent, setZoomByPercent, zoomToFit, centerOnWorldPt, snapWorldSmart, hoverTarget, handleCanvasMouseDown, handleCanvasMouseMove, handleCanvasMouseUp, handleCanvasDoubleClick, handleCanvasWheel, handleContextMenu, handleCanvasKeyDown } = useSchematicInteraction({
         canvasRef,
         canvasWrapRef,
         project,
@@ -496,8 +494,6 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
         setTool,
         setSettings,
         commitProject,
-        replaceProject,
-        confirmDiscardIfDirty,
         updateActiveSheet,
         setStatusMessage,
         handleNewProject,
@@ -537,8 +533,6 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
         tool,
         setSettings,
         commitProject,
-        replaceProject,
-        confirmDiscardIfDirty,
         updateActiveSheet,
         handleNewProject,
         handleOpenFile,
@@ -565,32 +559,36 @@ export const SchematicModule: React.FC<SchematicModuleProps> = ({ onSwitchModule
       <div className="dt-workspace">
         <SchematicLeftSidebar allLibraries={allLibraries} selectedLibId={selectedLibId} setSelectedLibId={setSelectedLibId} selectedLibCompId={selectedLibCompId} setSelectedLibCompId={setSelectedLibCompId} selectedPartIndex={selectedPartIndex} setSelectedPartIndex={setSelectedPartIndex} placeExpanded={placeExpanded} setPlaceExpanded={setPlaceExpanded} toolsExpanded={toolsExpanded} setToolsExpanded={setToolsExpanded} sortLibsAlpha={sortLibsAlpha} setSortLibsAlpha={setSortLibsAlpha} searchCompQuery={searchCompQuery} setSearchCompQuery={setSearchCompQuery} displayedLibComps={displayedLibComps} previewComponentDef={previewComponentDef} previewPatternDef={previewPatternDef} netPortStyle={netPortStyle} setNetPortStyle={setNetPortStyle} netPortLabel={netPortLabel} setNetPortLabel={setNetPortLabel} autoPowerCheck={autoPowerCheck} setAutoPowerCheck={setAutoPowerCheck} setTool={setTool} setStatusMessage={setStatusMessage}/>
 
-        <div className="dt-splitter" role="separator" aria-label="Ширина библиотеки" tabIndex={0} onPointerDown={e => resizePanel('left', e)} onKeyDown={e => { if (e.key.startsWith('Arrow'))
-        setPanelWidths(p => ({ ...p, left: Math.max(150, Math.min(500, p.left + (e.key === 'ArrowRight' ? 10 : -10))) })); }}/>
+        <SchematicPanelSplitter side="left" width={panelWidths.left} onResize={width => setPanelWidths(p => ({ ...p, left: width }))}/>
         <div className="dt-center-col">
-          <div className="dt-canvas-wrap" ref={canvasWrapRef}>
+          <div className="dt-canvas-wrap" ref={canvasWrapRef} role="tabpanel" id={schematicSheetPanelId} aria-labelledby={schematicSheetTabId(activeSheet.id)}>
             <canvas ref={canvasRef} style={{
             display: 'block',
             width: '100%',
             height: '100%',
             cursor: isPanning ? 'grabbing' : tool === 'select' ? (hoverTarget ? 'crosshair' : 'default') : 'crosshair', touchAction: 'none'
-        }} tabIndex={0} aria-label="Редактор электрической схемы" onPointerDown={handleCanvasMouseDown} onPointerMove={handleCanvasMouseMove} onPointerUp={handleCanvasMouseUp} onDoubleClick={handleCanvasDoubleClick} onWheel={handleCanvasWheel} onContextMenu={handleContextMenu}/>
+        }} tabIndex={0} aria-label="Редактор электрической схемы" onPointerDown={handleCanvasMouseDown} onPointerMove={handleCanvasMouseMove} onPointerUp={handleCanvasMouseUp} onDoubleClick={handleCanvasDoubleClick} onWheel={handleCanvasWheel} onContextMenu={handleContextMenu} onKeyDown={handleCanvasKeyDown}/>
           </div>
           <SchematicSheetBar project={project} activeSheet={activeSheet} commitProject={commitProject}/>
         </div>
 
-        <div className="dt-splitter" role="separator" aria-label="Ширина свойств" tabIndex={0} onPointerDown={e => resizePanel('right', e)}/>
+        <SchematicPanelSplitter side="right" width={panelWidths.right} onResize={width => setPanelWidths(p => ({ ...p, right: width }))}/>
         <SchematicRightSidebar selectedIds={selectedIds} onProperties={() => openProperties(selectedIds)} ercStale={ercRevision?.sheets !== project.sheets || ercRevision?.customComponentDefs !== project.customComponentDefs} project={project} activeSheet={activeSheet} userPatterns={userPatterns} selectedPlacedComp={selectedPlacedComp} inspectorCompDef={inspectorCompDef} selectedPartIndex={selectedPartIndex} selectedWireId={selectedWireId} selectedPortId={selectedPortId} selectedCompIds={selectedCompIds} setSelectedCompIds={setSelectedCompIds} managerTab={managerTab} setManagerTab={setManagerTab} schematicNets={schematicNets} highlightedNet={highlightedNet} setHighlightedNet={(action) => { setHighlightedNet((prev) => { const next = typeof action === 'function' ? action(prev) : action; if (next !== null) setStoredSelection([]); return next; }); }} ercErrors={ercErrors} setShowTitleDialog={setShowTitleDialog} onCenterWorldPt={centerOnWorldPt} commitProject={commitProject} updateActiveSheet={updateActiveSheet}/>
       </div>
 
-      <StatusBar hint={`${statusMessage} | ${autosaveStatus}${isDirty ? " | Изменения не записаны в файл" : ""}`} extraCenter={`Лист: ${activeSheet.name} | Элементов: ${activeSheet.components.filter((c) => !c.refDes.startsWith('#')).length} | Цепей: ${schematicNets.length}`} gridMm={project.gridSize} units={project.units} cursorX={cursorMm.x} cursorY={cursorMm.y} onToggleUnits={() => commitProject((prev) => ({
+      <StatusBar hint={`${statusMessage} | ${autosaveStatus}${isDirty ? " | Изменения не записаны в файл" : ""}`} extraCenter={`Лист: ${schematicSheetLabel(activeSheet.name)} | Элементов: ${activeSheet.components.filter((c) => !c.refDes.startsWith('#')).length} | Цепей: ${schematicNets.length}`} gridMm={project.gridSize} units={project.units} cursorX={cursorMm.x} cursorY={cursorMm.y} onToggleUnits={() => commitProject((prev) => ({
             ...prev,
             units: prev.units === 'mm' ? 'mil' : prev.units === 'mil' ? 'in' : 'mm'
         }), false)}/>
 
       {propertiesIds && <SchematicObjectDialog project={project} sheet={activeSheet} ids={propertiesIds} defs={customCompMap} onApply={(next) => { updateActiveSheet(() => next); setPropertiesIds(null); }} onClose={() => setPropertiesIds(null)}/>}
-      {contextMenu && (<SchematicContextMenu menu={contextMenu} onProperties={() => openProperties(contextMenu.ids ?? selectedIds)} onCopy={onCopy} onPaste={onPaste} canPaste={!!getClipboard()} hotkeys={hotkeys} onWireAction={(action) => { if (contextMenu.wireId)
-            updateActiveSheet(s => editWire(s, contextMenu.wireId!, cursorMm, action)); }} onRotate={rotateSelection} onFlipX={() => flipSelection('X')} onFlipY={() => flipSelection('Y')} onDelete={deleteSelection} onClose={() => setContextMenu(null)}/>)}
+      {contextMenu && (<SchematicContextMenu menu={contextMenu} onProperties={() => openProperties(contextMenu.ids)} onCopy={onCopy} onPaste={onPaste} canPaste={!!getClipboard()} hotkeys={hotkeys}
+            onWireAction={action => {
+                const target = contextMenu.wireTarget;
+                if (target) updateActiveSheet(s => editWire(s, target.id, target.point, action));
+            }}
+            onRotate={rotateSelection} onFlipX={() => flipSelection('X')} onFlipY={() => flipSelection('Y')} onDelete={deleteSelection}
+            onClose={closeContextMenu} onRestoreFocus={() => canvasRef.current?.focus({ preventScroll: true })}/>)}
 
       {showTitleDialog && (<TitleBlockDialog format={activeSheet.format} titleBlock={activeSheet.titleBlock} onApply={(fmt, tb) => {
                 updateActiveSheet((s) => ({ ...s, format: fmt, titleBlock: tb }));

@@ -1,6 +1,6 @@
 import { SchDragState } from './types';
 
-export const SCHEMATIC_ZOOM_OPTIONS = [25, 50, 75, 100, 125, 150, 165, 200, 300, 400];
+export const SCHEMATIC_ZOOM_OPTIONS = [10, 20, 25, 50, 75, 100, 125, 150, 165, 200, 300, 400, 500, 800, 1000];
 
 export const INITIAL_SCH_DRAG_STATE: SchDragState = {
   mode: 'none',

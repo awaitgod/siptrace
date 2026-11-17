@@ -12,6 +12,10 @@ import { GostConversionDialog } from '../../components/GostConversionDialog';
 import { MenuBar, TopMenuSpec } from '../../components/MenuBar';
 import { StatusBar } from '../../components/StatusBar';
 import { DipIcon } from '../../theme/DipTraceIcons';
+import { nextAvailableNumber } from '../libraryEditors/numbering';
+import { useLibraryDraft } from '../libraryEditors/useLibraryDraft';
+import { changePadType, renumberPads, validatePatternGenerator } from './patternEditing';
+import '../libraryEditors/libraryEditor.css';
 
 type PatToolId = 'select' | 'padSmd' | 'padTht' | 'hole' | 'silkLine' | 'silkRect';
 
@@ -38,6 +42,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
     const up = loadUserPatterns();
     return up[0] ? structuredClone(up[0]) : structuredClone(GOST_PATTERN_LIBRARIES[2].patterns[0]);
   });
+  const { acceptReplacement, replaceDraft } = useLibraryDraft(pattern, setPattern, 'Корпус изменён. Продолжить без сохранения?');
 
   const [tool, setTool] = useState<PatToolId>('select');
   const [gridMm, setGridMm] = useState(0.5);
@@ -53,7 +58,8 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
   const [showCadLibDialog, setShowCadLibDialog] = useState(false);
 
   const handleImportPatternLibrary = async () => {
-    const pickedList = await pickCadFiles('.lib,.eli,.kicad_mod,.lbr,.dxf,.gostlib,.json,.zip');
+    if (!acceptReplacement()) return;
+    const pickedList = await pickCadFiles('.lib,.libxml,.eli,.elixml,.kicad_mod,.lbr,.dxf,.gostlib,.json,.zip');
     if (pickedList.length === 0) return;
     try {
       const importedPats: PatternDef[] = [];
@@ -96,7 +102,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
       }
       setUserPatterns(loadUserPatterns());
       if (importedPats.length > 0) {
-        setPattern(structuredClone(importedPats[0]));
+        replaceDraft(structuredClone(importedPats[0]));
         setStatusText(`Импортировано корпусов (${lastFormat}): ${importedPats.length}.`);
         if (lastReport) setConversionReport(lastReport);
       } else {
@@ -118,6 +124,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
   const [genBodyL, setGenBodyL] = useState(9.9);
   const [genThermalPad, setGenThermalPad] = useState(3.2);
   const [genDensity, setGenDensity] = useState<'A' | 'B' | 'C'>('B');
+  const [generatorIssue, setGeneratorIssue] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -134,12 +141,13 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
       }
     });
     const onKeyDown = (e: KeyboardEvent) => {
+      if (showGenDialog || conversionReport || showCadLibDialog) return;
       if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's' || e.code === 'KeyS')) {
         e.preventDefault();
         handleSavePattern();
       } else if (e.key === 'Escape') {
-        setShowGenDialog(false);
         setDraftStart(null);
+        setTool('select');
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedPadId && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement)) {
         e.preventDefault();
         setPattern((p) => ({ ...p, pads: p.pads.filter((x) => x.id !== selectedPadId) }));
@@ -153,14 +161,24 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
     };
   });
 
+  useEffect(() => {
+    setDraftStart(null);
+    setSelectedPadId(null);
+  }, [pattern.id]);
+
+  const changeTool = (nextTool: PatToolId) => {
+    setDraftStart(null);
+    setTool(nextTool);
+  };
+
   const handleSavePattern = () => {
     const toSave = structuredClone(pattern);
-    if (!toSave.id.startsWith('upat')) toSave.id = uid('upat');
+    if (!toSave.id.startsWith('upat') || toSave.library !== 'patlib_user') toSave.id = uid('upat');
     toSave.library = 'patlib_user';
-    const next = [...userPatterns.filter((p) => p.id !== toSave.id), toSave];
+    const next = [...loadUserPatterns().filter((p) => p.id !== toSave.id), toSave];
     setUserPatterns(next);
     saveUserPatterns(next);
-    setPattern(toSave);
+    replaceDraft(toSave);
     broadcastEdaEvent('libraries:updated', { kind: 'patterns' });
     setStatusText(`Корпус «${toSave.name}» сохранён в Пользовательскую библиотеку.`);
   };
@@ -359,7 +377,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
     const pt = snapPoint(wp, gridMm);
 
     if (tool === 'padSmd' || tool === 'padTht' || tool === 'hole') {
-      const nextNum = String(pattern.pads.length + 1);
+      const nextNum = nextAvailableNumber(pattern.pads);
       const newPad: PadDef = {
         id: uid('pad'),
         number: tool === 'hole' ? '' : nextNum,
@@ -437,12 +455,57 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
     return arr;
   }, [userPatterns]);
 
+  const openGenerator = () => {
+    setGeneratorIssue(null);
+    setShowGenDialog(true);
+  };
+
+  const generatePattern = () => {
+    const parameters = {
+      family: genFamily,
+      name: genName.trim(),
+      pinCount: genPins,
+      pitch: genPitch,
+      rowSpacing: genRowSpan,
+      padWidth: genPadW,
+      padHeight: genPadH,
+      holeDiameter: genHole,
+      bodyWidth: genBodyW,
+      bodyLength: genBodyL,
+      bodyHeight: genFamily === 'DIP' ? 3.5 : 1.6,
+      densityLevel: genDensity,
+      thermalPadSize: genFamily === 'QFN' ? genThermalPad : undefined
+    };
+    const issue = validatePatternGenerator(parameters);
+    if (issue) {
+      setGeneratorIssue(issue);
+      return;
+    }
+    if (!acceptReplacement()) return;
+    const generated = generateParametricPattern(parameters);
+    replaceDraft(generated);
+    setShowGenDialog(false);
+    setStatusText(`Сгенерирован корпус «${generated.name}» (${generated.pads.length} контактных площадок).`);
+  };
+
+  const openPattern = (nextPattern: PatternDef) => {
+    if (!acceptReplacement()) return false;
+    replaceDraft(nextPattern);
+    changeTool('select');
+    setSelectedPadId(null);
+    return true;
+  };
+
+  const switchModule = (module: Parameters<typeof openAppModule>[0]) => {
+    if (acceptReplacement()) openAppModule(module, (m) => onSwitchModule?.(m));
+  };
+
   const menus: TopMenuSpec[] = [
     {
       id: 'lib',
       label: 'Библиотека',
       items: [
-        { label: 'Новый корпус...', onClick: () => setPattern(createEmptyPattern()) },
+        { label: 'Новый корпус...', onClick: () => openPattern(createEmptyPattern()) },
         { label: 'Импорт корпуса из САПР (.lib / .kicad_mod / .lbr / .dxf)...', onClick: handleImportPatternLibrary },
         { label: 'Сохранить в Пользовательскую библиотеку', shortcut: 'Ctrl+S', onClick: handleSavePattern },
         {
@@ -454,15 +517,15 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
           }
         },
         { separator: true },
-        { label: 'Стартовое окно (Запуск)', onClick: () => openAppModule('launcher', (m) => onSwitchModule?.(m)) }
+        { label: 'Стартовое окно (Запуск)', onClick: () => switchModule('launcher') }
       ]
     },
     {
       id: 'pattern',
       label: 'Корпус',
       items: [
-        { label: 'Генератор корпусов (IPC-7351 / ГОСТ)...', onClick: () => setShowGenDialog(true) },
-        { label: 'Автонумерация контактных площадок (1..N)', onClick: () => setPattern((p) => ({ ...p, pads: p.pads.map((pd, i) => ({ ...pd, number: pd.type === 'MountingHole' ? '' : String(i + 1) })) })) }
+        { label: 'Генератор корпусов (IPC-7351 / ГОСТ)...', onClick: openGenerator },
+        { label: 'Автонумерация контактных площадок (1..N)', onClick: () => setPattern((p) => ({ ...p, pads: renumberPads(p.pads) })) }
       ]
     },
     {
@@ -481,26 +544,26 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
       id: 'tools',
       label: 'Инструменты',
       items: [
-        { label: 'Открыть Плата (PCB Layout)', onClick: () => openAppModule('pcb', (m) => onSwitchModule?.(m)) },
-        { label: 'Открыть Редактор компонентов', onClick: () => openAppModule('componentEditor', (m) => onSwitchModule?.(m)) }
+        { label: 'Открыть Плата (PCB Layout)', onClick: () => switchModule('pcb') },
+        { label: 'Открыть Редактор компонентов', onClick: () => switchModule('componentEditor') }
       ]
     }
   ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#f0f0f0' }}>
-      <MenuBar menus={menus} onBrandClick={() => openAppModule('launcher', (m) => onSwitchModule?.(m))} />
+      <MenuBar menus={menus} onBrandClick={() => switchModule('launcher')} />
 
       <div className="dt-toolbar-row">
-        <button className="dt-tb-btn" title="Новый корпус" onClick={() => setPattern(createEmptyPattern())}><DipIcon name="new" /></button>
+        <button className="dt-tb-btn" title="Новый корпус" onClick={() => openPattern(createEmptyPattern())}><DipIcon name="new" /></button>
         <button className="dt-tb-btn" title="Сохранить в Пользовательскую библиотеку" onClick={handleSavePattern}><DipIcon name="save" /></button>
         <div className="dt-tb-sep" />
-        <button className={`dt-tb-btn ${tool === 'select' ? 'active' : ''}`} title="Выбор" onClick={() => setTool('select')}><DipIcon name="select" /></button>
-        <button className={`dt-tb-btn ${tool === 'padSmd' ? 'active' : ''}`} title="Площадка SMD" onClick={() => setTool('padSmd')}><DipIcon name="padSmd" /></button>
-        <button className={`dt-tb-btn ${tool === 'padTht' ? 'active' : ''}`} title="Вывод THT (с отверстием)" onClick={() => setTool('padTht')}><DipIcon name="padTht" /></button>
-        <button className={`dt-tb-btn ${tool === 'hole' ? 'active' : ''}`} title="Крепёжное отверстие" onClick={() => setTool('hole')}><DipIcon name="hole" /></button>
-        <button className={`dt-tb-btn ${tool === 'silkLine' ? 'active' : ''}`} title="Линия шелкографии" onClick={() => { setDraftStart(null); setTool('silkLine'); }}><DipIcon name="shapeLine" /></button>
-        <button className={`dt-tb-btn ${tool === 'silkRect' ? 'active' : ''}`} title="Прямоугольник шелкографии" onClick={() => { setDraftStart(null); setTool('silkRect'); }}><DipIcon name="shapeRect" /></button>
+        <button className={`dt-tb-btn ${tool === 'select' ? 'active' : ''}`} aria-pressed={tool === 'select'} title="Выбор" onClick={() => changeTool('select')}><DipIcon name="select" /></button>
+        <button className={`dt-tb-btn ${tool === 'padSmd' ? 'active' : ''}`} aria-pressed={tool === 'padSmd'} title="Площадка SMD" onClick={() => changeTool('padSmd')}><DipIcon name="padSmd" /></button>
+        <button className={`dt-tb-btn ${tool === 'padTht' ? 'active' : ''}`} aria-pressed={tool === 'padTht'} title="Вывод THT (с отверстием)" onClick={() => changeTool('padTht')}><DipIcon name="padTht" /></button>
+        <button className={`dt-tb-btn ${tool === 'hole' ? 'active' : ''}`} aria-pressed={tool === 'hole'} title="Крепёжное отверстие" onClick={() => changeTool('hole')}><DipIcon name="hole" /></button>
+        <button className={`dt-tb-btn ${tool === 'silkLine' ? 'active' : ''}`} aria-pressed={tool === 'silkLine'} title="Линия шелкографии" onClick={() => changeTool('silkLine')}><DipIcon name="shapeLine" /></button>
+        <button className={`dt-tb-btn ${tool === 'silkRect' ? 'active' : ''}`} aria-pressed={tool === 'silkRect'} title="Прямоугольник шелкографии" onClick={() => changeTool('silkRect')}><DipIcon name="shapeRect" /></button>
         <div className="dt-tb-sep" />
         <button className="dt-tb-btn" title="Показать весь корпус" onClick={zoomToFit}><DipIcon name="zoomAll" /></button>
         <select className="dt-tb-select" style={{ width: 72 }} value={gridMm} onChange={(e) => setGridMm(parseFloat(e.target.value))}>
@@ -518,13 +581,14 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
       <div className="dt-workspace">
         {/* Left Pattern List */}
         <div className="dt-left-sidebar">
-          <div className="dt-black-bar"><span>Корпуса библиотек</span></div>
+          <div className="dt-black-bar" role="heading" aria-level={2}><span>Корпуса библиотек</span></div>
           <div className="dt-comp-list" style={{ height: 230, flex: 'none' }}>
             {allPatterns.map((p) => (
               <div
                 key={p.id}
-                className={`dt-comp-item ${p.name === pattern.name ? 'selected' : ''}`}
-                onClick={() => setPattern(structuredClone(p))}
+                className={`dt-comp-item ${p.id === pattern.id ? 'selected' : ''}`}
+                aria-pressed={p.id === pattern.id}
+                onClick={() => openPattern(structuredClone(p))}
               >
                 {p.name}
               </div>
@@ -570,6 +634,8 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
           <div className="dt-canvas-wrap" ref={wrapRef}>
             <canvas
               ref={canvasRef}
+              tabIndex={0}
+              aria-label="Редактор посадочных мест и корпусов (ГОСТ / IPC-7351)"
               style={{ display: 'block', width: '100%', height: '100%', cursor: tool === 'select' ? 'default' : 'crosshair' }}
               onMouseDown={handleCanvasMouseDown}
               onMouseMove={(e) => {
@@ -609,7 +675,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
               )}
             </div>
             <div className="dt-panel-body">
-              <table className="dt-table">
+              <table className="dt-table library-editor-table">
                 <thead>
                   <tr>
                     <th>№</th>
@@ -626,12 +692,15 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
                       key={pad.id}
                       style={{ background: pad.id === selectedPadId ? '#cce8ff' : '#fff' }}
                       onClick={() => setSelectedPadId(pad.id)}
+                      onFocus={() => setSelectedPadId(pad.id)}
                     >
                       <td>
                         <input
                           className="dt-prop-input"
                           style={{ width: 24 }}
                           value={pad.number}
+                          aria-label={`Номер площадки ${pad.number || 'без номера'}`}
+                          disabled={pad.type === 'MountingHole' && !pad.number}
                           onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === pad.id ? { ...x, number: e.target.value } : x) }))}
                         />
                       </td>
@@ -639,7 +708,8 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
                         <select
                           className="dt-prop-input"
                           value={pad.type}
-                          onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === pad.id ? { ...x, type: e.target.value as PadType } : x) }))}
+                          aria-label={`Тип площадки ${pad.number || 'без номера'}`}
+                          onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === pad.id ? changePadType(x, e.target.value as PadType, p.pads) : x) }))}
                         >
                           <option value="SMD">SMD</option>
                           <option value="THT">THT</option>
@@ -653,6 +723,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
                           type="number"
                           step="0.25"
                           value={pad.x}
+                          aria-label={`Координата X площадки ${pad.number || 'без номера'}`}
                           onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === pad.id ? { ...x, x: parseFloat(e.target.value) || 0 } : x) }))}
                         />
                       </td>
@@ -663,6 +734,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
                           type="number"
                           step="0.25"
                           value={pad.y}
+                          aria-label={`Координата Y площадки ${pad.number || 'без номера'}`}
                           onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === pad.id ? { ...x, y: parseFloat(e.target.value) || 0 } : x) }))}
                         />
                       </td>
@@ -673,7 +745,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
                         </div>
                       </td>
                       <td>
-                        <input className="dt-prop-input" style={{ width: 34 }} type="number" step="0.05" value={pad.holeDiameter ?? 0} onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === pad.id ? { ...x, holeDiameter: Math.max(0, parseFloat(e.target.value) || 0) } : x) }))} />
+                        <input className="dt-prop-input" aria-label={`Диаметр отверстия площадки ${pad.number || 'без номера'}`} style={{ width: 34 }} type="number" step="0.05" disabled={pad.type === 'SMD'} value={pad.holeDiameter ?? 0} onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === pad.id ? { ...x, holeDiameter: Math.max(0, parseFloat(e.target.value) || 0) } : x) }))} />
                       </td>
                     </tr>
                   ))}
@@ -718,7 +790,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
                   </select>
                 </label>
                 <label>Название корпуса: <input className="dt-input" style={{ width: '100%' }} value={genName} onChange={(e) => setGenName(e.target.value)} /></label>
-                <label>Количество выводов: <input className="dt-input" style={{ width: '100%' }} type="number" value={genPins} onChange={(e) => setGenPins(Math.max(2, parseInt(e.target.value, 10) || 2))} /></label>
+                <label>Количество выводов: <input className="dt-input" style={{ width: '100%' }} type="number" min={2} max={4096} value={genPins} onChange={(e) => setGenPins(Number(e.target.value))} /></label>
                 <label>Шаг выводов e (мм): <input className="dt-input" style={{ width: '100%' }} type="number" step="0.05" value={genPitch} onChange={(e) => setGenPitch(parseFloat(e.target.value) || 0.5)} /></label>
                 <label>Межрядное расстояние (мм): <input className="dt-input" style={{ width: '100%' }} type="number" step="0.1" value={genRowSpan} onChange={(e) => setGenRowSpan(parseFloat(e.target.value) || 5)} /></label>
                 <label>Ширина площадки (мм): <input className="dt-input" style={{ width: '100%' }} type="number" step="0.05" value={genPadW} onChange={(e) => setGenPadW(parseFloat(e.target.value) || 1.2)} /></label>
@@ -736,31 +808,10 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
                   </label>
                 )}
               </div>
+              {generatorIssue && <p role="alert">{generatorIssue}</p>}
             </div>
             <div className="dt-modal-footer">
-              <button
-                className="dt-btn primary"
-                onClick={() => {
-                  const gen = generateParametricPattern({
-                    family: genFamily,
-                    name: genName,
-                    pinCount: genPins,
-                    pitch: genPitch,
-                    rowSpacing: genRowSpan,
-                    padWidth: genPadW,
-                    padHeight: genPadH,
-                    holeDiameter: genHole,
-                    bodyWidth: genBodyW,
-                    bodyLength: genBodyL,
-                    bodyHeight: genFamily === 'DIP' ? 3.5 : 1.6,
-                    densityLevel: genDensity,
-                    thermalPadSize: genFamily === 'QFN' ? genThermalPad : undefined
-                  });
-                  setPattern(gen);
-                  setShowGenDialog(false);
-                  setStatusText(`Сгенерирован корпус «${gen.name}» (${gen.pads.length} контактных площадок).`);
-                }}
-              >
+              <button className="dt-btn primary" onClick={generatePattern}>
                 Сгенерировать корпус
               </button>
               <button className="dt-btn" onClick={() => setShowGenDialog(false)}>Отмена</button>
@@ -778,8 +829,9 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
           initialTab="patterns"
           onClose={() => setShowCadLibDialog(false)}
           onSelectPattern={(pat) => {
-            setPattern(structuredClone(pat));
+            if (!openPattern(structuredClone(pat))) return false;
             setStatusText(`Загружен корпус «${pat.name}» из библиотеки «${pat.library}».`);
+            return true;
           }}
         />
       )}

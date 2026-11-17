@@ -1,13 +1,12 @@
 import { ColorSchemeId, Point2D, SchWire, SchematicProject } from '../../../core/types';
 /** Interactive editing tools in Schematic Capture. */
 export type SchToolId = 'select' | 'paste' | 'junction' | 'noConnect' | 'placeComp' | 'wire' | 'bus' | 'busTap' | 'netPort' | 'pinLabel' | 'shapeLine' | 'shapeRect' | 'shapeCircle' | 'shapeText' | 'table' | 'hierarchy' | 'diffPair' | 'zoomBox' | 'origin';
-/** Canvas right-click context menu anchor and target entity IDs. */
+/** Canvas context menu anchor and target entity IDs. */
 export interface SchContextMenu {
     x: number;
     y: number;
-    ids?: string[];
-    compId?: string;
-    wireId?: string;
+    ids: string[];
+    wireTarget?: { id: string; point: Point2D };
 }
 /** Screen-to-world viewport camera mapping for schematic sheets. */
 export interface SchViewport {

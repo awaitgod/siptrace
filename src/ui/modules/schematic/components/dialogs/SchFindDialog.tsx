@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { PlacedComponent } from '../../../../../core/types';
 import { NetGraphNode } from '../../../../../engines/erc';
 
@@ -20,14 +20,6 @@ export const SchFindDialog: React.FC<SchFindDialogProps> = ({
 }) => {
   const [findQuery, setFindQuery] = useState('');
   const q = findQuery.trim().toLowerCase();
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
 
   const matchingComps = components.filter(
     (c) =>
@@ -58,7 +50,8 @@ export const SchFindDialog: React.FC<SchFindDialogProps> = ({
           <input
             className="dt-input"
             style={{ width: '100%', marginBottom: 8 }}
-            autoFocus
+            data-autofocus
+            aria-label="Обозначение компонента, значение или имя цепи"
             placeholder="Введите RefDes (например, R1, U1) или имя цепи..."
             value={findQuery}
             onChange={(e) => setFindQuery(e.target.value)}
@@ -68,28 +61,30 @@ export const SchFindDialog: React.FC<SchFindDialogProps> = ({
           />
           <div style={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #ccc', background: '#fff' }}>
             {matchingComps.map((c) => (
-              <div
+              <button
+                type="button"
                 key={c.id}
-                className="dt-tree-row"
+                className="dt-tree-row dt-find-result"
                 onClick={() => {
                   onSelectComp(c.id, c.x, c.y);
                   onClose();
                 }}
               >
                 [Элемент] {c.refDes} — {c.value || c.typeName} ({c.x} мм, {c.y} мм)
-              </div>
+              </button>
             ))}
             {matchingNets.map((n) => (
-              <div
+              <button
+                type="button"
                 key={`net_${n.netName}`}
-                className="dt-tree-row"
+                className="dt-tree-row dt-find-result"
                 onClick={() => {
                   onSelectNet?.(n.netName);
                   onClose();
                 }}
               >
                 [Цепь] {n.netName} ({n.pins.length} выв.)
-              </div>
+              </button>
             ))}
             {matchingComps.length === 0 && matchingNets.length === 0 && (
               <div style={{ padding: 8, color: '#666' }}>Ничего не найдено.</div>

@@ -43,16 +43,15 @@ export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => 
   }, []);
 
   return (
-  <div className="dt-left-sidebar">
-    <div className="dt-black-bar" onClick={() => p.setPlaceExpanded((v) => !v)}>
+  <div className="dt-left-sidebar" id="schematic-library">
+    <button type="button" className="dt-black-bar" aria-expanded={p.placeExpanded} onClick={() => p.setPlaceExpanded((v) => !v)}>
       <span>Установить компонент</span>
-      <span>{p.placeExpanded ? '▼' : '▶'}</span>
-    </div>
+      <span aria-hidden="true">{p.placeExpanded ? '▼' : '▶'}</span>
+    </button>
     {p.placeExpanded && (
       <>
-        <div className="dt-black-bar" onClick={() => p.setSelectedLibId(p.allLibraries[0].id)}>
+        <div className="dt-black-bar" role="heading" aria-level={2}>
           <span>Компоненты (ГОСТ)</span>
-          <span>▼</span>
         </div>
         <div className="dt-lib-list">
           {p.allLibraries.map((lib) => (
@@ -85,10 +84,10 @@ export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => 
       </>
     )}
 
-    <div className="dt-black-bar" onClick={() => p.setToolsExpanded((v) => !v)}>
+    <button type="button" className="dt-black-bar" aria-expanded={p.toolsExpanded} onClick={() => p.setToolsExpanded((v) => !v)}>
       <span>Инструменты</span>
-      <span>{p.toolsExpanded ? '▼' : '▶'}</span>
-    </div>
+      <span aria-hidden="true">{p.toolsExpanded ? '▼' : '▶'}</span>
+    </button>
     {p.toolsExpanded && (
       <div style={{ background: '#202020', color: '#fff', padding: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
         <label style={{ fontSize: 10.5 }}>
@@ -121,10 +120,10 @@ export const SchematicLeftSidebar: React.FC<SchematicLeftSidebarProps> = (p) => 
       </div>
     )}
 
-    <div className="dt-black-bar" onClick={() => p.setSortLibsAlpha((v) => !v)}>
-      <span>Сортировка {p.sortLibsAlpha ? 'Вкл.' : 'Выкл.'}</span>
-      <span>◀</span>
-    </div>
+    <button type="button" className="dt-black-bar" aria-pressed={p.sortLibsAlpha} onClick={() => p.setSortLibsAlpha((v) => !v)}>
+      <span>Сортировать по алфавиту</span>
+      <span aria-hidden="true">{p.sortLibsAlpha ? '✓' : ''}</span>
+    </button>
 
     <div style={{ padding: '2px 3px', background: '#141414', borderBottom: '1px solid #333' }}>
       <input

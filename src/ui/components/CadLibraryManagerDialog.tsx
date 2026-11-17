@@ -14,16 +14,17 @@ import { pickCadFiles, saveTextFile } from '../../core/utils/fileIo';
 import { importExternalCadLibrary } from '../../engines/importers';
 import { findPatternById } from '../../gost/libraries/gostPatterns';
 import { PatternPreviewCanvas, SymbolPreviewCanvas } from './CadPreviewCanvas';
+import './CadLibraryManagerDialog.css';
 
 export interface CadLibraryManagerDialogProps {
   onClose: () => void;
   initialTab?: 'components' | 'patterns';
-  onSelectComponent?: (comp: ComponentDef) => void;
-  onSelectPattern?: (pat: PatternDef) => void;
+  onSelectComponent?: (comp: ComponentDef) => void | boolean;
+  onSelectPattern?: (pat: PatternDef) => void | boolean;
 }
 
 const SUPPORTED_EXT_ACCEPT =
-  '.eli,.lib,.kicad_sym,.kicad_mod,.lbr,.json,.gostlib,.zip,.asc,.txt';
+  '.eli,.elixml,.lib,.libxml,.kicad_sym,.kicad_mod,.lbr,.json,.gostlib,.zip,.asc,.txt';
 
 export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = ({
   onClose,
@@ -74,16 +75,18 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
     [bundles, selectedBundleId]
   );
 
+  const categoryBundles = useMemo(
+    () => categoryFilter === 'ALL' ? null : bundles.filter((bundle) => bundle.category === categoryFilter),
+    [bundles, categoryFilter]
+  );
+
   const filteredComponents = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    const allowedLibs = categoryFilter === 'ALL'
-      ? null
-      : new Set(bundles.filter((b) => b.category === categoryFilter).map((b) => b.name));
     return userComponents.filter((c) => {
       if (activeBundle && !activeBundle.componentIds.includes(c.id) && c.library !== activeBundle.name) {
         return false;
       }
-      if (allowedLibs && !allowedLibs.has(c.library)) {
+      if (categoryBundles && !categoryBundles.some((bundle) => bundle.componentIds.includes(c.id) || bundle.name === c.library)) {
         return false;
       }
       if (!q) return true;
@@ -97,12 +100,15 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
         c.library.toLowerCase().includes(q)
       );
     });
-  }, [userComponents, bundles, activeBundle, categoryFilter, searchQuery]);
+  }, [userComponents, activeBundle, categoryBundles, searchQuery]);
 
   const filteredPatterns = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return userPatterns.filter((p) => {
       if (activeBundle && !activeBundle.patternIds.includes(p.id) && p.library !== activeBundle.name) {
+        return false;
+      }
+      if (categoryBundles && !categoryBundles.some((bundle) => bundle.patternIds.includes(p.id) || bundle.name === p.library)) {
         return false;
       }
       if (!q) return true;
@@ -113,7 +119,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
         p.library.toLowerCase().includes(q)
       );
     });
-  }, [userPatterns, activeBundle, searchQuery]);
+  }, [userPatterns, activeBundle, categoryBundles, searchQuery]);
 
   const selectedComp = useMemo(
     () =>
@@ -212,6 +218,8 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
       refreshFromStore();
       if (lastBundle) {
         setSelectedBundleId(lastBundle.id);
+        setCategoryFilter('ALL');
+        setSearchQuery('');
       }
       if (totalComps > 0) setActiveTab('components');
       else if (totalPats > 0) setActiveTab('patterns');
@@ -235,6 +243,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
   };
 
   const handleDeleteBundle = (bundle: CadLibraryBundle) => {
+    if (!window.confirm(`Удалить библиотеку «${bundle.name}» вместе с принадлежащими только ей УГО и корпусами?`)) return;
     deleteImportedLibraryBundle(bundle.id);
     if (selectedBundleId === bundle.id) {
       setSelectedBundleId('ALL');
@@ -243,12 +252,20 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
     setStatusMsg(`Удалена библиотека "${bundle.name}".`);
   };
 
+  const openComponent = (component: ComponentDef) => {
+    if (onSelectComponent && onSelectComponent(component) !== false) onClose();
+  };
+
+  const openPattern = (pattern: PatternDef) => {
+    if (onSelectPattern && onSelectPattern(pattern) !== false) onClose();
+  };
+
   return (
     <div className="dt-modal-backdrop" data-testid="cad-library-manager-modal">
       <div className="dt-modal" style={{ width: 960, maxWidth: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
         <div className="dt-modal-title">
           <span>Библиотеки внешних CAD (DipTrace .eli/.lib, KiCad, Eagle, EasyEDA, ZIP)</span>
-          <button className="dt-btn" style={{ minWidth: 22, height: 18, padding: 0 }} onClick={onClose}>×</button>
+          <button className="dt-btn" aria-label="Закрыть менеджер библиотек" style={{ minWidth: 22, height: 18, padding: 0 }} onClick={onClose}>×</button>
         </div>
 
         <div className="dt-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 8, overflow: 'hidden', flex: 1 }}>
@@ -274,7 +291,10 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
             <select
               className="dt-select"
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setSelectedBundleId('ALL');
+              }}
               style={{ minWidth: 160 }}
               title="Фильтр по категории"
             >
@@ -286,7 +306,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
           </div>
 
           {/* Main 3-column layout */}
-          <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr 270px', gap: 10, minHeight: 390, flex: 1, overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(135px, 1fr) minmax(220px, 1.75fr) minmax(150px, 1.1fr)', gap: 10, minHeight: 0, flex: '1 1 390px', overflow: 'auto' }}>
             {/* Left: Library Bundles */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, border: '1px solid #A0A0A0', background: '#FFFFFF', overflowY: 'auto', padding: 4 }}>
               <div style={{ fontWeight: 'bold', fontSize: 11, padding: '2px 4px', borderBottom: '1px solid #D0D0D0' }}>
@@ -294,6 +314,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
               </div>
               <button
                 className={`dt-btn ${selectedBundleId === 'ALL' ? 'active' : ''}`}
+                aria-pressed={selectedBundleId === 'ALL'}
                 style={{ justifyContent: 'space-between', display: 'flex', textAlign: 'left', padding: '4px 6px' }}
                 onClick={() => setSelectedBundleId('ALL')}
               >
@@ -301,7 +322,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                 <span style={{ opacity: 0.75 }}>{userComponents.length}/{userPatterns.length}</span>
               </button>
 
-              {bundles.map((b) => {
+              {(categoryBundles ?? bundles).map((b) => {
                 const isActive = selectedBundleId === b.id;
                 return (
                   <div
@@ -319,9 +340,9 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
-                      <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={b.name}>
+                      <button className="dt-btn" aria-pressed={isActive} style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} onClick={() => setSelectedBundleId(b.id)} title={b.name}>
                         {b.name}
-                      </strong>
+                      </button>
                       <span style={{ fontSize: 10, background: b.gostAdapted ? '#DCF0DC' : '#ECECEC', padding: '0 4px', borderRadius: 2 }}>
                         {b.gostAdapted ? 'ГОСТ' : 'CAD'}
                       </span>
@@ -336,6 +357,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                           className="dt-btn"
                           style={{ minWidth: 20, height: 18, padding: '0 4px', fontSize: 10 }}
                           title="Экспорт в .gostlib"
+                          aria-label={`Экспортировать библиотеку ${b.name}`}
                           onClick={() => handleExportBundle(b)}
                         >
                           ↓
@@ -344,6 +366,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                           className="dt-btn"
                           style={{ minWidth: 20, height: 18, padding: '0 4px', fontSize: 10 }}
                           title="Удалить библиотеку"
+                          aria-label={`Удалить библиотеку ${b.name}`}
                           onClick={() => handleDeleteBundle(b)}
                         >
                           ×
@@ -367,19 +390,23 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                 <input
                   className="dt-input"
                   data-testid="cadlib-search-input"
-                  placeholder="Поиск (имя, номинал, RefDes, корпус, ГОСТ)..."
+                  data-autofocus="true"
+                  placeholder={activeTab === 'components' ? 'Поиск по УГО…' : 'Поиск по корпусам…'}
+                  aria-label={activeTab === 'components' ? 'Поиск по УГО' : 'Поиск по корпусам'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{ flex: 1 }}
+                  style={{ flex: 1, minWidth: 0 }}
                 />
                 <button
                   className={`dt-btn ${activeTab === 'components' ? 'active' : ''}`}
+                  aria-pressed={activeTab === 'components'}
                   onClick={() => setActiveTab('components')}
                 >
                   УГО ({filteredComponents.length})
                 </button>
                 <button
                   className={`dt-btn ${activeTab === 'patterns' ? 'active' : ''}`}
+                  aria-pressed={activeTab === 'patterns'}
                   onClick={() => setActiveTab('patterns')}
                 >
                   Корпуса ({filteredPatterns.length})
@@ -404,15 +431,12 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                           <tr
                             key={c.id}
                             onClick={() => setSelectedCompId(c.id)}
-                            onDoubleClick={() => {
-                              if (onSelectComponent) {
-                                onSelectComponent(c);
-                                onClose();
-                              }
-                            }}
+                            onDoubleClick={() => openComponent(c)}
                             style={{ background: sel ? '#316AC5' : undefined, color: sel ? '#FFFFFF' : undefined, cursor: 'pointer' }}
                           >
-                            <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>{c.name}</td>
+                            <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>
+                              <button type="button" className="cad-library-item" aria-pressed={sel} onClick={() => setSelectedCompId(c.id)}>{c.name}</button>
+                            </td>
                             <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>{c.refDesPrefix}</td>
                             <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>{c.patternId || '—'}</td>
                             <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>{c.library}</td>
@@ -433,7 +457,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                     <thead>
                       <tr style={{ background: '#ECECEC', position: 'sticky', top: 0, textAlign: 'left' }}>
                         <th style={{ padding: '4px 6px', borderBottom: '1px solid #C0C0C0' }}>Корпус</th>
-                        <th style={{ padding: '4px 6px', borderBottom: '1px solid #C0C0C0' }}>Падов</th>
+                        <th style={{ padding: '4px 6px', borderBottom: '1px solid #C0C0C0' }}>Контактных площадок</th>
                         <th style={{ padding: '4px 6px', borderBottom: '1px solid #C0C0C0' }}>ГОСТ / Тип</th>
                         <th style={{ padding: '4px 6px', borderBottom: '1px solid #C0C0C0' }}>Библиотека</th>
                       </tr>
@@ -445,15 +469,12 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                           <tr
                             key={p.id}
                             onClick={() => setSelectedPatId(p.id)}
-                            onDoubleClick={() => {
-                              if (onSelectPattern) {
-                                onSelectPattern(p);
-                                onClose();
-                              }
-                            }}
+                            onDoubleClick={() => openPattern(p)}
                             style={{ background: sel ? '#316AC5' : undefined, color: sel ? '#FFFFFF' : undefined, cursor: 'pointer' }}
                           >
-                            <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>{p.name}</td>
+                            <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>
+                              <button type="button" className="cad-library-item" aria-pressed={sel} onClick={() => setSelectedPatId(p.id)}>{p.name}</button>
+                            </td>
                             <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>{p.pads.length}</td>
                             <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>{p.gostName || 'CAD'}</td>
                             <td style={{ padding: '3px 6px', borderBottom: '1px solid #EEE' }}>{p.library}</td>
@@ -475,8 +496,12 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
 
             {/* Right: Dual Live Preview */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, border: '1px solid #A0A0A0', background: '#F4F4F4', padding: 6, overflowY: 'auto' }}>
-              <div style={{ fontWeight: 'bold', fontSize: 11 }}>Предпросмотр УГО</div>
-              <SymbolPreviewCanvas component={activeTab === 'components' ? selectedComp : null} />
+              {activeTab === 'components' && (
+                <>
+                  <div style={{ fontWeight: 'bold', fontSize: 11 }}>Предпросмотр УГО</div>
+                  <SymbolPreviewCanvas component={selectedComp} />
+                </>
+              )}
               <div style={{ fontWeight: 'bold', fontSize: 11, marginTop: 2 }}>
                 Предпросмотр корпуса {resolvedLinkedPattern ? `(${resolvedLinkedPattern.name})` : ''}
               </div>
@@ -485,8 +510,9 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
               {activeTab === 'components' && selectedComp && (
                 <div style={{ fontSize: 11, lineHeight: 1.4, background: '#FFF', border: '1px solid #CCC', padding: 6 }}>
                   <div><b>Имя:</b> {selectedComp.name}</div>
-                  <div><b>RefDes:</b> {selectedComp.refDesPrefix} {selectedComp.defaultValue ? `(${selectedComp.defaultValue})` : ''}</div>
-                  <div><b>Выводов:</b> {selectedComp.parts[0]?.pins.length ?? 0}</div>
+                  <div><b>Позиционное обозначение:</b> {selectedComp.refDesPrefix} {selectedComp.defaultValue ? `(${selectedComp.defaultValue})` : ''}</div>
+                  <div><b>Секций:</b> {selectedComp.parts.length}</div>
+                  <div><b>Выводов по секциям:</b> {selectedComp.parts.map((part) => part.pins.length).join(' / ')}</div>
                   <div><b>Корпус:</b> {selectedComp.patternId || 'не назначен'}</div>
                   <div><b>ГОСТ:</b> {selectedComp.gostStandard || '—'}</div>
                 </div>
@@ -495,7 +521,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
               {activeTab === 'patterns' && resolvedLinkedPattern && (
                 <div style={{ fontSize: 11, lineHeight: 1.4, background: '#FFF', border: '1px solid #CCC', padding: 6 }}>
                   <div><b>Корпус:</b> {resolvedLinkedPattern.name}</div>
-                  <div><b>Падов:</b> {resolvedLinkedPattern.pads.length}</div>
+                  <div><b>Площадок:</b> {resolvedLinkedPattern.pads.length}</div>
                   <div><b>3D-модель:</b> {resolvedLinkedPattern.model3d?.shape ?? 'Box'}</div>
                   <div><b>Описание:</b> {resolvedLinkedPattern.description}</div>
                 </div>
@@ -504,10 +530,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
               {activeTab === 'components' && selectedComp && onSelectComponent && (
                 <button
                   className="dt-btn dt-btn-primary"
-                  onClick={() => {
-                    onSelectComponent(selectedComp);
-                    onClose();
-                  }}
+                  onClick={() => openComponent(selectedComp)}
                 >
                   Выбрать компонент
                 </button>
@@ -515,10 +538,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
               {activeTab === 'patterns' && resolvedLinkedPattern && onSelectPattern && (
                 <button
                   className="dt-btn dt-btn-primary"
-                  onClick={() => {
-                    onSelectPattern(resolvedLinkedPattern);
-                    onClose();
-                  }}
+                  onClick={() => openPattern(resolvedLinkedPattern)}
                 >
                   Выбрать корпус
                 </button>
@@ -534,7 +554,7 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
 
           {/* Footer */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #9A9A9A', paddingTop: 6 }}>
-            <span style={{ fontSize: 11, color: '#333' }} data-testid="cadlib-status">{statusMsg}</span>
+            <span style={{ fontSize: 11, color: '#333' }} data-testid="cadlib-status" role="status">{statusMsg}</span>
             <button className="dt-btn" onClick={onClose}>Закрыть</button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DrcError, PcbCopperPour, PcbTrace, PcbVia, Point2D, Units } from '../../../core/types';
-import { dist, polygonBounds, uid } from '../../../core/geometry';
+import { PcbTrace, PcbVia, Point2D, Units } from '../../../core/types';
+import { dist, uid } from '../../../core/geometry';
 import { snapPoint } from '../../../core/units';
 import {
   broadcastEdaEvent,
@@ -15,14 +15,12 @@ import {
   subscribeEdaEvents
 } from '../../../core/store';
 import { GOST_PATTERN_LIBRARIES, findPatternById } from '../../../gost/libraries/gostPatterns';
-import { computeUnroutedRatlines, getWorldPads, runPcbDrc } from '../../../engines/drc';
-import { createDefaultPcbLayers } from '../../../engines/netlist';
+import { computeUnroutedRatlines, getWorldPads } from '../../../engines/drc';
 import { updateAllCopperPours } from '../../../engines/copperPour';
 import { AutorouterReport, DEFAULT_AUTOROUTER_SETTINGS, runAutorouter } from '../../../engines/autorouter';
 import { runAutoplacer } from '../../../engines/autoplacer';
-import { exportGerberSet } from '../../../engines/camExport';
 import { GostConversionReport, importCadPcb, serializePcb } from '../../../engines/importers';
-import { clearSavedFileHandle, pickCadFile, saveTextFile } from '../../../core/utils/fileIo';
+import { clearSavedFileHandle, nativeCadFilename, pickCadFile, saveTextFile } from '../../../core/utils/fileIo';
 import { GostConversionDialog } from '../../components/GostConversionDialog';
 import { NewProjectDialog } from '../../components/NewProjectDialog';
 import { MenuBar } from '../../components/MenuBar';
@@ -33,6 +31,7 @@ import { PcbLeftSidebar } from './components/PcbLeftSidebar';
 import { PcbRightSidebar } from './components/PcbRightSidebar';
 import { PcbToolbar } from './components/PcbToolbar';
 import { PcbAutorouteBanner } from './components/dialogs/PcbAutorouteBanner';
+import { PcbBoardWizardDialog } from './components/dialogs/PcbBoardWizardDialog';
 import { PcbCamDialog } from './components/dialogs/PcbCamDialog';
 import { PcbCompareDialog } from './components/dialogs/PcbCompareDialog';
 import { PcbCopperPourDialog } from './components/dialogs/PcbCopperPourDialog';
@@ -40,10 +39,12 @@ import { PcbPanelizeDialog } from './components/dialogs/PcbPanelizeDialog';
 import { PcbRfCalcDialog } from './components/dialogs/PcbRfCalcDialog';
 import { PcbRulesDialog } from './components/dialogs/PcbRulesDialog';
 import { usePcbHotkeys } from './hooks/usePcbHotkeys';
+import { NO_DRC_ISSUES, usePcbDrcReport } from './hooks/usePcbDrcReport';
 import { usePcbProjectState } from './hooks/usePcbProjectState';
 import { usePcbCanvasInteraction } from './interactions/usePcbCanvasInteraction';
 import { createPcbTopMenus } from './menus/pcbMenuSpec';
-import { buildBoardOutlinePolygon, buildViaStitchingVias } from './services/pcbActionsService';
+import { buildViaStitchingVias, PcbCopperPourSettings } from './services/pcbActionsService';
+import { isInnerCopperLayer } from './services/pcbLayerStack';
 import { CopperLayerId, MeasureRulerState, PcbExtraSelection, PcbToolId } from './types';
 
 /** Thin Enterprise composition root for the PCB Layout & Autorouter Editor. */
@@ -100,7 +101,8 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
   // Right dock tabs & verification reports
   const [rightTopTab, setRightTopTab] = useState<'layers' | 'objects'>('layers');
   const [managerTab, setManagerTab] = useState<'components' | 'nets' | 'drc'>('components');
-  const [drcErrors, setDrcErrors] = useState<DrcError[]>([]);
+  const { report: drcReport, runDrc, clearDrc } = usePcbDrcReport(pcb);
+  const drcErrors = drcReport.status === 'current' ? drcReport.issues : NO_DRC_ISSUES;
   const [autorouteReport, setAutorouteReport] = useState<AutorouterReport | null>(null);
 
   // Modals & modal drafts
@@ -117,35 +119,22 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
   const [findQuery, setFindQuery] = useState('');
   const [selectedExtraObj, setSelectedExtraObj] = useState<PcbExtraSelection | null>(null);
   const [conversionReport, setConversionReport] = useState<GostConversionReport | null>(() => consumePendingConversionReport());
-  const [wizardW, setWizardW] = useState(100);
-  const [wizardH, setWizardH] = useState(70);
-  const [wizardR, setWizardR] = useState(2);
-  const [wizardCircle, setWizardCircle] = useState(false);
-  const [wizardThick, setWizardThick] = useState(1.6);
-  const [wizardLayers, setWizardLayers] = useState<2 | 4>(2);
-
   useEffect(() => {
-    if (!showBoardWizard) return;
-    if (pcb.boardOutline.length >= 3) {
-      const b = polygonBounds(pcb.boardOutline);
-      setWizardW(Math.max(10, Number((b.maxX - b.minX).toFixed(2))));
-      setWizardH(Math.max(10, Number((b.maxY - b.minY).toFixed(2))));
-    }
-    setWizardThick(pcb.boardThickness || 1.6);
-    setWizardLayers(pcb.layerCount === 4 ? 4 : 2);
-  }, [showBoardWizard, pcb.boardOutline, pcb.boardThickness, pcb.layerCount]);
+    if (pcb.layerCount === 4 || !isInnerCopperLayer(activeLayer)) return;
+    setActiveLayer('TopCopper');
+    setRouteDraftPts([]);
+    setPolyDraftPts([]);
+    setTool('select');
+  }, [pcb.layerCount, activeLayer]);
 
-  const [newPourNet, setNewPourNet] = useState('GND');
-  const [newPourLayer, setNewPourLayer] = useState<CopperLayerId>('BottomCopper');
-  const [newPourFill, setNewPourFill] = useState<PcbCopperPour['fillType']>('Solid');
-  const [previewGerberFile, setPreviewGerberFile] = useState('');
+  const [pourDraft, setPourDraft] = useState<PcbCopperPourSettings | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const cursorMmRef = useRef<Point2D>({ x: 0, y: 0 });
 
   // Derived topology
-  const ratlines = useMemo(() => (showRatlines ? computeUnroutedRatlines(pcb) : []), [pcb, showRatlines]);
+  const ratlines = useMemo(() => computeUnroutedRatlines(pcb), [pcb]);
   const worldPads = useMemo(() => getWorldPads(pcb), [pcb]);
   const netNames = useMemo(() => {
     const s = new Set<string>();
@@ -165,17 +154,9 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
 
   // Domain actions
   const handleRunDrc = useCallback(() => {
-    const errs = runPcbDrc(pcb);
-    setDrcErrors(errs);
+    setStatusMessage(runDrc());
     setManagerTab('drc');
-    const eCnt = errs.filter((e) => e.severity === 'Error').length;
-    const wCnt = errs.filter((e) => e.severity === 'Warning').length;
-    setStatusMessage(
-      errs.length === 0
-        ? 'Проверка DRC (ГОСТ 23751): Нарушений не обнаружено!'
-        : `Проверка DRC: ошибок ${eCnt}, предупреждений ${wCnt}.`
-    );
-  }, [pcb]);
+  }, [runDrc]);
 
   const handleAutoroute = useCallback(() => {
     const { pcb: routed, report } = runAutorouter(pcb, {
@@ -209,6 +190,10 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
 
   const switchCopperLayer = useCallback(
     (targetLayer: CopperLayerId) => {
+      if (tool === 'copperPour' && targetLayer !== activeLayer) {
+        setStatusMessage('Слой полигона задаётся перед рисованием. Завершите заливку или нажмите Esc.');
+        return;
+      }
       if (tool === 'routeManual' && routeDraftPts.length > 0 && targetLayer !== activeLayer) {
         const cur = snapPoint(cursorMmRef.current, pcb.gridSize);
         let segmentPts = routeDraftPts;
@@ -296,8 +281,7 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
     routeElbowFlip,
     lineStartPt,
     setLineStartPt,
-    newPourNet,
-    newPourFill,
+    pourDraft,
     setMeasurePts,
     setStatusMessage,
     commitPcb,
@@ -326,18 +310,18 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
       replacePcb(res.pcb);
       setSelectedCompId(null);
       setSelectedTraceId(null);
-      setDrcErrors([]);
+      clearDrc();
       setAutorouteReport(null);
       setStatusMessage(res.statusMessage);
     },
-    [onSwitchModule, replacePcb]
+    [onSwitchModule, replacePcb, clearDrc]
   );
 
   const handleSavePcbFile = useCallback(
     async (saveAs = false) => {
       saveActivePcb(pcb);
       const savedName = await saveTextFile(
-        pcb.filePath || `${pcb.projectName}.gostpcb`,
+        nativeCadFilename(pcb.filePath, pcb.projectName, 'gostpcb'),
         serializePcb(pcb),
         [{ name: 'Плата SIPTrace', extensions: ['gostpcb', 'json'] }],
         { saveKey: 'pcb', saveAs }
@@ -444,7 +428,7 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
   const handleOpenPcbFile = useCallback(async () => {
     if (!confirmDiscardIfDirty()) return;
     const picked = await pickCadFile(
-      '.gostpcb,.dip,.asc,.xml,.kicad_pcb,.brd,.json,.epcb,.pcbdoc,.dxf,.gbr,.gtl,.gbl,.zip,.pdsprj,.dch,.kicad_sch,.sch',
+      '.gostpcb,.dip,.asc,.xml,.kicad_pcb,.brd,.json,.epcb,.pcbdoc,.dxf,.gbr,.gtl,.gbl,.gko,.gm1,.gto,.gbo,.gts,.gbs,.drl,.xln,.zip,.pdsprj,.dch,.kicad_sch,.sch',
       [
         {
           name: 'Все САПР ПП / Gerber / ZIP / Схемы (SIPTrace / DipTrace / KiCad / Eagle / EasyEDA / Altium / DXF)',
@@ -460,7 +444,7 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
       replacePcb(res.pcb);
       setSelectedCompId(null);
       setSelectedTraceId(null);
-      setDrcErrors([]);
+      clearDrc();
       setAutorouteReport(null);
       recordRecentProject({
         id: res.pcb.projectName + '_pcb',
@@ -477,7 +461,7 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
     } catch (err) {
       setStatusMessage(`Ошибка открытия файла платы: ${(err as Error).message}`);
     }
-  }, [confirmDiscardIfDirty, replacePcb]);
+  }, [confirmDiscardIfDirty, replacePcb, clearDrc]);
 
   const remoteProbeId = useRef<string | null>(null);
   // Cross-probe synchronization between Schematic & PCB
@@ -569,8 +553,6 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
   );
 
   const selectedComp = pcb.components.find((c) => c.id === selectedCompId) ?? null;
-  const gerberFiles = useMemo(() => (showCamDialog ? exportGerberSet(pcb).files : {}), [showCamDialog, pcb]);
-  const gerberNames = Object.keys(gerberFiles).filter((f) => /\.(GTL|GBL|G2L|G3L|GTS|GBS|GTO|GBO|GTP|GBP|GKO)$/i.test(f));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#f0f0f0' }}>
@@ -625,6 +607,8 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
           <div className="dt-canvas-wrap" ref={canvasWrapRef}>
             <canvas
               ref={canvasRef}
+              tabIndex={0}
+              aria-label="Редактор топологии печатной платы"
               style={{ display: 'block', width: '100%', height: '100%', cursor: tool === 'select' ? 'default' : 'crosshair' }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
@@ -659,7 +643,8 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
           highlightedNet={highlightedNet}
           setHighlightedNet={setHighlightedNet}
           netNames={netNames}
-          drcErrors={drcErrors}
+          drcReport={drcReport}
+          onRunDrc={handleRunDrc}
           selectedComp={selectedComp}
           ratlineCount={ratlines.length}
           onCenterWorldPt={centerOnWorldPt}
@@ -668,7 +653,9 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
       </div>
 
       <StatusBar
-        hint={statusMessage}
+        hint={drcReport.status === 'stale' && statusMessage.startsWith('Проверка DRC')
+          ? 'Плата изменена после проверки DRC. Повторить проверку: F9.'
+          : statusMessage}
         extraCenter={`Слой: ${activeLayer} | Неразведённых: ${ratlines.length} | Дорожек: ${pcb.traces.length} | Переходов: ${pcb.vias.length}`}
         gridMm={pcb.gridSize}
         units={pcb.units}
@@ -687,16 +674,17 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
         <PcbCopperPourDialog
           pcb={pcb}
           netNames={netNames}
-          newPourLayer={newPourLayer}
-          setNewPourLayer={setNewPourLayer}
-          newPourNet={newPourNet}
-          setNewPourNet={setNewPourNet}
-          newPourFill={newPourFill}
-          setNewPourFill={setNewPourFill}
+          initialLayer={activeLayer}
+          onDraw={(settings) => {
+            setPourDraft(settings);
+            setRouteDraftPts([]);
+            setPolyDraftPts([]);
+            setActiveLayer(settings.layer);
+            setTool('copperPour');
+            setShowPourDialog(false);
+            setStatusMessage('Укажите вершины полигона на плате. ПКМ — завершить заливку.');
+          }}
           commitPcb={commitPcb}
-          setPolyDraftPts={setPolyDraftPts}
-          setActiveLayer={setActiveLayer}
-          setTool={setTool}
           setStatusMessage={setStatusMessage}
           onClose={() => setShowPourDialog(false)}
         />
@@ -704,10 +692,6 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
       {showCamDialog && (
         <PcbCamDialog
           pcb={pcb}
-          gerberFiles={gerberFiles}
-          gerberNames={gerberNames}
-          previewGerberFile={previewGerberFile}
-          setPreviewGerberFile={setPreviewGerberFile}
           setStatusMessage={setStatusMessage}
           onClose={() => setShowCamDialog(false)}
         />
@@ -740,62 +724,15 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
         />
       )}
       {showBoardWizard && (
-        <div className="dt-modal-backdrop" onClick={() => setShowBoardWizard(false)}>
-          <div className="dt-modal" style={{ width: 420 }} onClick={(e) => e.stopPropagation()}>
-            <div className="dt-modal-title">
-              <strong>Мастер контура и стека печатной платы</strong>
-              <button className="dt-btn" style={{ minWidth: 22, height: 18, padding: 0 }} onClick={() => setShowBoardWizard(false)}>×</button>
-            </div>
-            <div className="dt-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 11.5 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                <label>Ширина (мм): <input type="number" className="dt-input" style={{ width: '100%' }} value={wizardW} onChange={(e) => setWizardW(Math.max(10, Number(e.target.value) || 50))} /></label>
-                <label>Высота (мм): <input type="number" className="dt-input" style={{ width: '100%' }} value={wizardH} onChange={(e) => setWizardH(Math.max(10, Number(e.target.value) || 50))} /></label>
-                <label>Скругление углов (мм): <input type="number" step="0.5" min="0" className="dt-input" style={{ width: '100%' }} value={wizardR} onChange={(e) => setWizardR(Math.max(0, Number(e.target.value) || 0))} /></label>
-                <label>Толщина текстолита (мм):
-                  <select className="dt-select" style={{ width: '100%' }} value={wizardThick} onChange={(e) => setWizardThick(Number(e.target.value))}>
-                    <option value={0.8}>0.8 мм</option>
-                    <option value={1.0}>1.0 мм</option>
-                    <option value={1.6}>1.6 мм (Стандарт FR-4)</option>
-                    <option value={2.0}>2.0 мм</option>
-                  </select>
-                </label>
-                <label>Слоёв меди:
-                  <select className="dt-select" style={{ width: '100%' }} value={wizardLayers} onChange={(e) => setWizardLayers((Number(e.target.value) === 4 ? 4 : 2))}>
-                    <option value={2}>2 слоя (Верх / Низ)</option>
-                    <option value={4}>4 слоя (Многослойная ПП)</option>
-                  </select>
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 14 }}>
-                  <input type="checkbox" checked={wizardCircle} onChange={(e) => setWizardCircle(e.target.checked)} />
-                  Круглая/эллиптическая плата
-                </label>
-              </div>
-            </div>
-            <div className="dt-modal-footer">
-              <button
-                className="dt-btn primary"
-                onClick={() => {
-                  commitPcb((p) => {
-                    const b = p.boardOutline.length >= 3 ? polygonBounds(p.boardOutline) : { minX: 10, minY: 10 };
-                    const outline = buildBoardOutlinePolygon(wizardW, wizardH, wizardR, wizardCircle, { x: b.minX, y: b.minY });
-                    return updateAllCopperPours({
-                      ...p,
-                      boardOutline: outline,
-                      boardThickness: wizardThick,
-                      layerCount: wizardLayers,
-                      layers: wizardLayers !== p.layerCount ? createDefaultPcbLayers(wizardLayers) : p.layers
-                    });
-                  });
-                  setShowBoardWizard(false);
-                  setStatusMessage(`Контур платы обновлён: ${wizardW}×${wizardH} мм, толщина ${wizardThick} мм, ${wizardLayers} слоя.`);
-                }}
-              >
-                Применить контур
-              </button>
-              <button className="dt-btn" onClick={() => setShowBoardWizard(false)}>Отмена</button>
-            </div>
-          </div>
-        </div>
+        <PcbBoardWizardDialog
+          pcb={pcb}
+          commitPcb={commitPcb}
+          onClose={() => setShowBoardWizard(false)}
+          onApply={() => {
+            setShowBoardWizard(false);
+            setStatusMessage('Параметры платы применены.');
+          }}
+        />
       )}
       {showFindDialog && (() => {
         const executeFind = () => {

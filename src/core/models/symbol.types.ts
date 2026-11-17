@@ -35,6 +35,8 @@ export interface SymbolPin {
   showName: boolean;
   showNumber: boolean;
   isHiddenPower?: boolean;
+  /** Global signal assigned to an individual pin on a multi-pin net port. */
+  portNetName?: string;
   padMapping?: string; // pad number in attached pattern
 }
 

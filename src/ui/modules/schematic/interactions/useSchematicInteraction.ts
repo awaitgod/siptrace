@@ -70,6 +70,7 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
     const previewRef = useRef<SchematicSheet | null>(null);
     const preview = (sheet: SchematicSheet) => { previewRef.current = sheet; setDragPreview(sheet); };
     const drag = useRef<Drag | null>(null), suppressContext = useRef(false), latest = useRef(p);
+    const previousTool = useRef(p.tool);
     latest.current = p;
     const rawCursor = useRef<Point2D>({ x: 0, y: 0 });
     const initialFitPending = useRef(false);
@@ -133,7 +134,7 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
         const w = p.canvasWrapRef.current;
         if (!w)
             return;
-        setViewport(v => { const scale = Math.max(.4, Math.min(25, pct / 165 * 3.1)); return { pxPerMm: scale, ox: w.clientWidth / 2 - (w.clientWidth / 2 - v.ox) / v.pxPerMm * scale, oy: w.clientHeight / 2 - (w.clientHeight / 2 - v.oy) / v.pxPerMm * scale }; });
+        setViewport(v => { const scale = Math.max(.18, Math.min(25, pct / 165 * 3.1)); return { pxPerMm: scale, ox: w.clientWidth / 2 - (w.clientWidth / 2 - v.ox) / v.pxPerMm * scale, oy: w.clientHeight / 2 - (w.clientHeight / 2 - v.oy) / v.pxPerMm * scale }; });
     };
     const centerOnWorldPt = useCallback((x: number, y: number) => { const w = p.canvasWrapRef.current; if (w)
         setViewport(v => ({ ...v, ox: w.clientWidth / 2 - x * v.pxPerMm, oy: w.clientHeight / 2 - y * v.pxPerMm })); }, [p.canvasWrapRef]);
@@ -202,6 +203,8 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
         return () => { window.removeEventListener('siptrace:cancel', onCancel); window.removeEventListener('blur', onCancel); window.removeEventListener('pointerup', finish); window.removeEventListener('pointercancel', onCancel); };
     }, [cancelOperation, flushPan]);
     useEffect(() => {
+        const from = previousTool.current;
+        previousTool.current = p.tool;
         if (drag.current && drag.current.mode !== 'pan') {
             drag.current = null;
             previewRef.current = null;
@@ -209,10 +212,11 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
             p.setMarqueeBox(null);
         }
         if (!['select', 'zoomBox', 'paste'].includes(p.tool)) p.setSelectedIds([]);
-        if (!['wire', 'bus'].includes(p.tool))
-        p.setWireDraftPts([]); if (!['shapeLine', 'shapeRect', 'shapeCircle'].includes(p.tool))
-        p.setShapeStartPt(null); if (p.tool !== 'paste')
-        p.setPasteDraft(null); }, [p.tool]);
+        // A click on a pin starts a wire while changing from Select.
+        if (p.tool !== 'wire' || from !== 'select') p.setWireDraftPts([]);
+        p.setShapeStartPt(null);
+        if (p.tool !== 'paste') p.setPasteDraft(null);
+    }, [p.tool]);
     const hitAt = (pt: Point2D): string | null => {
         const tolerance = 6 / viewport.pxPerMm;
         const labels = [...p.activeSheet.components].reverse().flatMap(c => [labelId(c.id, 'refDes'), labelId(c.id, 'value')]);
@@ -360,14 +364,15 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
             return;
         }
         const hit = hitAt(pt);
+        const isMulti = e.shiftKey || e.ctrlKey || e.metaKey;
         if (!hit) {
             p.setMarqueeBox(null);
-            if (!e.shiftKey)
+            if (!isMulti)
                 p.setSelectedIds([]);
-            drag.current = { ...base, mode: 'marquee', ids: e.shiftKey ? p.selectedIds : [] };
+            drag.current = { ...base, mode: 'marquee', ids: isMulti ? p.selectedIds : [] };
             return;
         }
-        const ids = e.shiftKey ? p.selectedIds.includes(hit) ? p.selectedIds.filter(id => id !== hit) : [...p.selectedIds, hit] : p.selectedIds.includes(hit) ? p.selectedIds : [hit];
+        const ids = isMulti ? p.selectedIds.includes(hit) ? p.selectedIds.filter(id => id !== hit) : [...p.selectedIds, hit] : p.selectedIds.includes(hit) ? p.selectedIds : [hit];
         p.setSelectedIds(ids);
         if (!ids.includes(hit))
             return;
@@ -513,7 +518,7 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
     };
     const handleCanvasWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
         const r = p.canvasRef.current!.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
-        setViewport(v => { const z = Math.max(.4, Math.min(25, v.pxPerMm * (e.deltaY < 0 ? 1.15 : 1 / 1.15))); return { pxPerMm: z, ox: x - (x - v.ox) / v.pxPerMm * z, oy: y - (y - v.oy) / v.pxPerMm * z }; });
+        setViewport(v => { const z = Math.max(.18, Math.min(25, v.pxPerMm * (e.deltaY < 0 ? 1.15 : 1 / 1.15))); return { pxPerMm: z, ox: x - (x - v.ox) / v.pxPerMm * z, oy: y - (y - v.oy) / v.pxPerMm * z }; });
     };
     const handleContextMenu = (e: React.MouseEvent<HTMLCanvasElement>) => {
         e.preventDefault();
@@ -521,11 +526,35 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
             suppressContext.current = false;
             return;
         }
-        const id = hitAt(world(e.clientX, e.clientY));
+        const point = world(e.clientX, e.clientY);
+        const id = hitAt(point);
         if (id && !p.selectedIds.includes(id))
             p.setSelectedIds([id]);
         const hit = id ? findEntity(p.activeSheet, id) : null;
-        p.setContextMenu({ x: e.clientX, y: e.clientY, ids: id ? (p.selectedIds.includes(id) ? p.selectedIds : [id]) : [], compId: hit?.kind === 'components' ? id! : undefined, wireId: hit?.kind === 'wires' ? id! : undefined });
+        e.currentTarget.focus({ preventScroll: true });
+        p.setContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            ids: id ? (p.selectedIds.includes(id) ? p.selectedIds : [id]) : [],
+            wireTarget: id && hit?.kind === 'wires' ? { id, point } : undefined
+        });
     };
-    return { isPanning, displaySheet: dragPreview ?? p.activeSheet, viewport, cursorMm, zoomPercent, setZoomByPercent, zoomToFit, centerOnWorldPt, snapWorldSmart, hoverTarget, cancelOperation, handleCanvasMouseDown, handleCanvasMouseMove, handleCanvasMouseUp, handleCanvasDoubleClick, handleCanvasWheel, handleContextMenu };
+    const handleCanvasKeyDown = (e: React.KeyboardEvent<HTMLCanvasElement>) => {
+        if (e.key !== 'ContextMenu' && !(e.shiftKey && e.key === 'F10')) return;
+        e.preventDefault();
+        if (p.tool !== 'select' || drag.current) {
+            cancelOperation();
+            return;
+        }
+        const rect = e.currentTarget.getBoundingClientRect();
+        const bounds = p.selectedIds.length ? selectionBounds(p.activeSheet, p.selectedIds, p.customCompMap) : null;
+        const x = bounds ? rect.left + viewport.ox + ((bounds.minX + bounds.maxX) / 2) * viewport.pxPerMm : rect.left;
+        const y = bounds ? rect.top + viewport.oy + ((bounds.minY + bounds.maxY) / 2) * viewport.pxPerMm : rect.top;
+        p.setContextMenu({
+            x: Math.min(rect.right, Math.max(rect.left, x)),
+            y: Math.min(rect.bottom, Math.max(rect.top, y)),
+            ids: p.selectedIds
+        });
+    };
+    return { isPanning, displaySheet: dragPreview ?? p.activeSheet, viewport, cursorMm, zoomPercent, setZoomByPercent, zoomToFit, centerOnWorldPt, snapWorldSmart, hoverTarget, cancelOperation, handleCanvasMouseDown, handleCanvasMouseMove, handleCanvasMouseUp, handleCanvasDoubleClick, handleCanvasWheel, handleContextMenu, handleCanvasKeyDown };
 }

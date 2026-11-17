@@ -284,9 +284,10 @@ const CH340G_IC: ComponentDef = {
       headerText: 'CH340G',
       subHeaderText: 'USB ↔ UART',
       halfWidthMm: 15,
+      anchorRows: 7,
       leftPins: [
         { num: '16', name: 'VCC', type: 'Power' },
-        { num: '4', name: 'V3', type: 'Passive' },
+        { num: '4', name: 'V3', type: 'Power' },
         { num: '1', name: 'GND', type: 'Power' },
         { num: '5', name: 'UD+', type: 'Bidirectional' },
         { num: '6', name: 'UD-', type: 'Bidirectional' },
@@ -299,7 +300,10 @@ const CH340G_IC: ComponentDef = {
         { num: '13', name: 'DTR#', type: 'Output' },
         { num: '14', name: 'RTS#', type: 'Output' },
         { num: '9', name: 'CTS#', type: 'Input' },
-        { num: '10', name: 'DSR#', type: 'Input' }
+        { num: '10', name: 'DSR#', type: 'Input' },
+        { num: '11', name: 'RI#', type: 'Input' },
+        { num: '12', name: 'DCD#', type: 'Input' },
+        { num: '15', name: 'R232', type: 'Input' }
       ]
     })
   ]
@@ -389,13 +393,13 @@ const TIMER_KR1006VI1: ComponentDef = {
 
 const SHIFT_REG_74HC595: ComponentDef = {
   id: 'COMP_DD_K555IR23_595',
-  name: 'К555ИР23 / 74HC595 (Сдвиговый регистр 8 бит)',
+  name: '74HC595D (Сдвиговый регистр 8 бит)',
   library: 'Микросхемы аналоговые и интерфейсы (ГОСТ)',
   refDesPrefix: 'DD',
   defaultValue: '74HC595D',
   gostStandard: 'ГОСТ 2.743-91',
   description: '8-разрядный сдвиговый регистр с защёлкой и 3 состояниями (расширитель выводов МК)',
-  manufacturer: 'РФ / NXP',
+  manufacturer: 'Nexperia',
   patternId: 'PAT_SOIC16_N',
   parts: [
     makeGostRectangularIcPart({

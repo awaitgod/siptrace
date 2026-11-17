@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GostAccuracyClass, PcbProject } from '../../../../../core/types';
 import { GOST_ACCURACY_CLASS_PRESETS, createGostDesignRules } from '../../../../../gost/gostRules';
-import { createDefaultPcbLayers } from '../../../../../engines/netlist';
+import { changePcbLayerStack, hasInternalLayerObjects, INTERNAL_LAYER_OBJECTS_MESSAGE } from '../../services/pcbLayerStack';
 
 export interface PcbRulesDialogProps {
   pcb: PcbProject;
@@ -15,13 +15,12 @@ export const PcbRulesDialog: React.FC<PcbRulesDialogProps> = ({ pcb, commitPcb, 
   const [layerCount, setLayerCount] = useState<2 | 4>(pcb.layerCount);
   const [surfaceFinish, setSurfaceFinish] = useState(pcb.surfaceFinish);
   const [netClasses, setNetClasses] = useState<PcbProject['netClasses']>(() => pcb.netClasses.map((nc) => ({ ...nc })));
+  const restrictTwoLayers = pcb.layerCount === 4 && hasInternalLayerObjects(pcb);
 
   const handleApply = () => {
     commitPcb((p) => ({
-      ...p,
+      ...changePcbLayerStack(p, layerCount),
       designRules: rules,
-      layerCount,
-      layers: layerCount !== p.layerCount ? createDefaultPcbLayers(layerCount) : p.layers,
       surfaceFinish,
       netClasses
     }));
@@ -121,7 +120,7 @@ export const PcbRulesDialog: React.FC<PcbRulesDialogProps> = ({ pcb, commitPcb, 
                 value={layerCount}
                 onChange={(e) => setLayerCount((Number(e.target.value) === 4 ? 4 : 2))}
               >
-                <option value={2}>2 слоя (Двусторонняя ПП)</option>
+                <option value={2} disabled={restrictTwoLayers}>2 слоя (Двусторонняя ПП)</option>
                 <option value={4}>4 слоя (Многослойная МПП)</option>
               </select>
             </label>
@@ -130,14 +129,16 @@ export const PcbRulesDialog: React.FC<PcbRulesDialogProps> = ({ pcb, commitPcb, 
               <select
                 className="dt-select"
                 value={surfaceFinish}
-                onChange={(e) => setSurfaceFinish(e.target.value as any)}
+                onChange={(e) => setSurfaceFinish(e.target.value as PcbProject['surfaceFinish'])}
               >
                 <option value="HASL">ПОС-63 (HASL)</option>
                 <option value="ENIG">Иммерсионное золото (ENIG)</option>
                 <option value="ImmersionSilver">Иммерсионное серебро</option>
+                <option value="OSP">Органическое покрытие (OSP)</option>
               </select>
             </label>
           </div>
+          {restrictTwoLayers && <div>{INTERNAL_LAYER_OBJECTS_MESSAGE}</div>}
           {netClasses.length > 0 && (
             <div>
               <div style={{ fontWeight: 600, marginBottom: 4 }}>Классы цепей (NetClasses):</div>

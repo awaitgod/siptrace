@@ -1,33 +1,30 @@
 import React, { useState } from 'react';
-import { PcbCopperPour, PcbProject, Point2D } from '../../../../../core/types';
+import { PcbCopperPour, PcbProject } from '../../../../../core/types';
 import { updateAllCopperPours } from '../../../../../engines/copperPour';
-import { buildPcbCopperPour } from '../../services/pcbActionsService';
-import { CopperLayerId, PcbToolId } from '../../types';
+import { buildPcbCopperPour, PcbCopperPourSettings } from '../../services/pcbActionsService';
+import { CopperLayerId } from '../../types';
 
 export interface PcbCopperPourDialogProps {
   pcb: PcbProject;
   netNames: string[];
-  newPourLayer: CopperLayerId;
-  setNewPourLayer: (l: CopperLayerId) => void;
-  newPourNet: string;
-  setNewPourNet: (n: string) => void;
-  newPourFill: PcbCopperPour['fillType'];
-  setNewPourFill: (f: PcbCopperPour['fillType']) => void;
+  initialLayer: CopperLayerId;
+  onDraw: (settings: PcbCopperPourSettings) => void;
   commitPcb: (updater: (prev: PcbProject) => PcbProject, pushUndo?: boolean) => void;
-  setPolyDraftPts: React.Dispatch<React.SetStateAction<Point2D[]>>;
-  setActiveLayer: React.Dispatch<React.SetStateAction<CopperLayerId>>;
-  setTool: React.Dispatch<React.SetStateAction<PcbToolId>>;
   setStatusMessage: React.Dispatch<React.SetStateAction<string>>;
   onClose: () => void;
 }
 
 /** Modal for configuring, listing, deleting, and creating solid/hatch copper pours with thermal reliefs. */
 export const PcbCopperPourDialog: React.FC<PcbCopperPourDialogProps> = (p) => {
+  const [layer, setLayer] = useState(p.initialLayer);
+  const [netName, setNetName] = useState('GND');
+  const [fillType, setFillType] = useState<PcbCopperPour['fillType']>('Solid');
   const [clearance, setClearance] = useState(p.pcb.designRules.clearanceTraceToTrace || 0.3);
   const [thermalType, setThermalType] = useState<PcbCopperPour['thermalType']>('4Spoke');
   const [thermalGap, setThermalGap] = useState(0.35);
   const [thermalSpokeWidth, setThermalSpokeWidth] = useState(0.4);
   const [removeIslands, setRemoveIslands] = useState(true);
+  const settings: PcbCopperPourSettings = { layer, netName, fillType, clearance, thermalType, thermalGap, thermalSpokeWidth, removeIslands };
 
   return (
     <div className="dt-modal-backdrop" onClick={p.onClose}>
@@ -39,7 +36,7 @@ export const PcbCopperPourDialog: React.FC<PcbCopperPourDialogProps> = (p) => {
         <div className="dt-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '72vh', overflowY: 'auto' }}>
           <label>
             Слой заливки:
-            <select className="dt-select" style={{ width: '100%' }} value={p.newPourLayer} onChange={(e) => p.setNewPourLayer(e.target.value as CopperLayerId)}>
+            <select className="dt-select" style={{ width: '100%' }} value={layer} onChange={(e) => setLayer(e.target.value as CopperLayerId)}>
               <option value="BottomCopper">Нижний слой (Bottom)</option>
               <option value="TopCopper">Верхний слой (Top)</option>
               {p.pcb.layerCount === 4 && (
@@ -52,7 +49,7 @@ export const PcbCopperPourDialog: React.FC<PcbCopperPourDialogProps> = (p) => {
           </label>
           <label>
             Цепь подключения:
-            <select className="dt-select" style={{ width: '100%' }} value={p.newPourNet} onChange={(e) => p.setNewPourNet(e.target.value)}>
+            <select className="dt-select" style={{ width: '100%' }} value={netName} onChange={(e) => setNetName(e.target.value)}>
               <option value="GND">GND</option>
               {p.netNames.filter((n) => n !== 'GND').map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
@@ -60,14 +57,14 @@ export const PcbCopperPourDialog: React.FC<PcbCopperPourDialogProps> = (p) => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <label>
               Тип заполнения:
-              <select className="dt-select" style={{ width: '100%' }} value={p.newPourFill} onChange={(e) => p.setNewPourFill(e.target.value as any)}>
+              <select className="dt-select" style={{ width: '100%' }} value={fillType} onChange={(e) => setFillType(e.target.value as PcbCopperPour['fillType'])}>
                 <option value="Solid">Сплошная заливка (Solid)</option>
                 <option value="Hatch">Сетчатая заливка (Hatch)</option>
               </select>
             </label>
             <label>
               Термобарьеры:
-              <select className="dt-select" style={{ width: '100%' }} value={thermalType} onChange={(e) => setThermalType(e.target.value as any)}>
+              <select className="dt-select" style={{ width: '100%' }} value={thermalType} onChange={(e) => setThermalType(e.target.value as PcbCopperPour['thermalType'])}>
                 <option value="4Spoke">4 спицы (4-Spoke)</option>
                 <option value="2Spoke">2 спицы (2-Spoke)</option>
                 <option value="Direct">Сплошной (Direct)</option>
@@ -81,8 +78,8 @@ export const PcbCopperPourDialog: React.FC<PcbCopperPourDialogProps> = (p) => {
             <label>
               Ширина спиц / зазор ТБ (мм):
               <div style={{ display: 'flex', gap: 4 }}>
-                <input type="number" step="0.05" min="0.15" title="Ширина спицы" className="dt-input" style={{ width: '50%' }} value={thermalSpokeWidth} onChange={(e) => setThermalSpokeWidth(Math.max(0.15, parseFloat(e.target.value) || 0.4))} />
-                <input type="number" step="0.05" min="0.15" title="Зазор термобарьера" className="dt-input" style={{ width: '50%' }} value={thermalGap} onChange={(e) => setThermalGap(Math.max(0.15, parseFloat(e.target.value) || 0.35))} />
+                <input type="number" step="0.05" min="0.15" aria-label="Ширина спицы" className="dt-input" style={{ width: '50%' }} value={thermalSpokeWidth} onChange={(e) => setThermalSpokeWidth(Math.max(0.15, parseFloat(e.target.value) || 0.4))} />
+                <input type="number" step="0.05" min="0.15" aria-label="Зазор термобарьера" className="dt-input" style={{ width: '50%' }} value={thermalGap} onChange={(e) => setThermalGap(Math.max(0.15, parseFloat(e.target.value) || 0.35))} />
               </div>
             </label>
           </div>
@@ -114,39 +111,24 @@ export const PcbCopperPourDialog: React.FC<PcbCopperPourDialogProps> = (p) => {
         <div className="dt-modal-footer">
           <button
             className="dt-btn primary"
+            disabled={p.pcb.boardOutline.length < 3}
             onClick={() => {
-              const basePour = buildPcbCopperPour({
+              const pour = buildPcbCopperPour({
                 pcb: p.pcb,
-                layer: p.newPourLayer,
-                netName: p.newPourNet,
                 outline: [...p.pcb.boardOutline],
                 dependOnBoardOutline: true,
-                fillType: p.newPourFill
+                settings
               });
-              const pour: PcbCopperPour = {
-                ...basePour,
-                clearance,
-                thermalType,
-                thermalGap,
-                thermalSpokeWidth,
-                removeIslands
-              };
               p.commitPcb((prev) => updateAllCopperPours({ ...prev, copperPours: [...prev.copperPours, pour] }));
               p.onClose();
-              p.setStatusMessage(`Полигон «${p.newPourNet}» на слое ${p.newPourLayer} залит по контуру платы.`);
+              p.setStatusMessage(`Полигон «${netName}» добавлен на слой ${layer} по контуру платы.`);
             }}
           >
             Залить по контуру платы
           </button>
           <button
             className="dt-btn"
-            onClick={() => {
-              p.setPolyDraftPts([]);
-              p.setActiveLayer(p.newPourLayer);
-              p.setTool('copperPour');
-              p.onClose();
-              p.setStatusMessage('Укажите вершины контура полигона на плате (ПКМ — завершить и залить).');
-            }}
+            onClick={() => p.onDraw(settings)}
           >
             Нарисовать вручную
           </button>

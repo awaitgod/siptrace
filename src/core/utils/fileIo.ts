@@ -1,3 +1,5 @@
+import { invoke, isTauri } from '@tauri-apps/api/core';
+
 export interface CadFileFilter {
   name: string;
   extensions: string[];
@@ -14,6 +16,13 @@ export interface SaveFileOptions {
   saveKey?: string;
   /** Forces prompting for a new file location even if a handle was previously remembered. */
   saveAs?: boolean;
+}
+
+/** Derives a native project filename without reusing a foreign CAD extension. */
+export function nativeCadFilename(filename: string | undefined, projectName: string, extension: 'gostsch' | 'gostpcb'): string {
+  const basename = filename?.split(/[\\/]/).pop();
+  const stem = basename?.replace(/\.[^.]+$/, '') || projectName;
+  return `${stem}.${extension}`;
 }
 
 interface FileSystemWritableLike {
@@ -60,6 +69,51 @@ function buildPickerTypes(filters: CadFileFilter[]) {
     }));
 }
 
+function getSaveFilePicker(): ShowSaveFilePickerFn | undefined {
+  return (window as Window & { showSaveFilePicker?: ShowSaveFilePickerFn }).showSaveFilePicker?.bind(window);
+}
+
+async function writeTextToHandle(handle: FileSystemFileHandleLike, content: string): Promise<string> {
+  const writable = await handle.createWritable();
+  await writable.write(content);
+  await writable.close();
+  return handle.name;
+}
+
+/** Prompts for an export destination without changing the project's remembered save handle. */
+export async function exportTextFile(
+  filename: string,
+  content: string,
+  extension: string,
+  description: string
+): Promise<{ method: 'saved' | 'download'; name: string } | null> {
+  if (isTauri()) {
+    const path = await invoke<string | null>('export_text_file', { filename, content, extension, description });
+    return path === null ? null : { method: 'saved', name: path };
+  }
+
+  const picker = getSaveFilePicker();
+  if (picker) {
+    let handle: FileSystemFileHandleLike | undefined;
+    try {
+      handle = await picker({
+        suggestedName: filename,
+        types: buildPickerTypes([{ name: description, extensions: [extension] }])
+      });
+    } catch (error) {
+      const name = (error as Error)?.name;
+      if (name === 'AbortError') return null;
+      if (name !== 'SecurityError') throw error;
+    }
+    if (handle) {
+      return { method: 'saved', name: await writeTextToHandle(handle, content) };
+    }
+  }
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  return { method: 'download', name: triggerBlobDownload(filename, blob) };
+}
+
 /**
  * Saves a UTF-8 text file. Uses File System Access API (overwrite in place on Ctrl+S)
  * when available in browser/WebView2, falling back to browser download.
@@ -71,16 +125,13 @@ export async function saveTextFile(
   options: SaveFileOptions = {}
 ): Promise<string | null> {
   const { saveKey, saveAs } = options;
-  const picker = (window as unknown as { showSaveFilePicker?: ShowSaveFilePickerFn }).showSaveFilePicker;
+  const picker = getSaveFilePicker();
 
   if (saveKey && !saveAs) {
     const existing = rememberedSaveHandles.get(saveKey);
     if (existing) {
       try {
-        const writable = await existing.createWritable();
-        await writable.write(content);
-        await writable.close();
-        return existing.name;
+        return await writeTextToHandle(existing, content);
       } catch {
         rememberedSaveHandles.delete(saveKey);
       }
@@ -94,11 +145,9 @@ export async function saveTextFile(
         suggestedName: defaultName,
         ...(types.length > 0 ? { types } : {})
       });
-      const writable = await handle.createWritable();
-      await writable.write(content);
-      await writable.close();
+      const name = await writeTextToHandle(handle, content);
       rememberedSaveHandles.set(saveKey, handle);
-      return handle.name;
+      return name;
     } catch (err) {
       const name = (err as Error)?.name;
       if (name === 'AbortError') {
@@ -183,8 +232,8 @@ export async function pickCadFiles(accept: string, _filters: CadFileFilter[] = [
   return openFilePickerInternal(accept, true);
 }
 
-/** Opens a CAD file (text or binary ZIP/.pdsprj/.zip) via browser file picker. */
-export async function pickCadFile(accept: string, _filters: CadFileFilter[] = []): Promise<PickedCadFile | null> {
+/** Opens a CAD file. Omit accept to allow the importer to identify any selected file. */
+export async function pickCadFile(accept = '', _filters: CadFileFilter[] = []): Promise<PickedCadFile | null> {
   const files = await openFilePickerInternal(accept, false);
   return files[0] ?? null;
 }

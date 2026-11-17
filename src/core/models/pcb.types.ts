@@ -137,6 +137,7 @@ export interface PcbDesignRules {
   clearanceTraceToPad: number;
   clearancePadToPad: number;
   clearanceViaToAny: number;
+  clearanceHoleToHole?: number;
   clearanceCopperToBoard: number;
   minTraceWidth: number;
   defaultTraceWidth: number;

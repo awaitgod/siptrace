@@ -50,6 +50,7 @@ export function usePcbProjectState(
   const commitPcb = useCallback((updater: (prev: PcbProject) => PcbProject, pushUndo = true) => {
     const prev = pcbRef.current;
     const next = updater(prev);
+    if (next === prev) return;
     if (pushUndo) {
       const nextHist = [...historyRef.current.slice(-29), prev];
       historyRef.current = nextHist;

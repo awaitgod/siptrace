@@ -14,6 +14,7 @@ export interface PinWorld {
     x: number;
     y: number;
     isHiddenPower?: boolean;
+    portNetName?: string;
 }
 export interface NetGraphNode {
     netName: string;
@@ -38,7 +39,8 @@ export function getComponentWorldPins(comp: PlacedComponent, customDefs?: Record
             electricalType: pin.electricalType,
             x: Math.round(pt.x * 1000) / 1000,
             y: Math.round(pt.y * 1000) / 1000,
-            isHiddenPower: pin.isHiddenPower
+            isHiddenPower: pin.isHiddenPower,
+            portNetName: pin.portNetName
         };
     });
 }
@@ -83,12 +85,13 @@ export function extractSchematicNets(project: SchematicProject): NetGraphNode[] 
             const pins = getComponentWorldPins(comp, project.customComponentDefs);
             for (const pin of pins) {
                 items.push({ kind: 'pin', pin, sheetId: sheet.id, scopeId });
-                if (def?.isNetPort && def.portNetName) {
+                const netName = pin.portNetName || (def?.isNetPort && def.portNetName ? comp.value || def.portNetName : undefined);
+                if (netName) {
                     items.push({
                         kind: 'port',
                         x: pin.x,
                         y: pin.y,
-                        netName: comp.value || def.portNetName,
+                        netName,
                         sheetId: sheet.id,
                         scopeId,
                         isGlobal: true

@@ -11,6 +11,8 @@ import {
 import { extractSchematicNetlist } from '../../src/engines/netlist/netlistExtractor';
 import { convertSchematicToPcb } from '../../src/engines/netlist/schematicToPcbConverter';
 import { createZipArchive } from '../../src/core/utils/zipArchive';
+import { convertDipSymbolShapes, type DipShape } from '../../src/engines/importers/diptrace/binaryCommon';
+import { extractSchematicNets } from '../../src/engines/erc';
 
 /** Minimal DipTrace binary writer helper for deterministic self-contained unit tests. */
 class TestDipWriter {
@@ -55,7 +57,9 @@ class TestDipWriter {
   }
 }
 
-function buildMinimalBinaryDch(): Uint8Array {
+function buildMinimalBinaryDch(symbol: 'resistor' | 'multi-port' | 'power' = 'resistor', branch = false): Uint8Array {
+  const isPort = symbol !== 'resistor';
+  const symbolName = symbol === 'power' ? '+5V' : symbol === 'multi-port' ? 'PORT2' : 'RES_0805';
   const w = new TestDipWriter();
   w.sig('DTSCHEM');
   w.int(42); // v42 (UTF-16BE, radians)
@@ -75,9 +79,9 @@ function buildMinimalBinaryDch(): Uint8Array {
   w.bool(true); w.bool(false);
   w.int(0); w.int(0); w.int(0); w.int(0); w.int(0); w.int(0); w.int(0);
   w.mm(20); w.mm(30); w.mm(10); w.mm(4);
-  w.textU16('RES_0805'); w.textU16('R1'); w.textU16('10k'); w.textU16('R'); w.textU16('RES_0805');
+  w.textU16(symbolName); w.textU16(isPort ? 'NetPort1' : 'R1'); w.textU16(isPort ? '' : '10k'); w.textU16('R'); w.textU16(symbolName);
   w.int(0); w.int(0); w.bool(false);
-  w.int(1); w.int(0); w.textU16('Part 1'); w.textU16(''); w.bool(false);
+  w.int(1); w.int(isPort ? 2 : 0); w.textU16('Part 1'); w.textU16(''); w.bool(false);
   w.int(0); w.int(0); w.int(0);
   w.num(0); w.num(0); w.num(0); w.num(0);
   w.textU16(''); w.int(1);
@@ -85,9 +89,9 @@ function buildMinimalBinaryDch(): Uint8Array {
   w.int(0); w.int(0); w.bool(false); w.num(0);
   w.textU16(''); w.int(0); w.int(0); w.textU16(''); w.textU16(''); w.bool(false); w.bool(false);
 
-  // 2 pins for R1
-  w.int(2);
-  for (const [pIdx, pX, orient] of [[1, -2.5, 0], [2, 2.5, 2]] as const) {
+  const pins = [[1, -2.5, 0], [2, 2.5, 2]] as const;
+  w.int(symbol === 'power' ? 1 : pins.length);
+  for (const [pIdx, pX, orient] of symbol === 'power' ? pins.slice(0, 1) : pins) {
     w.bool(true); w.int(0); w.int(orient); w.int(pIdx); w.int(-1);
     w.mm(pX); w.mm(0); w.mm(2.5);
     w.textU16(String(pIdx)); w.textU16(String(pIdx));
@@ -124,19 +128,34 @@ function buildMinimalBinaryDch(): Uint8Array {
   // PageConnectors, SchDrawings, Nets, Buses
   w.int(0); // pageConns
   w.int(0); // schShapes
-  w.int(1); // 1 net ("VCC")
+  w.int(symbol === 'multi-port' ? 2 : 1);
   w.bool(true); w.bool(false); w.bool(false); w.bool(false);
   w.int(0); w.int(0); w.int(0); w.int(0);
   w.textU16('VCC'); w.num(-1); w.num(-1); w.int(0); w.bool(false);
   w.int(1); w.int(0); w.int(0); // 1 net pin ref (comp 0, pin 0)
-  w.int(1); // 1 wire line
+  w.int(branch ? 2 : 1);
   w.int(0); w.int(0); w.int(0); w.int(0); w.int(0); w.int(0);
   w.int(0); w.int(0); w.int(0); w.int(0); w.int(0); w.int(0); w.bool(false);
   w.int(2); // 2 points connecting to pin 1 of R1 (at 20 - 5 = 15, 30)
   w.mm(15); w.mm(30); w.int(0);
   w.mm(15); w.mm(15); w.int(0);
   w.bool(false); w.int(-1); w.bool(false); w.int(0);
+  if (branch) {
+    for (let i = 0; i < 12; i++) w.int(0);
+    w.bool(false); w.int(2);
+    w.mm(15); w.mm(20); w.int(0);
+    w.mm(5); w.mm(20); w.int(0);
+    w.bool(false); w.int(-1); w.bool(false); w.int(0);
+  }
   w.bool(false); w.bool(false); w.color(0);
+  if (symbol === 'multi-port') {
+    w.bool(true); w.bool(false); w.bool(false); w.bool(false);
+    w.int(0); w.int(0); w.int(1); w.int(0);
+    w.textU16('DATA'); w.num(-1); w.num(-1); w.int(0); w.bool(false);
+    w.int(1); w.int(0); w.int(1);
+    w.int(0);
+    w.bool(false); w.bool(false); w.color(0);
+  }
   w.int(0); // 0 buses
 
   return w.bytes();
@@ -189,6 +208,41 @@ function buildMinimalBinaryLib(): Uint8Array {
 }
 
 describe('Native DipTrace binary format decoding & GOST conversion', () => {
+  it('preserves both pins of a DipTrace port and assigns their nets independently', async () => {
+    const { project } = await importCadSchematic(buildMinimalBinaryDch('multi-port'), 'multi-port.dch');
+    const sheet = project.sheets[0];
+    expect(sheet.netPorts).toHaveLength(0);
+    const [port] = sheet.components;
+    const def = project.customComponentDefs![port.componentDefId];
+    expect(def.isNetPort).toBe(true);
+    expect(def.parts[0].pins.map(pin => [pin.x, pin.portNetName])).toEqual([[-5, 'VCC'], [5, 'DATA']]);
+    const nets = extractSchematicNets(project);
+    expect(nets.find(net => net.netName === 'VCC')?.pins.map(pin => pin.pinNumber)).toEqual(['1']);
+    expect(nets.find(net => net.netName === 'DATA')?.pins.map(pin => pin.pinNumber)).toEqual(['2']);
+    expect(extractSchematicNetlist(project)).toEqual([]);
+  });
+
+  it('keeps the power symbol label and points the stem toward the original body', async () => {
+    const { project } = await importCadSchematic(buildMinimalBinaryDch('power'), 'power.dch');
+    expect(project.sheets[0].netPorts).toMatchObject([{ label: '+5V', netName: 'VCC', style: 'Power', angle: 90 }]);
+  });
+
+  it('draws a junction where a wire branches from the same net', async () => {
+    const { project } = await importCadSchematic(buildMinimalBinaryDch('resistor', true), 'branch.dch');
+    const { wires, junctions } = project.sheets[0];
+    expect(junctions).toMatchObject([{ ...wires[1].points[0], netName: 'VCC' }]);
+  });
+
+  it('selects the arc sweep that passes through the middle point', () => {
+    const shape: DipShape = {
+      enabled: true, type: 2, orientation: 0, fontSize: 0, fontColor: 0, fontType: 0, fontName: '',
+      textLines: [], penWidthMm: 0.35, pointsMm: [{ x: 1, y: 0 }, { x: 0, y: -1 }, { x: -1, y: 0 }],
+      controlsRaw: [], layer: 0, layId: 0, allLayers: false, textAngle: 0, textShow: 0, padId: -1,
+      markingGenerated: false, showPart: false
+    };
+    expect(convertDipSymbolShapes([shape])).toMatchObject([{ type: 'arc', startAngle: Math.PI, endAngle: 0 }]);
+  });
+
   it('imports native DipTrace binary .dch (raw, binary-string, and inside .zip) and sets GOST schematic + netlist', async () => {
     const dchBytes = buildMinimalBinaryDch();
     const ident = detectDipTraceBinaryFormat(dchBytes);

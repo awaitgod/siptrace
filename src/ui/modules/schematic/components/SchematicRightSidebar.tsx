@@ -31,7 +31,7 @@ export interface SchematicRightSidebarProps {
     updateActiveSheet: (sheetUpdater: (s: SchematicSheet) => SchematicSheet, pushUndo?: boolean) => void;
 }
 /** Right docked sidebar displaying Properties, Project Manager (Components/Nets/ERC), and Pinout. */
-export const SchematicRightSidebar: React.FC<SchematicRightSidebarProps> = (p) => (<div className="dt-right-sidebar">
+export const SchematicRightSidebar: React.FC<SchematicRightSidebarProps> = (p) => (<div className="dt-right-sidebar" id="schematic-properties">
     <button className="dt-btn" onClick={p.onProperties} disabled={!p.selectedIds?.length}>Свойства выделения ({p.selectedIds?.length ?? 0}) — E</button>
     {/* Свойства */}
     <div className="dt-panel-card" style={{ height: '31%' }}>

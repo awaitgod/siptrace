@@ -30,6 +30,11 @@ import { MenuBar, TopMenuSpec } from '../../components/MenuBar';
 import { StatusBar } from '../../components/StatusBar';
 import { DipIcon } from '../../theme/DipTraceIcons';
 import { PatternPreviewCanvas, drawSymbolPrimitives } from '../../components/CadPreviewCanvas';
+import { nextAvailableNumber } from '../libraryEditors/numbering';
+import { useLibraryDraft } from '../libraryEditors/useLibraryDraft';
+import { validateComponent } from './componentValidation';
+import './componentEditor.css';
+import '../libraryEditors/libraryEditor.css';
 
 type CompToolId = 'select' | 'pin' | 'line' | 'rect' | 'circle' | 'text';
 
@@ -64,6 +69,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
     const u = loadUserComponents();
     return u[0] ? structuredClone(u[0]) : structuredClone(GOST_COMPONENT_LIBRARIES[0].components[0]);
   });
+  const { acceptReplacement, replaceDraft } = useLibraryDraft(comp, setComp, 'Компонент изменён. Продолжить без сохранения?');
   const [partIdx, setPartIdx] = useState(1);
   const [tool, setTool] = useState<CompToolId>('select');
   const [gridMm, setGridMm] = useState(2.5);
@@ -72,18 +78,21 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
   const [draftStart, setDraftStart] = useState<Point2D | null>(null);
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
   const panRef = useRef<{ startX: number; startY: number; ox: number; oy: number } | null>(null);
-  const [statusText, setStatusText] = useState('Редактор компонентов (УГО ГОСТ 2.721 / 2.743). Выберите элемент или рисуйте символ.');
+  const [statusText, setStatusText] = useState('Редактор компонентов (УГО ГОСТ 2.721 / 2.743). Выберите элемент или создавайте УГО.');
   const [showPatternDialog, setShowPatternDialog] = useState(false);
   const [showIcWizard, setShowIcWizard] = useState(false);
   const [icName, setIcName] = useState('К561ИЕ10');
   const [icPrefix, setIcPrefix] = useState('DD');
-  const [icLeftPins, setIcLeftPins] = useState(4);
-  const [icRightPins, setIcRightPins] = useState(4);
+  const [icLeftPins, setIcLeftPins] = useState('4');
+  const [icRightPins, setIcRightPins] = useState('4');
+  const [verificationIssues, setVerificationIssues] = useState<string[] | null>(null);
+  const [symbolText, setSymbolText] = useState('&');
   const [conversionReport, setConversionReport] = useState<GostConversionReport | null>(null);
   const [showCadLibDialog, setShowCadLibDialog] = useState(false);
 
   const handleImportCompLibrary = async () => {
-    const pickedList = await pickCadFiles('.eli,.lib,.kicad_sym,.kicad_mod,.lbr,.gostlib,.json,.zip');
+    if (!acceptReplacement()) return;
+    const pickedList = await pickCadFiles('.eli,.elixml,.lib,.libxml,.kicad_sym,.kicad_mod,.lbr,.gostlib,.json,.zip');
     if (pickedList.length === 0) return;
     try {
       const importedComps: ComponentDef[] = [];
@@ -107,7 +116,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
       setUserComps(loadUserComponents());
       setUserPatterns(loadUserPatterns());
       if (importedComps.length > 0) {
-        setComp(structuredClone(importedComps[0]));
+        replaceDraft(structuredClone(importedComps[0]));
         setPartIdx(1);
         setStatusText(`Импортировано компонентов (${lastRes?.detectedFormat ?? 'CAD'}): ${importedComps.length} -> ГОСТ УГО.`);
         if (lastRes) setConversionReport(lastRes.report);
@@ -134,13 +143,13 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
       }
     });
     const onKeyDown = (e: KeyboardEvent) => {
+      if (showPatternDialog || showIcWizard || verificationIssues || conversionReport || showCadLibDialog) return;
       if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's' || e.code === 'KeyS')) {
         e.preventDefault();
         handleSaveToUserLibrary();
       } else if (e.key === 'Escape') {
-        setShowPatternDialog(false);
-        setShowIcWizard(false);
         setDraftStart(null);
+        setTool('select');
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedPinId && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement)) {
         e.preventDefault();
         updateActivePart((p) => ({ ...p, pins: p.pins.filter((x) => x.id !== selectedPinId) }));
@@ -158,6 +167,10 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
     () => comp.parts.find((p) => p.partIndex === partIdx) ?? comp.parts[0],
     [comp.parts, partIdx]
   );
+  useEffect(() => {
+    setSelectedPinId(null);
+    setDraftStart(null);
+  }, [comp.id, activePart.partIndex]);
 
   const attachedPattern = useMemo(
     () => userPatterns.find((p) => p.id === comp.patternId) ?? findPatternById(comp.patternId) ?? null,
@@ -177,40 +190,74 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
   // Save current component to user library
   const handleSaveToUserLibrary = async () => {
     const toSave = structuredClone(comp);
-    if (!toSave.id.startsWith('ucomp')) toSave.id = uid('ucomp');
+    if (!toSave.id.startsWith('ucomp') || toSave.library !== 'lib_user') toSave.id = uid('ucomp');
     toSave.library = 'lib_user';
-    const nextList = [...userComps.filter((c) => c.id !== toSave.id), toSave];
+    const nextList = [...loadUserComponents().filter((c) => c.id !== toSave.id), toSave];
     setUserComps(nextList);
     saveUserComponents(nextList);
-    setComp(toSave);
+    replaceDraft(toSave);
     broadcastEdaEvent('libraries:updated', { kind: 'components' });
     setStatusText(`Компонент «${toSave.name}» сохранён в Пользовательскую библиотеку и синхронизирован со Схемотехникой.`);
   };
 
   const handleVerifyComponent = () => {
-    const errs: string[] = [];
-    if (!comp.refDesPrefix) errs.push('Не задан буквенный префикс ГОСТ (R, C, DA, DD...)');
-    if (!comp.patternId) errs.push('Не привязан посадочный корпус');
-    const padNums = attachedPattern ? new Set(attachedPattern.pads.filter(p => p.number).map(p => p.number)) : null;
-    for (const pt of comp.parts) {
-      const nums = new Set<string>();
-      for (const p of pt.pins) {
-        if (nums.has(p.number)) errs.push(`Дубликат номера вывода ${p.number} в секции ${pt.partIndex}`);
-        nums.add(p.number);
-        const mapped = p.padMapping ?? p.number;
-        if (padNums && mapped && !padNums.has(mapped)) {
-          errs.push(`Вывод ${p.number} (pad «${mapped}») отсутствует в корпусе ${comp.patternId}`);
-        }
-        if (Math.abs(Math.round(p.x / 2.5) * 2.5 - p.x) > 0.05 || Math.abs(Math.round(p.y / 2.5) * 2.5 - p.y) > 0.05) {
-          errs.push(`Вывод ${p.number} (${p.x}, ${p.y}) не на сетке 2.5 мм`);
-        }
-      }
-    }
-    setStatusText(
-      errs.length === 0
-        ? `Проверка компонента «${comp.name}»: ошибок нет (${activePart.pins.length} выводов, корпус ${comp.patternId}).`
-        : `Ошибки проверки (${errs.length}): ${errs.slice(0, 4).join('; ')}`
-    );
+    setVerificationIssues(validateComponent(comp, attachedPattern));
+  };
+
+  const changeTool = (nextTool: CompToolId) => {
+    setDraftStart(null);
+    setTool(nextTool);
+  };
+
+  const pinCountIsValid = (value: string) => {
+    const count = Number(value);
+    return Number.isInteger(count) && count >= 1 && count <= 32;
+  };
+
+  const icInputsValid = Boolean(icName.trim() && icPrefix.trim() && pinCountIsValid(icLeftPins) && pinCountIsValid(icRightPins));
+
+  const createIc = () => {
+    if (!icInputsValid || !acceptReplacement()) return;
+    const leftCount = Number(icLeftPins);
+    const rightCount = Number(icRightPins);
+    const leftPins = Array.from({ length: leftCount }, (_, i) => ({
+      num: String(i + 1),
+      name: `IN${i + 1}`,
+      type: 'Input' as const
+    }));
+    const rightPins = Array.from({ length: rightCount }, (_, i) => ({
+      num: String(leftCount + i + 1),
+      name: `OUT${i + 1}`,
+      type: 'Output' as const
+    }));
+    const name = icName.trim();
+    replaceDraft({
+      id: uid('ucomp'),
+      name,
+      library: 'lib_user',
+      gostStandard: 'ГОСТ 2.743-91',
+      refDesPrefix: icPrefix.trim(),
+      defaultValue: name,
+      patternId: '',
+      description: `ИМС ${name} (создано Мастером УГО ГОСТ)`,
+      parts: [makeGostRectangularIcPart({ leftPins, rightPins, headerText: name })]
+    });
+    setPartIdx(1);
+    setShowIcWizard(false);
+    setStatusText(`Создано УГО «${name}» с ${leftCount + rightCount} выводами. Назначьте корпус и проверьте распиновку.`);
+  };
+
+  const openComponent = (component: ComponentDef) => {
+    if (!acceptReplacement()) return false;
+    replaceDraft(component);
+    setPartIdx(component.parts[0]?.partIndex ?? 1);
+    changeTool('select');
+    setSelectedPinId(null);
+    return true;
+  };
+
+  const switchModule = (module: Parameters<typeof openAppModule>[0]) => {
+    if (acceptReplacement()) openAppModule(module, (m) => onSwitchModule?.(m));
   };
 
   const zoomToFit = () => {
@@ -360,10 +407,10 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
     const pt = snapPoint(wp, gridMm);
 
     if (tool === 'pin') {
-      const n = activePart.pins.length + 1;
+      const n = nextAvailableNumber(activePart.pins);
       const newPin: SymbolPin = {
         id: uid('pin'),
-        number: String(n),
+        number: n,
         name: `P${n}`,
         x: pt.x,
         y: pt.y,
@@ -373,7 +420,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
         style: 'Line',
         showName: true,
         showNumber: true,
-        padMapping: String(n)
+        padMapping: n
       };
       updateActivePart((p) => ({ ...p, pins: [...p.pins, newPin] }));
       setSelectedPinId(newPin.id);
@@ -381,7 +428,8 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
     }
 
     if (tool === 'text') {
-      const prim: SymbolPrimitive = { type: 'text', x: pt.x, y: pt.y, text: '&', size: 3.5 };
+      if (!symbolText.trim()) return;
+      const prim: SymbolPrimitive = { type: 'text', x: pt.x, y: pt.y, text: symbolText.trim(), size: 3.5 };
       updateActivePart((p) => ({ ...p, primitives: [...p.primitives, prim] }));
       setTool('select');
       return;
@@ -420,7 +468,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
       id: 'lib',
       label: 'Библиотека',
       items: [
-        { label: 'Новый компонент ГОСТ...', onClick: () => { setComp(createEmptyGostComponent()); setPartIdx(1); } },
+        { label: 'Новый компонент ГОСТ...', onClick: () => openComponent(createEmptyGostComponent()) },
         { label: 'Мастер создания УГО ИМС (ГОСТ 2.743)...', onClick: () => setShowIcWizard(true) },
         { label: 'Импорт библиотеки САПР (.eli / .kicad_sym / .lbr / .gostlib)...', onClick: handleImportCompLibrary },
         { label: 'Сохранить в Пользовательскую библиотеку', shortcut: 'Ctrl+S', onClick: handleSaveToUserLibrary },
@@ -433,7 +481,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
             ]);
           }
         },
-        { label: 'Стартовое окно (Запуск)', onClick: () => openAppModule('launcher', (m) => onSwitchModule?.(m)) }
+        { label: 'Стартовое окно (Запуск)', onClick: () => switchModule('launcher') }
       ]
     },
     {
@@ -441,7 +489,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
       label: 'Компонент',
       items: [
         { label: 'Добавить новую секцию (Multi-part)', onClick: () => {
-          const nextIdx = comp.parts.length + 1;
+          const nextIdx = Math.max(...comp.parts.map((part) => part.partIndex)) + 1;
           setComp((p) => ({
             ...p,
             parts: [...p.parts, { partIndex: nextIdx, name: `Секция ${nextIdx}`, primitives: [{ type: 'rect', x: -7.5, y: -7.5, w: 15, h: 15, width: 0.4 }], pins: [] }]
@@ -456,20 +504,20 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
       id: 'objects',
       label: 'Объекты',
       items: [
-        { label: 'Выбор', checked: tool === 'select', onClick: () => setTool('select') },
-        { label: 'Добавить вывод (Pin)', checked: tool === 'pin', onClick: () => setTool('pin') },
-        { label: 'Линия УГО', checked: tool === 'line', onClick: () => { setDraftStart(null); setTool('line'); } },
-        { label: 'Прямоугольник УГО (ГОСТ корпус 10×4 / ИМС)', checked: tool === 'rect', onClick: () => { setDraftStart(null); setTool('rect'); } },
-        { label: 'Окружность / Инверсия', checked: tool === 'circle', onClick: () => { setDraftStart(null); setTool('circle'); } },
-        { label: 'Функциональный текст (&, 1, TT)', checked: tool === 'text', onClick: () => setTool('text') }
+        { label: 'Выбор', checked: tool === 'select', onClick: () => changeTool('select') },
+        { label: 'Добавить вывод (Pin)', checked: tool === 'pin', onClick: () => changeTool('pin') },
+        { label: 'Линия УГО', checked: tool === 'line', onClick: () => changeTool('line') },
+        { label: 'Прямоугольник УГО', checked: tool === 'rect', onClick: () => changeTool('rect') },
+        { label: 'Окружность УГО', checked: tool === 'circle', onClick: () => changeTool('circle') },
+        { label: 'Функциональный текст', checked: tool === 'text', onClick: () => changeTool('text') }
       ]
     },
     {
       id: 'tools',
       label: 'Инструменты',
       items: [
-        { label: 'Открыть Схемотехнику', onClick: () => openAppModule('schematic', (m) => onSwitchModule?.(m)) },
-        { label: 'Открыть Редактор корпусов', onClick: () => openAppModule('patternEditor', (m) => onSwitchModule?.(m)) }
+        { label: 'Открыть Схемотехнику', onClick: () => switchModule('schematic') },
+        { label: 'Открыть Редактор корпусов', onClick: () => switchModule('patternEditor') }
       ]
     }
   ];
@@ -482,18 +530,21 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#f0f0f0' }}>
-      <MenuBar menus={menus} onBrandClick={() => openAppModule('launcher', (m) => onSwitchModule?.(m))} />
+      <MenuBar menus={menus} onBrandClick={() => switchModule('launcher')} />
 
       <div className="dt-toolbar-row">
-        <button className="dt-tb-btn" title="Новый компонент ГОСТ" onClick={() => { setComp(createEmptyGostComponent()); setPartIdx(1); }}><DipIcon name="new" /></button>
+        <button className="dt-tb-btn" title="Новый компонент ГОСТ" onClick={() => openComponent(createEmptyGostComponent())}><DipIcon name="new" /></button>
         <button className="dt-tb-btn" title="Сохранить в Пользовательскую библиотеку" onClick={handleSaveToUserLibrary}><DipIcon name="save" /></button>
         <div className="dt-tb-sep" />
-        <button className={`dt-tb-btn ${tool === 'select' ? 'active' : ''}`} title="Выбор" onClick={() => setTool('select')}><DipIcon name="select" /></button>
-        <button className={`dt-tb-btn ${tool === 'pin' ? 'active' : ''}`} title="Добавить вывод (Pin)" onClick={() => setTool('pin')}><DipIcon name="pin" /></button>
-        <button className={`dt-tb-btn ${tool === 'line' ? 'active' : ''}`} title="Линия УГО" onClick={() => { setDraftStart(null); setTool('line'); }}><DipIcon name="shapeLine" /></button>
-        <button className={`dt-tb-btn ${tool === 'rect' ? 'active' : ''}`} title="Прямоугольник УГО" onClick={() => { setDraftStart(null); setTool('rect'); }}><DipIcon name="shapeRect" /></button>
-        <button className={`dt-tb-btn ${tool === 'circle' ? 'active' : ''}`} title="Окружность УГО" onClick={() => { setDraftStart(null); setTool('circle'); }}><DipIcon name="shapeCircle" /></button>
-        <button className={`dt-tb-btn ${tool === 'text' ? 'active' : ''}`} title="Текст (& / 1 / TT)" onClick={() => setTool('text')}><DipIcon name="shapeText" /></button>
+        <button className={`dt-tb-btn ${tool === 'select' ? 'active' : ''}`} aria-pressed={tool === 'select'} title="Выбор" onClick={() => changeTool('select')}><DipIcon name="select" /></button>
+        <button className={`dt-tb-btn ${tool === 'pin' ? 'active' : ''}`} aria-pressed={tool === 'pin'} title="Добавить вывод (Pin)" onClick={() => changeTool('pin')}><DipIcon name="pin" /></button>
+        <button className={`dt-tb-btn ${tool === 'line' ? 'active' : ''}`} aria-pressed={tool === 'line'} title="Линия УГО" onClick={() => changeTool('line')}><DipIcon name="shapeLine" /></button>
+        <button className={`dt-tb-btn ${tool === 'rect' ? 'active' : ''}`} aria-pressed={tool === 'rect'} title="Прямоугольник УГО" onClick={() => changeTool('rect')}><DipIcon name="shapeRect" /></button>
+        <button className={`dt-tb-btn ${tool === 'circle' ? 'active' : ''}`} aria-pressed={tool === 'circle'} title="Окружность УГО" onClick={() => changeTool('circle')}><DipIcon name="shapeCircle" /></button>
+        <button className={`dt-tb-btn ${tool === 'text' ? 'active' : ''}`} aria-pressed={tool === 'text'} title="Функциональный текст" onClick={() => changeTool('text')}><DipIcon name="shapeText" /></button>
+        {tool === 'text' && (
+          <input className="dt-input" aria-label="Текст УГО" title="Текст для размещения на УГО" style={{ width: 72 }} value={symbolText} onChange={(e) => setSymbolText(e.target.value)} />
+        )}
         <div className="dt-tb-sep" />
         <button className="dt-tb-btn" title="Показать весь компонент" onClick={zoomToFit}><DipIcon name="zoomAll" /></button>
         <select className="dt-tb-select" style={{ width: 72 }} value={gridMm} onChange={(e) => setGridMm(parseFloat(e.target.value))}>
@@ -510,16 +561,14 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
       <div className="dt-workspace">
         {/* Left Library & Component Info */}
         <div className="dt-left-sidebar">
-          <div className="dt-black-bar"><span>Компоненты библиотек</span></div>
+          <div className="dt-black-bar" role="heading" aria-level={2}><span>Компоненты библиотек</span></div>
           <div className="dt-comp-list" style={{ height: 220, flex: 'none' }}>
             {allSourceComps.map((c) => (
               <div
                 key={c.id}
-                className={`dt-comp-item ${c.name === comp.name ? 'selected' : ''}`}
-                onClick={() => {
-                  setComp(structuredClone(c));
-                  setPartIdx(1);
-                }}
+                className={`dt-comp-item ${c.id === comp.id ? 'selected' : ''}`}
+                aria-pressed={c.id === comp.id}
+                onClick={() => openComponent(structuredClone(c))}
               >
                 {c.name}
               </div>
@@ -534,7 +583,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
             <label>Стандарт ЕСКД: <input className="dt-input" style={{ width: '100%' }} value={comp.gostStandard} onChange={(e) => setComp((p) => ({ ...p, gostStandard: e.target.value }))} /></label>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
               <span>Секции ({comp.parts.length}):</span>
-              <select className="dt-select" value={partIdx} onChange={(e) => setPartIdx(Number(e.target.value))}>
+              <select className="dt-select" aria-label="Секция компонента" value={activePart.partIndex} onChange={(e) => setPartIdx(Number(e.target.value))}>
                 {comp.parts.map((pt) => <option key={pt.partIndex} value={pt.partIndex}>{pt.name}</option>)}
               </select>
             </div>
@@ -546,6 +595,8 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
           <div className="dt-canvas-wrap" ref={wrapRef}>
             <canvas
               ref={canvasRef}
+              tabIndex={0}
+              aria-label="Редактор УГО компонентов (ГОСТ 2.721 / 2.743)"
               style={{ display: 'block', width: '100%', height: '100%', cursor: tool === 'select' ? 'default' : 'crosshair' }}
               onMouseDown={handleCanvasMouseDown}
               onMouseMove={(e) => {
@@ -585,7 +636,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
               )}
             </div>
             <div className="dt-panel-body">
-              <table className="dt-table">
+              <table className="dt-table library-editor-table">
                 <thead>
                   <tr>
                     <th>№</th>
@@ -602,10 +653,12 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                       key={pin.id}
                       style={{ background: pin.id === selectedPinId ? '#cce8ff' : '#fff' }}
                       onClick={() => setSelectedPinId(pin.id)}
+                      onFocus={() => setSelectedPinId(pin.id)}
                     >
                       <td>
                         <input
                           className="dt-prop-input"
+                          aria-label={`Номер вывода ${pin.number}`}
                           style={{ width: 24 }}
                           value={pin.number}
                           onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === pin.id ? { ...x, number: e.target.value } : x) }))}
@@ -614,6 +667,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                       <td>
                         <input
                           className="dt-prop-input"
+                          aria-label={`Имя вывода ${pin.number}`}
                           style={{ width: 44 }}
                           value={pin.name}
                           onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === pin.id ? { ...x, name: e.target.value } : x) }))}
@@ -622,6 +676,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                       <td>
                         <select
                           className="dt-prop-input"
+                          aria-label={`Ориентация вывода ${pin.number}`}
                           value={pin.orientation}
                           onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === pin.id ? { ...x, orientation: Number(e.target.value) as PinOrientation } : x) }))}
                         >
@@ -634,18 +689,23 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                       <td>
                         <select
                           className="dt-prop-input"
+                          aria-label={`Стиль вывода ${pin.number}`}
                           value={pin.style}
-                          onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === pin.id ? { ...x, style: e.target.value as any } : x) }))}
+                          onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === pin.id ? { ...x, style: e.target.value as PinGraphicStyle } : x) }))}
                         >
                           <option value="Line">Line</option>
                           <option value="Inverted">Inv</option>
                           <option value="Clock">Clk</option>
                           <option value="InvertedClock">InvClk</option>
+                          {!['Line', 'Inverted', 'Clock', 'InvertedClock'].includes(pin.style) && (
+                            <option value={pin.style} disabled>{pin.style} (импорт)</option>
+                          )}
                         </select>
                       </td>
                       <td>
                         <select
                           className="dt-prop-input"
+                          aria-label={`Электрический тип вывода ${pin.number}`}
                           value={pin.electricalType}
                           onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === pin.id ? { ...x, electricalType: e.target.value as PinElectricalType } : x) }))}
                         >
@@ -662,6 +722,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                       <td>
                         <input
                           className="dt-prop-input"
+                          aria-label={`Площадка вывода ${pin.number}`}
                           style={{ width: 24 }}
                           value={pin.padMapping ?? pin.number}
                           onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === pin.id ? { ...x, padMapping: e.target.value } : x) }))}
@@ -700,16 +761,18 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                 <div style={{ marginBottom: 8 }}>
                   <div style={{ fontWeight: 600, background: '#eee', padding: '2px 6px' }}>Пользовательские корпуса</div>
                   {userPatterns.map((p) => (
-                    <div
+                    <button
+                      type="button"
                       key={p.id}
-                      className={`dt-tree-row ${p.id === comp.patternId ? 'selected' : ''}`}
+                      className={`dt-tree-row component-pattern-option ${p.id === comp.patternId ? 'selected' : ''}`}
+                      aria-pressed={p.id === comp.patternId}
                       onClick={() => {
                         setComp((prev) => ({ ...prev, patternId: p.id }));
                         setShowPatternDialog(false);
                       }}
                     >
                       {p.name} ({p.pads.length} выв.) — {p.description}
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -717,16 +780,18 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                 <div key={lib.id} style={{ marginBottom: 8 }}>
                   <div style={{ fontWeight: 600, background: '#eee', padding: '2px 6px' }}>{lib.name}</div>
                   {lib.patterns.map((p) => (
-                    <div
+                    <button
+                      type="button"
                       key={p.id}
-                      className={`dt-tree-row ${p.id === comp.patternId ? 'selected' : ''}`}
+                      className={`dt-tree-row component-pattern-option ${p.id === comp.patternId ? 'selected' : ''}`}
+                      aria-pressed={p.id === comp.patternId}
                       onClick={() => {
                         setComp((prev) => ({ ...prev, patternId: p.id }));
                         setShowPatternDialog(false);
                       }}
                     >
                       {p.name} ({p.pads.length} выв.) — {p.description}
-                    </div>
+                    </button>
                   ))}
                 </div>
               ))}
@@ -740,52 +805,42 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
 
       {showIcWizard && (
         <div className="dt-modal-backdrop" onClick={() => setShowIcWizard(false)}>
-          <div className="dt-modal" style={{ width: 420 }} onClick={(e) => e.stopPropagation()}>
+          <div className="dt-modal" style={{ width: 440 }} onClick={(e) => e.stopPropagation()}>
             <div className="dt-modal-title">
               <strong>Мастер создания УГО микросхемы (ГОСТ 2.743-91)</strong>
               <button className="dt-btn" style={{ minWidth: 22, height: 18, padding: 0 }} onClick={() => setShowIcWizard(false)}>×</button>
             </div>
             <div className="dt-modal-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 11.5 }}>
               <label>Наименование ИМС: <input className="dt-input" style={{ width: '100%' }} value={icName} onChange={(e) => setIcName(e.target.value)} /></label>
-              <label>Префикс (DD/DA): <input className="dt-input" style={{ width: '100%' }} value={icPrefix} onChange={(e) => setIcPrefix(e.target.value || 'DD')} /></label>
-              <label>Выводов слева (Входы): <input type="number" min={1} max={32} className="dt-input" style={{ width: '100%' }} value={icLeftPins} onChange={(e) => setIcLeftPins(Math.max(1, parseInt(e.target.value, 10) || 1))} /></label>
-              <label>Выводов справа (Выходы): <input type="number" min={1} max={32} className="dt-input" style={{ width: '100%' }} value={icRightPins} onChange={(e) => setIcRightPins(Math.max(1, parseInt(e.target.value, 10) || 1))} /></label>
+              <label>Префикс (DD/DA): <input className="dt-input" style={{ width: '100%' }} value={icPrefix} onChange={(e) => setIcPrefix(e.target.value)} /></label>
+              <label>Входов слева (1–32): <input type="number" min={1} max={32} aria-invalid={!pinCountIsValid(icLeftPins)} className="dt-input" style={{ width: '100%' }} value={icLeftPins} onChange={(e) => setIcLeftPins(e.target.value)} /></label>
+              <label>Выходов справа (1–32): <input type="number" min={1} max={32} aria-invalid={!pinCountIsValid(icRightPins)} className="dt-input" style={{ width: '100%' }} value={icRightPins} onChange={(e) => setIcRightPins(e.target.value)} /></label>
+              <div style={{ gridColumn: '1 / -1' }}>Мастер создаёт шаблон. Задайте номера, имена и типы выводов по документации компонента.</div>
             </div>
             <div className="dt-modal-footer">
-              <button
-                className="dt-btn primary"
-                onClick={() => {
-                  const leftPins = Array.from({ length: icLeftPins }, (_, i) => ({
-                    num: String(i + 1),
-                    name: `IN${i + 1}`,
-                    type: 'Input' as const
-                  }));
-                  const rightPins = Array.from({ length: icRightPins }, (_, i) => ({
-                    num: String(icLeftPins + i + 1),
-                    name: `OUT${i + 1}`,
-                    type: 'Output' as const
-                  }));
-                  const part = makeGostRectangularIcPart({ leftPins, rightPins, headerText: icName });
-                  const totalPins = icLeftPins + icRightPins;
-                  setComp({
-                    id: uid('ucomp'),
-                    name: icName,
-                    library: 'lib_user',
-                    gostStandard: 'ГОСТ 2.743-91',
-                    refDesPrefix: icPrefix,
-                    defaultValue: icName,
-                    patternId: totalPins <= 8 ? 'PAT_DIP8' : totalPins <= 14 ? 'PAT_DIP14' : totalPins <= 16 ? 'PAT_DIP16' : totalPins <= 28 ? 'PAT_DIP28_N' : totalPins <= 48 ? 'PAT_QFP48' : 'PAT_LQFP64',
-                    description: `ИМС ${icName} (создано Мастером УГО ГОСТ)`,
-                    parts: [part]
-                  });
-                  setPartIdx(1);
-                  setShowIcWizard(false);
-                  setStatusText(`Сгенерировано УГО ИМС «${icName}» (${icLeftPins + icRightPins} выводов по сетке 2.5 мм).`);
-                }}
-              >
+              <button className="dt-btn primary" disabled={!icInputsValid} onClick={createIc}>
                 Создать УГО
               </button>
               <button className="dt-btn" onClick={() => setShowIcWizard(false)}>Отмена</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {verificationIssues && (
+        <div className="dt-modal-backdrop">
+          <div className="dt-modal" style={{ width: 520, maxWidth: '95vw' }}>
+            <div className="dt-modal-title">
+              <span>Проверка УГО</span>
+              <button className="dt-btn" aria-label="Закрыть проверку" onClick={() => setVerificationIssues(null)}>×</button>
+            </div>
+            <div className="dt-modal-body" style={{ maxHeight: '55vh', overflowY: 'auto' }}>
+              {verificationIssues.length === 0
+                ? <p>Компонент «{comp.name}» прошёл проверку нумерации, привязки площадок и сетки.</p>
+                : <ul>{verificationIssues.map((issue, index) => <li key={index}>{issue}</li>)}</ul>}
+            </div>
+            <div className="dt-modal-footer">
+              <button className="dt-btn" onClick={() => setVerificationIssues(null)}>Закрыть</button>
             </div>
           </div>
         </div>
@@ -800,9 +855,9 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
           initialTab="components"
           onClose={() => setShowCadLibDialog(false)}
           onSelectComponent={(c) => {
-            setComp(structuredClone(c));
-            setPartIdx(1);
+            if (!openComponent(structuredClone(c))) return false;
             setStatusText(`Загружен компонент «${c.name}» из библиотеки «${c.library}».`);
+            return true;
           }}
         />
       )}

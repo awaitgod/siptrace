@@ -1,6 +1,6 @@
 import { printSchematicProject } from '../services/printSchematic';
 import { ComponentDef, PlacedComponent, SchematicProject, SchematicSheet, Units } from '../../../../core/types';
-import { AppSettings, createProjectFromOptions, openAppModule, saveSettings } from '../../../../core/store';
+import { AppSettings, openAppModule, saveSettings } from '../../../../core/store';
 import { renumberSchematicComponents } from '../../../../engines/erc';
 import { exportDipTraceAsciiSchematic } from '../../../../engines/importers';
 import { exportDipTraceAsciiNetlist } from '../../../../engines/netlist';
@@ -33,8 +33,6 @@ export interface CreateSchematicTopMenusParams {
     setTool: React.Dispatch<React.SetStateAction<SchToolId>>;
     setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
     commitProject: (updater: (prev: SchematicProject) => SchematicProject, pushUndo?: boolean) => void;
-    replaceProject: (next: SchematicProject) => void;
-    confirmDiscardIfDirty: () => boolean;
     updateActiveSheet: (sheetUpdater: (s: SchematicSheet) => SchematicSheet, pushUndo?: boolean) => void;
     setStatusMessage: React.Dispatch<React.SetStateAction<string>>;
     handleNewProject: () => void;
@@ -63,6 +61,7 @@ export interface CreateSchematicTopMenusParams {
 }
 /** Builds the exact DipTrace Russian top menu specification for Schematic Capture. */
 export function createSchematicTopMenus(p: CreateSchematicTopMenusParams): TopMenuSpec[] {
+    const exportAsc = () => p.handleExportTextFile(`${p.project.projectName}.asc`, exportDipTraceAsciiSchematic(p.project), 'asc', 'DipTrace ASCII Schematic');
     return [
         {
             id: 'file',
@@ -70,66 +69,29 @@ export function createSchematicTopMenus(p: CreateSchematicTopMenusParams): TopMe
             items: [
                 { label: 'Новый проект...', shortcut: 'Ctrl+N', onClick: p.handleNewProject },
                 { label: 'Открыть...', shortcut: 'Ctrl+O', onClick: p.handleOpenFile },
-                { label: 'Импорт сторонних САПР (DipTrace / Proteus / KiCad / Eagle / EasyEDA / Altium)...', onClick: p.handleOpenFile },
-                {
-                    label: 'Открыть проект «Гальваническая развязка RS-485»',
-                    onClick: () => {
-                        if (!p.confirmDiscardIfDirty())
-                            return;
-                        const res = createProjectFromOptions({
-                            mode: 'demo_rs485',
-                            projectName: 'RS-485',
-                            titleName: 'Гальваническая развязка RS-485',
-                            designation: 'ГТРС.468364.001',
-                            sheetFormat: 'A3_L',
-                            boardWidthMm: 90,
-                            boardHeightMm: 55,
-                            boardCornerRadiusMm: 0,
-                            boardIsCircle: false,
-                            boardLayers: 2,
-                            accuracyClass: 4,
-                            units: 'mm',
-                            developer: '',
-                            checker: '',
-                            normControl: '',
-                            organization: ''
-                        }, 'schematic');
-                        if (res.schematic)
-                            p.replaceProject(res.schematic);
-                        p.setStatusMessage(res.statusMessage);
-                    }
-                },
-                {
-                    label: 'Открыть проект «Контроллер К1986ВЕ92QI»',
-                    onClick: () => {
-                        if (!p.confirmDiscardIfDirty())
-                            return;
-                        const res = createProjectFromOptions({
-                            mode: 'demo_mcu',
-                            projectName: 'К1986ВЕ92QI',
-                            titleName: 'Контроллер К1986ВЕ92QI',
-                            designation: 'ГТРС.468364.005',
-                            sheetFormat: 'A3_L',
-                            boardWidthMm: 100,
-                            boardHeightMm: 70,
-                            boardCornerRadiusMm: 0,
-                            boardIsCircle: false,
-                            boardLayers: 2,
-                            accuracyClass: 4,
-                            units: 'mm',
-                            developer: '',
-                            checker: '',
-                            normControl: '',
-                            organization: ''
-                        }, 'schematic');
-                        if (res.schematic)
-                            p.replaceProject(res.schematic);
-                        p.setStatusMessage(res.statusMessage);
-                    }
-                },
                 { separator: true },
                 { label: 'Сохранить', shortcut: p.hotkeys.save, onClick: () => p.handleSaveFile(false) },
                 { label: 'Сохранить как...', shortcut: p.hotkeys.saveAs, onClick: () => p.handleSaveFile(true) },
+                {
+                    label: 'Экспорт схемы (.asc)...',
+                    onClick: exportAsc,
+                    submenuBelow: true,
+                    submenu: [
+                        { label: 'DipTrace ASCII (.asc)...', onClick: exportAsc },
+                        {
+                            label: 'Список цепей DipTrace (.net)...',
+                            onClick: () => p.handleExportTextFile(`${p.project.projectName}.net`, exportDipTraceAsciiNetlist(p.project), 'net', 'Список цепей DipTrace')
+                        },
+                        {
+                            label: 'SPICE (.cir)...',
+                            onClick: () => p.handleExportTextFile(`${p.project.projectName}.cir`, exportSpiceNetlist(p.project), 'cir', 'SPICE список цепей')
+                        },
+                        {
+                            label: 'Чертёж ГОСТ (.svg)...',
+                            onClick: () => p.handleExportTextFile(`${p.project.projectName}.svg`, generateSchematicSvg(p.activeSheet, p.customCompMap), 'svg', 'SVG чертёж')
+                        }
+                    ]
+                },
                 { separator: true },
                 { label: 'Заголовки и настройка листа (ГОСТ 2.104)...', onClick: () => p.setShowTitleDialog(true) },
                 { label: 'Перечень элементов по ГОСТ 2.701 / 2.106 (ПЭ3)...', onClick: () => p.setShowBomDialog(true) },
@@ -137,23 +99,6 @@ export function createSchematicTopMenus(p: CreateSchematicTopMenusParams): TopMe
                 { separator: true },
                 { label: 'Преобразовать в плату (PCB Layout)', shortcut: p.hotkeys.convertToPcb, onClick: p.handleConvertToPcb },
                 { label: 'Обновить плату по схеме', onClick: p.handleUpdatePcbFromSchematic },
-                { separator: true },
-                {
-                    label: 'Экспорт схемы DipTrace ASCII (.dch)...',
-                    onClick: () => p.handleExportTextFile(`${p.project.projectName}.dch`, exportDipTraceAsciiSchematic(p.project), 'dch', 'DipTrace ASCII Schematic')
-                },
-                {
-                    label: 'Экспорт списка цепей DipTrace ASCII (.net)...',
-                    onClick: () => p.handleExportTextFile(`${p.project.projectName}.net`, exportDipTraceAsciiNetlist(p.project), 'net', 'Список цепей DipTrace')
-                },
-                {
-                    label: 'Экспорт SPICE-схемы (.cir)...',
-                    onClick: () => p.handleExportTextFile(`${p.project.projectName}.cir`, exportSpiceNetlist(p.project), 'cir', 'SPICE список цепей')
-                },
-                {
-                    label: 'Экспорт векторного чертежа ГОСТ (.svg)...',
-                    onClick: () => p.handleExportTextFile(`${p.project.projectName}.svg`, generateSchematicSvg(p.activeSheet, p.customCompMap), 'svg', 'SVG чертёж')
-                },
                 { separator: true },
                 { label: 'Стартовое окно (Запуск)...', onClick: () => openAppModule('launcher', (m) => p.onSwitchModule?.(m)) }
             ]

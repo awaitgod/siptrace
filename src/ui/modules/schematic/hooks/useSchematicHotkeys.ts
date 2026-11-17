@@ -38,9 +38,13 @@ interface Params {
 export function useSchematicHotkeys(p: Params) {
     useEffect(() => {
         const handle = (e: KeyboardEvent) => {
-            if (document.querySelector('.dt-modal-backdrop'))
+            if (e.defaultPrevented || document.querySelector('.dt-modal-backdrop'))
                 return;
             const target = e.target;
+            if (target instanceof Element) {
+                if (target.closest('.dt-dropdown[role="menu"]')) return;
+                if (e.key.startsWith('Arrow') && target.closest('.dt-splitter, [role="tablist"]')) return;
+            }
             const input = target instanceof Element && target.matches('input, textarea, select, [contenteditable="true"]');
             if (input) {
                 if (matchesHotkey(e, p.hotkeys.save)) {
@@ -60,6 +64,8 @@ export function useSchematicHotkeys(p: Params) {
                 window.dispatchEvent(new Event('siptrace:cancel'));
                 return;
             }
+            if ((e.key === ' ' || e.key === 'Enter') && target instanceof Element && target.closest('button,a,[role="button"],[role^="menuitem"]'))
+                return;
             if (e.key === 'Enter' && ['wire', 'bus'].includes(p.tool) && p.wireDraftPts.length > 1) {
                 e.preventDefault();
                 p.updateActiveSheet(s => commitWire(s, p.wireDraftPts, p.tool === 'bus'));
@@ -69,14 +75,17 @@ export function useSchematicHotkeys(p: Params) {
             }
             if (e.key === 'Backspace' && p.wireDraftPts.length) {
                 e.preventDefault();
-                p.setWireDraftPts(v => v.slice(0, -1));
+                p.setWireDraftPts(v => (v.length > 2 ? v.slice(0, -2) : v.slice(0, -1)));
                 return;
             }
-            if ((e.key === ' ' || e.key === 'Enter') && target instanceof Element && target.closest('button,a,[role="button"],[role^="menuitem"]'))
-                return;
-            if (e.key === 'Delete' || e.key === 'Backspace') {
+            if (e.key === 'Delete' || (e.key === 'Backspace' && p.tool === 'select' && !p.wireDraftPts.length)) {
                 e.preventDefault();
                 p.deleteSelection();
+                return;
+            }
+            if (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'z' || e.code === 'KeyZ')) {
+                e.preventDefault();
+                p.handleRedo();
                 return;
             }
             if (e.key === ' ') {

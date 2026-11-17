@@ -6,12 +6,12 @@ export function makeResPrimitives(powerMark?: '0.125' | '0.25' | '0.5' | '1' | '
     { type: 'rect', x: -5, y: -2, w: 10, h: 4, width: 0.35 }
   ];
   if (powerMark === '0.125') {
-    // ГОСТ 2.728-74: 0.125 Вт — две параллельные наклонные черты //
-    prims.push({ type: 'line', x1: -1.6, y1: 1.4, x2: 0.4, y2: -1.4, width: 0.25 });
-    prims.push({ type: 'line', x1: -0.4, y1: 1.4, x2: 1.6, y2: -1.4, width: 0.25 });
+    // ГОСТ 2.728-74, табл. 1: две нисходящие черты.
+    prims.push({ type: 'line', x1: -1.6, y1: -1.4, x2: 0.4, y2: 1.4, width: 0.25 });
+    prims.push({ type: 'line', x1: -0.4, y1: -1.4, x2: 1.6, y2: 1.4, width: 0.25 });
   } else if (powerMark === '0.25') {
-    // ГОСТ 2.728-74: 0.25 Вт — одна наклонная черта /
-    prims.push({ type: 'line', x1: -1.2, y1: 1.5, x2: 1.2, y2: -1.5, width: 0.28 });
+    // ГОСТ 2.728-74, табл. 1: одна нисходящая черта.
+    prims.push({ type: 'line', x1: -1.2, y1: -1.5, x2: 1.2, y2: 1.5, width: 0.28 });
   } else if (powerMark === '0.5') {
     // ГОСТ 2.728-74: 0.5 Вт — одна продольная (горизонтальная) черта —
     prims.push({ type: 'line', x1: -2.2, y1: 0, x2: 2.2, y2: 0, width: 0.3 });
@@ -33,24 +33,25 @@ export function makeTwoPinHorizontal(): SymbolPin[] {
   ];
 }
 
-export function makeCapPrimitives(polarized = false): SymbolPrimitive[] {
-  // ГОСТ 2.728-74: две параллельные пластины 8 мм высотой, зазор 2 мм
-  const prims: SymbolPrimitive[] = [
+export function makeCapPrimitives(electrolytic = false): SymbolPrimitive[] {
+  if (electrolytic) {
+    // ГОСТ 2.728-74, табл. 4 и 6: прямоугольная положительная обкладка и зазор 1,5 мм.
+    return [
+      { type: 'rect', x: -2.25, y: -4, w: 1.5, h: 8, fill: false, width: 0.35 },
+      { type: 'line', x1: 0.75, y1: -4, x2: 0.75, y2: 4, width: 0.4 },
+      { type: 'text', x: -4.2, y: -3.8, text: '+', size: 2.5 }
+    ];
+  }
+  return [
     { type: 'line', x1: -1, y1: -4, x2: -1, y2: 4, width: 0.4 },
     { type: 'line', x1: 1, y1: -4, x2: 1, y2: 4, width: 0.4 }
   ];
-  if (polarized) {
-    // Полярный конденсатор по ГОСТ: закрашенный/очерченный прямоугольник на положительной обкладке + знак +
-    prims.push({ type: 'rect', x: -2.2, y: -4, w: 1.2, h: 8, fill: false, width: 0.35 });
-    prims.push({ type: 'text', x: -4.2, y: -3.8, text: '+', size: 2.5 });
-  }
-  return prims;
 }
 
-export function makeCapPins(polarized = false): SymbolPin[] {
+export function makeCapPins(electrolytic = false): SymbolPin[] {
   return [
-    { id: 'pin_1', number: '1', name: polarized ? '+' : '1', x: -5, y: 0, length: polarized ? 2.8 : 4, orientation: 0, electricalType: 'Passive', style: 'Line', showName: false, showNumber: false, padMapping: '1' },
-    { id: 'pin_2', number: '2', name: polarized ? '-' : '2', x: 5, y: 0, length: 4, orientation: 180, electricalType: 'Passive', style: 'Line', showName: false, showNumber: false, padMapping: '2' }
+    { id: 'pin_1', number: '1', name: electrolytic ? '+' : '1', x: -5, y: 0, length: electrolytic ? 2.75 : 4, orientation: 0, electricalType: 'Passive', style: 'Line', showName: false, showNumber: false, padMapping: '1' },
+    { id: 'pin_2', number: '2', name: electrolytic ? '-' : '2', x: 5, y: 0, length: electrolytic ? 4.25 : 4, orientation: 180, electricalType: 'Passive', style: 'Line', showName: false, showNumber: false, padMapping: '2' }
   ];
 }
 
@@ -85,6 +86,7 @@ export function makeGostRectangularIcPart(opts: {
   leftPins: GostIcPinSpec[];
   rightPins: GostIcPinSpec[];
   halfWidthMm?: number;
+  anchorRows?: number;
   headerText?: string;
   subHeaderText?: string;
   extraPrimitives?: SymbolPrimitive[];
@@ -93,14 +95,16 @@ export function makeGostRectangularIcPart(opts: {
   const maxRows = Math.max(opts.leftPins.length, opts.rightPins.length, 2);
   const topSpace = opts.subHeaderText ? 10 : opts.headerText ? 7.5 : 5;
   const bottomSpace = 5;
-  const totalPinsSpan = (maxRows - 1) * 5;
-  const totalHeight = Math.ceil((topSpace + totalPinsSpan + bottomSpace) / 5) * 5;
-  const halfH = totalHeight / 2;
+  // Keep the top and the original pin rows fixed when expanding a shipped symbol.
+  const anchorRows = opts.anchorRows ?? maxRows;
+  const anchorHeight = Math.ceil((topSpace + (anchorRows - 1) * 5 + bottomSpace) / 5) * 5;
+  const totalHeight = anchorHeight + Math.max(0, maxRows - anchorRows) * 5;
+  const halfH = anchorHeight / 2;
   const startY = -halfH + topSpace;
 
   const snap25 = (v: number) => Math.round(v / 2.5) * 2.5;
   const primitives: SymbolPrimitive[] = [
-    { type: 'rect', x: -halfW, y: -halfH, w: halfW * 2, h: halfH * 2, width: 0.42 }
+    { type: 'rect', x: -halfW, y: -halfH, w: halfW * 2, h: totalHeight, width: 0.42 }
   ];
   if (opts.headerText) {
     primitives.push({

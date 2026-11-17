@@ -59,6 +59,7 @@ export function drawSchNetsAndShapes(ctx: CanvasRenderingContext2D, sheet: Schem
     }
     // Net Ports
     for (const np of sheet.netPorts) {
+        const label = np.label ?? np.netName;
         const isSel = np.id === selectedPortId || (highlightedNet && np.netName === highlightedNet);
         ctx.strokeStyle = isSel ? '#FFFF44' : palette.portColor;
         ctx.fillStyle = isSel ? '#FFFF44' : palette.portColor;
@@ -78,6 +79,12 @@ export function drawSchNetsAndShapes(ctx: CanvasRenderingContext2D, sheet: Schem
             ctx.moveTo(np.x - 0.7, np.y + 5.4);
             ctx.lineTo(np.x + 0.7, np.y + 5.4);
             ctx.stroke();
+            if (label && label !== 'GND') {
+                ctx.font = `2.6px "Segoe UI", Arial`;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(label, np.x + 3.4, np.y + 3);
+            }
         }
         else if (np.style === 'Power') {
             ctx.moveTo(np.x, np.y);
@@ -88,7 +95,7 @@ export function drawSchNetsAndShapes(ctx: CanvasRenderingContext2D, sheet: Schem
             ctx.font = `bold 2.8px "Segoe UI", Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'bottom';
-            ctx.fillText(np.netName, np.x, np.y - 4.2);
+            ctx.fillText(label, np.x, np.y - 4.2);
         }
         else {
             const dir = np.style === 'PortLeft' || np.style === 'OffPageIn' ? -1 : 1;
@@ -102,7 +109,7 @@ export function drawSchNetsAndShapes(ctx: CanvasRenderingContext2D, sheet: Schem
             ctx.font = `2.6px "Segoe UI", Arial`;
             ctx.textAlign = dir > 0 ? 'left' : 'right';
             ctx.textBaseline = 'middle';
-            ctx.fillText(np.netName, np.x + dir * 9.5, np.y);
+            ctx.fillText(label, np.x + dir * 9.5, np.y);
         }
         ctx.restore();
     }

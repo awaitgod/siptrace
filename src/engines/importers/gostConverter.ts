@@ -59,8 +59,8 @@ const FOREIGN_CROSS_REF: AnalogCrossRef[] = [
   { pattern: /\b(VIRTUAL.?TERMINAL|VTERM|UART.?TERM)\b/i, gostDefId: 'COMP_PI_VIRTUAL_TERMINAL', gostValue: '9600 8N1', gostTypeName: 'Терминал UART', gostPrefix: 'P', gostPatternId: 'PAT_PLS_3' },
   // Interfaces & Power & Analog & Logic -> Russian GOST Equivalents
   { pattern: /\bMAX232\w*\b/i, gostDefId: 'COMP_DA_MAX232', gostValue: 'MAX232CSE (КР1181)', gostTypeName: 'MAX232 (ГОСТ)', gostPrefix: 'DA', gostPatternId: 'PAT_SOIC16_N' },
-  { pattern: /\bFT232\w*\b/i, gostDefId: 'COMP_DD_FT232RL', gostValue: 'FT232RL', gostTypeName: 'FT232RL (ГОСТ)', gostPrefix: 'DD', gostPatternId: 'PAT_SSOP28' },
-  { pattern: /\bCH340\w*\b/i, gostDefId: 'COMP_DD_CH340G', gostValue: 'CH340G', gostTypeName: 'CH340G (ГОСТ)', gostPrefix: 'DD', gostPatternId: 'PAT_SOIC16_N' },
+  { pattern: /\bFT232RL\b/i, gostDefId: 'COMP_DD_FT232RL', gostValue: 'FT232RL', gostTypeName: 'FT232RL (ГОСТ)', gostPrefix: 'DD', gostPatternId: 'PAT_SSOP28' },
+  { pattern: /\bCH340G\b/i, gostDefId: 'COMP_DD_CH340G', gostValue: 'CH340G', gostTypeName: 'CH340G (ГОСТ)', gostPrefix: 'DD', gostPatternId: 'PAT_SOIC16_N' },
   { pattern: /\b(AMS1117|NCP1117|MC33269D?-?5|LM1117)\b/i, gostDefId: 'COMP_DA_NCP1117_5V', gostValue: 'КР1181 / AMS1117-5.0', gostTypeName: 'AMS1117-5.0', gostPrefix: 'DA', gostPatternId: 'PAT_SOT223' },
   { pattern: /\bLP2985\w*\b/i, gostDefId: 'COMP_DA_LP2985_33', gostValue: 'LP2985-33DBVR', gostTypeName: 'LP2985-3.3', gostPrefix: 'DA', gostPatternId: 'PAT_SOT23_5' },
   { pattern: /\b(LM7805|7805|L7805)\b/i, gostDefId: 'COMP_DA_KR142EN5A', gostValue: 'КР142ЕН5А (5 В)', gostTypeName: 'КР142ЕН5А', gostPrefix: 'DA', gostPatternId: 'PAT_KT28_TO220' },
@@ -68,7 +68,7 @@ const FOREIGN_CROSS_REF: AnalogCrossRef[] = [
   { pattern: /\b(LMV358|LM358|NE5532|TL072)\b/i, gostDefId: 'COMP_DA_LMV358', gostValue: 'К140УД20 / LMV358', gostTypeName: 'К140УД20', gostPrefix: 'DA', gostPatternId: 'PAT_SOIC8' },
   { pattern: /\b(LM741|UA741|OP07|TL071)\b/i, gostDefId: 'COMP_DA_KR140UD708', gostValue: 'КР140УД708', gostTypeName: 'КР140УД708', gostPrefix: 'DA', gostPatternId: 'PAT_DIP8' },
   { pattern: /\b(NE555|LM555|TLC555)\b/i, gostDefId: 'COMP_DA_KR1006VI1', gostValue: 'КР1006ВИ1 (NE555)', gostTypeName: 'КР1006ВИ1', gostPrefix: 'DA', gostPatternId: 'PAT_DIP8' },
-  { pattern: /\b(74HC595|SN74HC595|74LS595)\b/i, gostDefId: 'COMP_DD_K555IR23_595', gostValue: 'К555ИР23 (74HC595)', gostTypeName: 'К555ИР23', gostPrefix: 'DD', gostPatternId: 'PAT_SOIC16_N' },
+  { pattern: /\b(?:SN)?74HC595D?\b/i, gostDefId: 'COMP_DD_K555IR23_595', gostValue: '74HC595', gostTypeName: '74HC595 (ГОСТ)', gostPrefix: 'DD', gostPatternId: 'PAT_SOIC16_N' },
   { pattern: /\b(74HC00|74LS00|SN7400|CD4011)\b/i, gostDefId: 'COMP_DD_K155LA3', gostValue: 'К155ЛА3', gostTypeName: 'К155ЛА3', gostPrefix: 'DD', gostPatternId: 'PAT_DIP14' },
   { pattern: /\b(74HC02|74LS02)\b/i, gostDefId: 'COMP_DD_K555LE1', gostValue: 'К555ЛЕ1', gostTypeName: 'К555ЛЕ1', gostPrefix: 'DD', gostPatternId: 'PAT_DIP14' },
   { pattern: /\b(74HC04|74LS04|CD4069)\b/i, gostDefId: 'COMP_DD_K561LN2', gostValue: 'К561ЛН2', gostTypeName: 'К561ЛН2', gostPrefix: 'DD', gostPatternId: 'PAT_DIP14' },
@@ -362,6 +362,19 @@ export function resolveOrBuildGostComponent(opts: {
     return { defId: 'COMP_SB_KN1', gostRefPrefix: 'SB', gostValue: gostValue || 'КМ1-1', gostTypeName: 'КМ1-1', gostPatternId: 'PAT_KN_TACT', convertedToUgo: true };
   }
 
+  // 3.5. Existing custom component definition from embedded CAD library
+  if (opts.customDefs[opts.rawName]) {
+    const existing = opts.customDefs[opts.rawName];
+    return {
+      defId: existing.id,
+      gostRefPrefix: existing.refDesPrefix || gostPrefix,
+      gostValue: existing.defaultValue || gostValue || opts.rawValue,
+      gostTypeName: existing.name,
+      gostPatternId: existing.patternId || gostPatternId,
+      convertedToUgo: false
+    };
+  }
+
   // 4. Direct match against any GOST built-in component name/id
   const matchedBuiltIn = ALL_GOST_COMPONENTS.find(
     (c) => c.id === opts.rawName || c.defaultValue.toUpperCase() === opts.rawValue.toUpperCase() || c.name.toUpperCase().includes(opts.rawName.toUpperCase())
@@ -449,7 +462,7 @@ export function convertImportedSchematicToGost(
   for (const sheet of project.sheets) {
     const nextComps: PlacedComponent[] = [];
     for (const c of sheet.components) {
-      const existingCustomDef = customDefs[c.componentDefId];
+      const existingCustomDef = customDefs[c.componentDefId] || customDefs[c.typeName] || customDefs[c.value];
       const existingPins: SymbolPin[] = existingCustomDef?.parts[0]?.pins ?? [];
       const res = resolveOrBuildGostComponent({
         rawRef: c.refDes,

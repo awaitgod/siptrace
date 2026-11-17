@@ -30,7 +30,7 @@ export const PcbLeftSidebar: React.FC<PcbLeftSidebarProps> = (p) => {
 
   return (
   <div className="dt-left-sidebar">
-    <div className="dt-black-bar"><span>Установить корпус (ГОСТ)</span><span>▼</span></div>
+    <div className="dt-black-bar" role="heading" aria-level={2}>Установить корпус</div>
     <div className="dt-lib-list" style={{ height: 120 }}>
       {p.allPatternLibs.map((lib) => (
         <div
@@ -56,7 +56,7 @@ export const PcbLeftSidebar: React.FC<PcbLeftSidebarProps> = (p) => {
         + Импорт / Библиотеки CAD...
       </button>
     </div>
-    <div className="dt-black-bar"><span>Корпуса ({p.activeLib?.patterns.length ?? 0})</span></div>
+    <div className="dt-black-bar" role="heading" aria-level={2}>Корпуса ({p.activeLib?.patterns.length ?? 0})</div>
     <div className="dt-comp-list">
       {(p.activeLib?.patterns ?? []).map((pat) => (
         <div

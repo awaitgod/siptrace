@@ -139,7 +139,7 @@ test('print creates clean vector sheets with dimensions and complete content',as
  expect(output.sections).toBe(1);expect(output.text).toContain('1k');expect(output.text).toContain('Audit < note & value');expect(output.text).not.toContain('Менеджер проекта');expect(output.svg).toBe('297mm');
 });
 test('launcher expansion fits the initial sheet once and later resize preserves zoom',async({page})=>{
- await page.setViewportSize({width:364,height:268});await page.goto('/?module=launcher');await page.getByRole('button',{name:'Схемотехника (Schematic Capture)',exact:true}).click();
+ await page.setViewportSize({width:364,height:268});await page.goto('/?module=launcher');await page.getByRole('button',{name:'Редактор схем',exact:true}).click();
  await page.setViewportSize({width:1440,height:900});const zoom=page.locator('.dt-tb-select').first().locator('option:checked');await expect.poll(async()=>parseInt(await zoom.innerText(),10)).toBeGreaterThan(100);
  await page.keyboard.press('+');const before=await zoom.innerText();await page.setViewportSize({width:1280,height:800});await expect(zoom).toHaveText(before);
 });

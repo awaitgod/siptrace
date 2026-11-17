@@ -11,6 +11,7 @@ import {
 import { parseDipTraceAsciiPcbWithReport, parseDipTraceAsciiSchematicWithReport, parseDipTraceXmlPcbWithReport, parseDipTraceXmlSchematicWithReport } from './dipTraceImporter';
 import { parseDxfToPcb, parseEagleXml, parseExcellonToPcb, parseGerberToPcb, parseKicadPcb, parseKicadSchematic, parseMultiEcadPcb, parseMultiEcadSchematic, parseProteusInput } from './ecadFormatsImporter';
 import { convertImportedPcbToGost, convertImportedSchematicToGost, GostConversionReport } from './gostConverter';
+import { isOle2Binary } from './ecad/ole2Reader';
 import { createImportedPcbProject, createImportedSchematicProject } from './projectShells';
 export interface ImportedSchematicResult {
     project: SchematicProject;
@@ -46,6 +47,9 @@ function isDipTraceXml(text: string): boolean {
     return text.startsWith('<') && (/<(Source|Project|Schematic|Board|DipTrace)\b/.test(text) || text.includes('DipTrace'));
 }
 function isDipTraceAscii(text: string): boolean {
+    if (text.includes('DipTrace-ElementLibrary') || text.includes('DipTrace-PatternLibrary')) {
+        return false;
+    }
     return text.startsWith('(Source') || text.startsWith('(Schematic') || text.startsWith('(Board') || text.includes('(Part ') || text.includes('(Component ');
 }
 function binaryStringToBytes(text: string): Uint8Array {
@@ -79,15 +83,15 @@ export function importCadSchematicSync(text: string, filename = 'Импорт.go
         const res = parseDipTraceXmlSchematicWithReport(trimmed);
         return { ...res, detectedFormat: 'DipTrace XML' };
     }
-    // 3. DipTrace ASCII (.dch / .asc)
-    if (isDipTraceAscii(trimmed) && !ext.endsWith('.kicad_sch')) {
-        const res = parseDipTraceAsciiSchematicWithReport(trimmed);
-        return { ...res, detectedFormat: 'DipTrace ASCII (.dch/.asc)' };
-    }
-    // 4. KiCad (.kicad_sch / legacy .sch)
-    if (ext.endsWith('.kicad_sch') || trimmed.includes('(kicad_sch') || trimmed.includes('EESchema Schematic File')) {
+    // KiCad and DipTrace both use S-expressions. Check the KiCad root before the broader DipTrace test.
+    if (/^\(\s*kicad_sch(?=\s|[()])/.test(trimmed) || trimmed.startsWith('EESchema Schematic File')) {
         const res = parseKicadSchematic(trimmed, baseName);
         return { ...res, detectedFormat: 'KiCad Schematic' };
+    }
+    // DipTrace ASCII (.asc, including older exports named .dch)
+    if (isDipTraceAscii(trimmed)) {
+        const res = parseDipTraceAsciiSchematicWithReport(trimmed);
+        return { ...res, detectedFormat: 'DipTrace ASCII (.dch/.asc)' };
     }
     // 5. Autodesk Eagle / Fusion (.sch XML)
     if (trimmed.includes('<eagle') || (trimmed.startsWith('<') && trimmed.includes('<schematic'))) {
@@ -160,6 +164,10 @@ export async function importCadSchematic(input: string | Uint8Array, filename = 
             const res = parseDipTraceBinarySchematic(input, filename);
             return { ...res, detectedFormat: res.report.sourceFormat };
         }
+        if (isOle2Binary(input)) {
+            const res = parseMultiEcadSchematic(input, baseName);
+            return { ...res, detectedFormat: res.report.sourceFormat };
+        }
         const decoded = utf8Decode(input);
         if (ext.endsWith('.pdsprj') || ext.endsWith('.dsn')) {
             const res = await parseProteusInput(input, baseName);
@@ -200,9 +208,9 @@ export function importCadPcbSync(text: string, filename = 'Импорт.gostpcb'
         const res = parseDipTraceAsciiPcbWithReport(trimmed);
         return { ...res, detectedFormat: 'DipTrace ASCII PCB (.dip/.asc)' };
     }
-    // 4. KiCad PCB (.kicad_pcb or legacy $PCBNEW-BOARD)
-    if (ext.endsWith('.kicad_pcb') || trimmed.includes('(kicad_pcb') || trimmed.includes('$PCBNEW-BOARD')) {
-        if (trimmed.includes('$PCBNEW-BOARD')) {
+    // 4. KiCad PCB (.kicad_pcb or legacy PCBNEW-BOARD)
+    if (ext.endsWith('.kicad_pcb') || trimmed.includes('(kicad_pcb') || trimmed.includes('PCBNEW-BOARD')) {
+        if (trimmed.includes('PCBNEW-BOARD')) {
             const res = parseMultiEcadPcb(trimmed, baseName);
             return { ...res, detectedFormat: 'Legacy KiCad (.brd)' };
         }
@@ -221,11 +229,11 @@ export function importCadPcbSync(text: string, filename = 'Импорт.gostpcb'
         return { ...res, detectedFormat: 'Autodesk DXF' };
     }
     // 7. Excellon Drill / Gerber RS-274X
-    if (/\.(drl|xln)$/i.test(ext) || (trimmed.includes('M48') && !trimmed.includes('%FSLAX'))) {
+    if (/\.(drl|xln)$/i.test(ext) || (trimmed.includes('M48') && !trimmed.includes('%FSLAX') && !trimmed.includes('%FSTAX'))) {
         const res = parseExcellonToPcb(trimmed, baseName);
         return { ...res, detectedFormat: 'Excellon N/C Drill (.drl)' };
     }
-    if (/\.(gbr|gtl|gbl|gto|gbo|gts|gbs|gko|gm1)$/i.test(ext) || trimmed.includes('%FSLAX') || trimmed.includes('G04 ')) {
+    if (/\.(gbr|gtl|gbl|gto|gbo|gts|gbs|gko|gm1)$/i.test(ext) || trimmed.includes('%FSLAX') || trimmed.includes('%FSTAX') || trimmed.includes('G04 ')) {
         const res = parseGerberToPcb(trimmed, baseName);
         return { ...res, detectedFormat: 'Gerber RS-274X' };
     }
@@ -265,30 +273,13 @@ export async function importCadPcb(input: string | Uint8Array, filename = 'Им�
                     }
                     const parsed = parseGerberToPcb(content, gn);
                     if (/\.(gko|gm1)$/i.test(gn)) {
-                        const poly: {
-                            x: number;
-                            y: number;
-                        }[] = [];
-                        for (const tr of parsed.pcb.traces)
-                            poly.push(...tr.points);
-                        if (poly.length >= 3) {
-                            const xs = poly.map((p) => p.x), ys = poly.map((p) => p.y);
-                            merged.boardOutline = [
-                                { x: Math.min(...xs), y: Math.min(...ys) },
-                                { x: Math.max(...xs), y: Math.min(...ys) },
-                                { x: Math.max(...xs), y: Math.max(...ys) },
-                                { x: Math.min(...xs), y: Math.max(...ys) }
-                            ];
+                        if (parsed.pcb.boardOutline.length >= 3) {
+                            merged.boardOutline = parsed.pcb.boardOutline;
                         }
                         continue;
                     }
                     if (/\.(gto|gbo)$/i.test(gn)) {
-                        const silkLay = /gbo/i.test(gn) ? 'BottomSilk' : 'TopSilk';
-                        for (const tr of parsed.pcb.traces) {
-                            for (let k = 1; k < tr.points.length; k++) {
-                                merged.shapes.push({ id: `gs_${merged.shapes.length}`, layer: silkLay, type: 'line', x1: tr.points[k - 1].x, y1: tr.points[k - 1].y, x2: tr.points[k].x, y2: tr.points[k].y, width: 0.15 });
-                            }
-                        }
+                        merged.shapes.push(...parsed.pcb.shapes);
                         continue;
                     }
                     if (/\.(gts|gbs)$/i.test(gn))
@@ -297,6 +288,7 @@ export async function importCadPcb(input: string | Uint8Array, filename = 'Им�
                     for (const tr of parsed.pcb.traces) {
                         merged.traces.push({ ...tr, layer: isBot ? 'BottomCopper' : 'TopCopper' });
                     }
+                    merged.components.push(...parsed.pcb.components);
                     merged.vias.push(...parsed.pcb.vias);
                 }
                 return {

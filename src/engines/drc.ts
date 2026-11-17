@@ -695,6 +695,38 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
     }
   }
 
+  // 6b. Hole-to-Hole (Drill-to-Drill) clearance check
+  const minHoleGap = rules.clearanceHoleToHole ?? Math.max(0.15, rules.clearanceViaToAny * 0.7);
+  const allHoles: Array<{ id: string; x: number; y: number; holeDia: number; name: string }> = [];
+  for (const v of pcb.vias) {
+    allHoles.push({ id: v.id, x: v.x, y: v.y, holeDia: v.holeDiameter, name: `Переход (${v.netName || '—'})` });
+  }
+  for (const wp of pads) {
+    if ((wp.pad.holeDiameter ?? 0) > 0) {
+      allHoles.push({ id: `${wp.compId}_${wp.pad.id}`, x: wp.x, y: wp.y, holeDia: wp.pad.holeDiameter!, name: `КП ${wp.refDes}.${wp.pad.number}` });
+    }
+  }
+  for (let i = 0; i < allHoles.length; i++) {
+    const h1 = allHoles[i];
+    for (let j = i + 1; j < allHoles.length; j++) {
+      const h2 = allHoles[j];
+      const d = dist(h1, h2);
+      const edgeGap = d - (h1.holeDia + h2.holeDia) / 2;
+      if (edgeGap + 1e-4 < minHoleGap) {
+        pushErr({
+          sigKey: [h1.id, h2.id].sort().join('_hh_'),
+          severity: 'Error',
+          layer: 'TopCopper',
+          x: (h1.x + h2.x) / 2,
+          y: (h1.y + h2.y) / 2,
+          code: 'DRC-HOLE-HOLE',
+          message: `Нарушение зазора между отверстиями сверловки ${h1.name} и ${h2.name} (${edgeGap.toFixed(2)} мм < ${minHoleGap.toFixed(2)} мм по ГОСТ 23751).`,
+          objectIds: [h1.id, h2.id]
+        });
+      }
+    }
+  }
+
   // 7. Copper-to-Board Outline Clearance (Traces, Pads, Vias)
   if (pcb.boardOutline.length >= 3) {
     for (const tr of pcb.traces) {

@@ -3,8 +3,10 @@ import { PcbProject, Point2D } from '../../../../../core/types';
 import { pickCadFile, saveBinaryFile, saveTextFile } from '../../../../../core/utils/fileIo';
 import {
   exportGerberZipBytes,
+  getGerberExportEntries,
   GerberInspectionSummary,
-  inspectGerberProjectOrBytes
+  inspectGerberProjectOrBytes,
+  parseExcellonPreview
 } from '../../../../../engines/camBundle';
 import { DxfExportOptions, exportExcellonDrill, exportPcbDxf, exportPcbSvg1to1 } from '../../../../../engines/camExport';
 import {
@@ -17,23 +19,22 @@ import { GerberPreviewBox } from './GerberPreviewBox';
 
 export interface PcbCamDialogProps {
   pcb: PcbProject;
-  gerberFiles: Record<string, string>;
-  gerberNames: string[];
-  previewGerberFile: string;
-  setPreviewGerberFile: (fn: string) => void;
   setStatusMessage: React.Dispatch<React.SetStateAction<string>>;
   onClose: () => void;
 }
 
 type CamTab = 'gerber' | 'excellon' | 'lut' | 'dxf' | 'gcode';
 
+const PROJECT_LAYER_VISIBILITY = {
+  bottomMask: false,
+  bottomSilk: false,
+  topPaste: false,
+  bottomPaste: false
+};
+
 /** Interactive CAM export workbench: Gerber RS-274X/X2 + ZIP + Multi-Layer Viewer, Excellon, ЛУТ SVG 1:1, DXF Layers/Units, and CNC G-Code. */
 export const PcbCamDialog: React.FC<PcbCamDialogProps> = ({
   pcb,
-  gerberFiles,
-  gerberNames,
-  previewGerberFile,
-  setPreviewGerberFile,
   setStatusMessage,
   onClose
 }) => {
@@ -45,32 +46,15 @@ export const PcbCamDialog: React.FC<PcbCamDialogProps> = ({
   const [lutMirror, setLutMirror] = useState(true);
   const [externalInspect, setExternalInspect] = useState<GerberInspectionSummary | null>(null);
   const [projectInspect, setProjectInspect] = useState<GerberInspectionSummary | null>(null);
-
-  const activeGerberFile = useMemo(
-    () => (previewGerberFile && gerberFiles[previewGerberFile] ? previewGerberFile : (gerberNames.find((n) => /\.GTL$/i.test(n)) ?? gerberNames[0] ?? '')),
-    [previewGerberFile, gerberFiles, gerberNames]
-  );
-
-  useEffect(() => {
-    if (!previewGerberFile && activeGerberFile) {
-      setPreviewGerberFile(activeGerberFile);
-    }
-  }, [previewGerberFile, activeGerberFile, setPreviewGerberFile]);
+  const [selectedGerberLayer, setSelectedGerberLayer] = useState('topCopper');
+  const [camError, setCamError] = useState('');
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
-  const [visibleLayers, setVisibleLayers] = useState<Record<string, boolean>>({
-    boardOutline: true,
-    bottomCopper: true,
-    topCopper: true,
-    topMask: true,
-    bottomMask: false,
-    topSilk: true,
-    drill: true
-  });
+  const [visibleLayers, setVisibleLayers] = useState<Record<string, boolean>>(PROJECT_LAYER_VISIBILITY);
 
   // DXF options (Lab 1)
   const [dxfOpts, setDxfOpts] = useState<DxfExportOptions>({
@@ -100,9 +84,16 @@ export const PcbCamDialog: React.FC<PcbCamDialogProps> = ({
   }, [pcb, x2Attributes]);
 
   const activeInspect = externalInspect ?? projectInspect;
+  const availableLayers = activeInspect?.layers.filter((layer) => externalInspect || includeDrills || layer.key !== 'drill') ?? [];
+  const activeLayer = availableLayers.find((layer) => layer.key === selectedGerberLayer) ?? availableLayers[0];
+  const displayLayers = compositeView
+    ? availableLayers.filter((layer) => visibleLayers[layer.key] !== false)
+    : activeLayer ? [activeLayer] : [];
   const gcodeResult = useMemo(() => generatePcbGCode(pcb, gcodeOpts), [pcb, gcodeOpts]);
   const dxfPreview = useMemo(() => exportPcbDxf(pcb, dxfOpts), [pcb, dxfOpts]);
   const excellonText = useMemo(() => exportExcellonDrill(pcb), [pcb]);
+  const excellonTools = useMemo(() => Array.from(excellonText.matchAll(/^(T\d+)C([\d.]+)$/gm)), [excellonText]);
+  const projectDrillCount = useMemo(() => parseExcellonPreview(excellonText).length, [excellonText]);
   const lutSvg = useMemo(() => exportPcbSvg1to1(pcb, lutLayer, lutMirror), [pcb, lutLayer, lutMirror]);
 
   // Draw G-Code CNC toolpath canvas when G-code tab is active
@@ -160,9 +151,9 @@ export const PcbCamDialog: React.FC<PcbCamDialogProps> = ({
   const handleExportGerberZip = async () => {
     const zipBytes = exportGerberZipBytes(pcb, x2Attributes, includeDrills);
     const saved = await saveBinaryFile(`${pcb.projectName}_Gerber.zip`, zipBytes, [
-      { name: 'ZIP-архив Gerber+Excellon', extensions: ['zip'] }
+      { name: 'ZIP-архив Gerber', extensions: ['zip'] }
     ]);
-    if (saved) setStatusMessage(`Экспортирован архив Gerber + Excellon: ${saved}`);
+    if (saved) setStatusMessage(`Экспортирован архив ${includeDrills ? 'Gerber + Excellon' : 'Gerber'}: ${saved}`);
   };
 
   const handleExportGerberFolder = async () => {
@@ -177,20 +168,23 @@ export const PcbCamDialog: React.FC<PcbCamDialogProps> = ({
         }>;
       }>;
     }).showDirectoryPicker;
+    setCamError('');
     if (picker) {
+      let written = 0;
       try {
         const dirHandle = await picker();
-        const names = Object.keys(gerberFiles);
-        for (const name of names) {
+        const entries = Object.entries(getGerberExportEntries(pcb, x2Attributes, includeDrills));
+        for (const [name, content] of entries) {
           const fh = await dirHandle.getFileHandle(name, { create: true });
           const writable = await fh.createWritable();
-          await writable.write(gerberFiles[name]);
+          await writable.write(content);
           await writable.close();
+          written++;
         }
-        setStatusMessage(`CAM Gerber & Excellon экспортировано (${names.length} файлов в папку ${dirHandle.name}).`);
+        setStatusMessage(`Экспортировано ${written} файлов в папку ${dirHandle.name}.`);
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
-          await handleExportGerberZip();
+          setCamError(`Экспорт в папку прерван. Записано файлов: ${written}. ${(err as Error).message}`);
         }
       }
       return;
@@ -199,17 +193,25 @@ export const PcbCamDialog: React.FC<PcbCamDialogProps> = ({
   };
 
   const handleInspectExternalGerber = async () => {
-    const picked = await pickCadFile('.zip,.gbr,.gtl,.gbl,.gko,.gto,.gts,.gbs,.drl,.xln', [
-      { name: 'Gerber / ZIP / Excellon', extensions: ['zip', 'gbr', 'gtl', 'gbl', 'gko', 'drl', 'xln'] }
+    setCamError('');
+    const extensions = ['zip', 'gbr', 'gtl', 'gbl', 'g2l', 'g3l', 'gko', 'gm1', 'gto', 'gbo', 'gts', 'gbs', 'gtp', 'gbp', 'drl', 'xln'];
+    const picked = await pickCadFile(extensions.map((extension) => `.${extension}`).join(','), [
+      { name: 'Gerber / ZIP / Excellon', extensions }
     ]);
     if (!picked) return;
-    const summary = await inspectGerberProjectOrBytes(pcb, x2Attributes, picked.bytes, picked.name);
-    const nextVis: Record<string, boolean> = {};
-    summary.layers.forEach((l) => { nextVis[l.key] = true; });
-    setVisibleLayers(nextVis);
-    setExternalInspect(summary);
-    setCompositeView(true);
-    setStatusMessage(`Gerber Viewer загрузил внешний файл: ${picked.name} (слоёв: ${summary.layers.length})`);
+    try {
+      const summary = await inspectGerberProjectOrBytes(pcb, x2Attributes, picked.bytes, picked.name);
+      if (summary.layers.length === 0) {
+        setCamError(`В файле «${picked.name}» не найдены слои Gerber или Excellon.`);
+        return;
+      }
+      setVisibleLayers({});
+      setExternalInspect(summary);
+      setCompositeView(true);
+      setStatusMessage(`Открыт внешний файл «${picked.name}». Слоёв: ${summary.layers.length}.`);
+    } catch (err) {
+      setCamError(`Не удалось открыть «${picked.name}». ${(err as Error).message}`);
+    }
   };
 
   const handleExportDxf = async () => {
@@ -229,7 +231,7 @@ export const PcbCamDialog: React.FC<PcbCamDialogProps> = ({
       <div className="dt-modal" style={{ width: 820, maxWidth: '95vw' }} onClick={(e) => e.stopPropagation()}>
         <div className="dt-modal-title">
           <strong>Производственные файлы (Gerber RS-274X/X2 / ZIP / Viewer / DXF / G-Code) — {pcb.projectName}</strong>
-          <button type="button" className="dt-btn" onClick={onClose} style={{ minWidth: 24, padding: '0 6px' }}>×</button>
+          <button type="button" className="dt-btn" aria-label="Закрыть окно CAM" onClick={onClose} style={{ minWidth: 24, padding: '0 6px' }}>×</button>
         </div>
 
         <div className="dt-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -259,12 +261,17 @@ export const PcbCamDialog: React.FC<PcbCamDialogProps> = ({
                 <label><input type="checkbox" checked={includeDrills} onChange={(e) => setIncludeDrills(e.target.checked)} /> Включить сверловку Excellon (.drl)</label>
                 <label><input type="checkbox" checked={compositeView} onChange={(e) => setCompositeView(e.target.checked)} /> Все слои вместе (Gerber Viewer)</label>
                 {!compositeView && (
-                  <select className="dt-select" value={activeGerberFile} onChange={(e) => setPreviewGerberFile(e.target.value)}>
-                    {gerberNames.map((n) => <option key={n} value={n}>{n}</option>)}
+                  <select aria-label="Слой для предпросмотра" className="dt-select" value={activeLayer?.key ?? ''} onChange={(e) => setSelectedGerberLayer(e.target.value)}>
+                    {availableLayers.map((layer) => <option key={layer.key} value={layer.key}>{layer.label}</option>)}
                   </select>
                 )}
                 {externalInspect && (
-                  <button type="button" className="dt-btn" onClick={() => setExternalInspect(null)}>
+                  <button type="button" className="dt-btn" onClick={() => {
+                    setExternalInspect(null);
+                    setVisibleLayers(PROJECT_LAYER_VISIBILITY);
+                    setSelectedGerberLayer('topCopper');
+                    setCamError('');
+                  }}>
                     ← Вернуть плату проекта
                   </button>
                 )}
@@ -272,7 +279,7 @@ export const PcbCamDialog: React.FC<PcbCamDialogProps> = ({
 
               {compositeView && activeInspect && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 11, background: '#ffffff', padding: '5px 8px', border: '1px solid #c8c8c8' }}>
-                  {activeInspect.layers.map((l) => (
+                  {availableLayers.map((l) => (
                     <label key={l.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       <input
                         type="checkbox"
@@ -287,33 +294,32 @@ export const PcbCamDialog: React.FC<PcbCamDialogProps> = ({
               )}
 
               <GerberPreviewBox
-                gerberContent={gerberFiles[activeGerberFile] ?? ''}
-                outline={pcb.boardOutline}
-                multiLayerSummary={activeInspect}
-                visibleLayers={visibleLayers}
-                showComposite={compositeView}
+                layers={displayLayers}
+                viewId={compositeView ? (externalInspect?.layers.map((layer) => layer.filename).join('|') ?? 'project') : (activeLayer?.filename ?? '')}
               />
 
               <div style={{ fontSize: 11.5, background: '#e5f1fb', border: '1px solid #99d1ff', padding: '5px 8px', display: 'flex', justifyContent: 'space-between' }}>
                 <span>
-                  Размер: <b>{activeInspect?.widthMm ?? 0} × {activeInspect?.heightMm ?? 0} мм</b> · Слоёв: <b>{activeInspect?.layers.length ?? 0}</b>
+                  Размер: <b>{activeInspect?.widthMm ?? 0} × {activeInspect?.heightMm ?? 0} мм</b> · Слоёв: <b>{availableLayers.length}</b>
                 </span>
                 <span>
-                  Отверстий: <b>{activeInspect?.drillCount ?? 0}</b> · Свёрла: <b>{activeInspect?.uniqueDrillSizes.join(', ') || '—'} мм</b>
+                  Отверстий: <b>{externalInspect || includeDrills ? activeInspect?.drillCount ?? 0 : 0}</b>
                 </span>
               </div>
 
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button type="button" className="dt-btn primary" onClick={handleExportGerberZip}>
-                  📦 Скачать Gerber + Drill (.zip)...
+                  {includeDrills ? 'Скачать Gerber + Drill (.zip)...' : 'Скачать Gerber (.zip)...'}
                 </button>
                 <button type="button" className="dt-btn" onClick={handleExportGerberFolder}>
-                  📁 Экспортировать в папку...
+                  Экспортировать в папку...
                 </button>
                 <button type="button" className="dt-btn" onClick={handleInspectExternalGerber}>
-                  🔍 Открыть Gerber / ZIP для проверки...
+                  Открыть Gerber / ZIP для проверки...
                 </button>
               </div>
+              {externalInspect && <div>Предпросмотр внешних файлов. Команды экспорта создают файлы платы «{pcb.projectName}».</div>}
+              {camError && <div role="alert">{camError}</div>}
             </>
           )}
 
@@ -322,20 +328,20 @@ export const PcbCamDialog: React.FC<PcbCamDialogProps> = ({
               <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 10 }}>
                 <div style={{ background: '#fff', border: '1px solid #c0c0c0', padding: 8, fontSize: 11.5 }}>
                   <div style={{ fontWeight: 700, marginBottom: 6 }}>Таблица свёрл Excellon (METRIC,TZ):</div>
-                  <div>Всего отверстий: <b>{activeInspect?.drillCount ?? 0}</b></div>
+                  <div>Всего отверстий: <b>{projectDrillCount}</b></div>
                   <div style={{ marginTop: 6 }}>
-                    {(activeInspect?.uniqueDrillSizes ?? []).length === 0 ? (
+                    {excellonTools.length === 0 ? (
                       <span style={{ color: '#666' }}>Отверстий на плате нет</span>
                     ) : (
-                      activeInspect!.uniqueDrillSizes.map((dia, i) => (
-                        <div key={dia} style={{ padding: '2px 0', borderBottom: '1px solid #eee' }}>
-                          <b>T{String(i + 1).padStart(2, '0')}</b> — Ø {dia} мм
+                      excellonTools.map(([, tool, diameter]) => (
+                        <div key={tool} style={{ padding: '2px 0', borderBottom: '1px solid #eee' }}>
+                          <b>{tool}</b> — Ø {diameter} мм
                         </div>
                       ))
                     )}
                   </div>
                 </div>
-                <textarea readOnly className="dt-input" style={{ height: 240, fontFamily: 'monospace', fontSize: 11, resize: 'none' }} value={excellonText} />
+                <textarea aria-label="Содержимое файла Excellon" readOnly className="dt-input" style={{ height: 240, fontFamily: 'monospace', fontSize: 11, resize: 'none' }} value={excellonText} />
               </div>
               <div>
                 <button

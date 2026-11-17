@@ -108,6 +108,33 @@ html, body, #root {
   color: #444444;
 }
 
+.dt-dropdown-row-inline {
+  flex-wrap: wrap;
+}
+
+.dt-dropdown-toggle {
+  border: 0;
+  padding: 2px 7px;
+  margin: -2px -7px -2px 20px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dt-dropdown-toggle:hover,
+.dt-dropdown-toggle:focus-visible {
+  background: #cce8ff;
+  outline: 1px solid #0078d7;
+}
+
+.dt-dropdown-inline {
+  position: static;
+  width: 100%;
+  min-width: 0;
+  margin-top: 3px;
+  border: 0;
+  box-shadow: none;
+}
+
 .dt-dropdown-row.disabled {
   color: #888888;
 }
@@ -144,6 +171,16 @@ html, body, #root {
   overflow-x: auto;
   overflow-y: hidden;
   flex-shrink: 0;
+}
+
+.dt-pcb3d-toolbar {
+  height: auto;
+  min-height: 28px;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  padding: 3px 6px;
+  overflow: visible;
+  white-space: nowrap;
 }
 
 .dt-tb-btn {
@@ -232,12 +269,17 @@ html, body, #root {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border: 0;
   border-bottom: 1px solid #3c3c3c;
-  cursor: pointer;
   flex-shrink: 0;
 }
 
-.dt-black-bar:hover {
+button.dt-black-bar {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button.dt-black-bar:hover {
   background: #1a1a1a;
 }
 
@@ -358,15 +400,22 @@ html, body, #root {
   gap: 1px;
 }
 
+.dt-sheet-tab,
+.dt-sheet-tabs > .dt-btn {
+  height: 100%;
+  min-width: 78px;
+}
+
 .dt-sheet-tab {
-  height: 18px;
   padding: 0 10px;
+  font-family: inherit;
   font-size: 11px;
   background: #e2e2e2;
   border: 1px solid #a8a8a8;
   border-bottom: none;
   display: flex;
   align-items: center;
+  justify-content: center;
   cursor: pointer;
   color: #222222;
 }
@@ -374,8 +423,6 @@ html, body, #root {
 .dt-sheet-tab.active {
   background: #ffffff;
   color: #000000;
-  font-weight: 600;
-  height: 19px;
 }
 
 /* Right Docked Sidebar — Properties, Project Manager, Section Pins / Layers */
@@ -476,6 +523,15 @@ html, body, #root {
 
 .dt-tree-row:hover {
   background: #e5f3ff;
+}
+
+.dt-find-result {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: #fff;
+  border: 0;
+  font-family: inherit;
 }
 
 .dt-tree-row.selected {
@@ -655,9 +711,9 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   padding: 8px 10px;
-  overflow: hidden;
+  overflow: auto;
   user-select: none;
 }
 
@@ -665,6 +721,7 @@ html, body, #root {
   width: 100%;
   max-width: 344px;
   display: flex;
+  flex-shrink: 0;
   flex-direction: column;
   gap: 5px;
 }
@@ -691,6 +748,11 @@ html, body, #root {
 .dt-launcher-module-btn:hover {
   background: #eef6fc;
   border-color: #0078d7;
+}
+
+.dt-launcher-module-btn:focus-visible {
+  outline: 2px solid #005a9e;
+  outline-offset: -3px;
 }
 
 .dt-launcher-module-btn:active {

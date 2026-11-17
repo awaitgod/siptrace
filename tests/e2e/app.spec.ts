@@ -36,11 +36,11 @@ test.describe('SIPTrace — Vite Web Suite & Visual Verification', () => {
     await expect(page.getByText('Параметры по умолчанию')).toHaveCount(0);
     await expect(page.getByText('Библиотеки CAD...')).toHaveCount(0);
 
-    await expect(page.getByText('Схемотехника (Schematic Capture)')).toBeVisible();
-    await expect(page.getByText('Плата (PCB Layout & Autorouter)')).toBeVisible();
-    await expect(page.getByText('Редактор компонентов (Component Editor)')).toBeVisible();
-    await expect(page.getByText('Редактор корпусов (Pattern Editor)')).toBeVisible();
-    await expect(page.getByText('3D-просмотр платы (3D Preview)')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Редактор схем' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Редактор плат' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Редактор компонентов' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Редактор посадочных мест' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '3D-просмотр платы' })).toBeVisible();
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '01_launcher.png') });
     expect(errors).toEqual([]);
   });
@@ -110,7 +110,7 @@ test.describe('SIPTrace — Vite Web Suite & Visual Verification', () => {
     await page.waitForTimeout(300);
     await expect(page.locator('.dt-modal')).toContainText('Производственные файлы (Gerber RS-274X/X2');
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '07_pcb_gerber_preview.png') });
-    await page.locator('.dt-modal').getByRole('button', { name: 'Закрыть' }).click();
+    await page.locator('.dt-modal').getByRole('button', { name: 'Закрыть', exact: true }).click();
 
     expect(errors).toEqual([]);
   });
@@ -157,7 +157,7 @@ test.describe('SIPTrace — Vite Web Suite & Visual Verification', () => {
     await page.waitForTimeout(200);
     await expect(page.locator('.dt-modal')).toContainText('Кадров G-Code:');
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '12_pcb_cam_gcode.png') });
-    await page.locator('.dt-modal').getByRole('button', { name: 'Закрыть' }).click();
+    await page.locator('.dt-modal').getByRole('button', { name: 'Закрыть', exact: true }).click();
     expect(errors).toEqual([]);
   });
 

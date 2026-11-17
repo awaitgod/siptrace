@@ -79,7 +79,7 @@ export const libResistors: ComponentLibrary = {
       refDesPrefix: 'R',
       defaultValue: '10к',
       gostStandard: 'ОЖ0.468.545 ТУ',
-      description: 'Резистор подстроечный по ГОСТ 2.728-74 (с Т-образным движком)',
+      description: 'Резистор подстроечный с тремя выводами (ГОСТ 2.728-74)',
       patternId: 'PAT_SP3_38',
       parts: [
         {
@@ -87,10 +87,8 @@ export const libResistors: ComponentLibrary = {
           name: 'Part 1',
           primitives: [
             { type: 'rect', x: -5, y: -2, w: 10, h: 4, width: 0.35 },
-            { type: 'line', x1: 0, y1: -5, x2: 0, y2: -2.8, width: 0.3 },
-            { type: 'line', x1: -1.5, y1: -2.8, x2: 1.5, y2: -2.8, width: 0.35 },
-            { type: 'line', x1: -3.5, y1: 3.5, x2: 3.5, y2: -3.5, width: 0.25 },
-            { type: 'line', x1: 2.5, y1: -3.5, x2: 4.5, y2: -3.5, width: 0.25 }
+            { type: 'line', x1: 0, y1: -5, x2: 0, y2: -2, width: 0.3 },
+            { type: 'line', x1: 0, y1: -4, x2: 5, y2: -4, width: 0.35 }
           ],
           pins: [
             { id: 'pin_1', number: '1', name: '1', x: -10, y: 0, length: 5, orientation: 0, electricalType: 'Passive', style: 'Line', showName: false, showNumber: false, padMapping: '1' },
@@ -117,7 +115,7 @@ export const libResistors: ComponentLibrary = {
             { type: 'rect', x: -5, y: -2, w: 10, h: 4, width: 0.35 },
             { type: 'line', x1: -4, y1: 3.5, x2: 3.5, y2: -3.5, width: 0.28 },
             { type: 'line', x1: -5.5, y1: 3.5, x2: -4, y2: 3.5, width: 0.28 },
-            { type: 'text', x: 5.2, y: -4.2, text: '-t°', size: 2.2 }
+            { type: 'text', x: -0.5, y: 4, text: '−t°', size: 2.2 }
           ],
           pins: makeTwoPinHorizontal()
         }

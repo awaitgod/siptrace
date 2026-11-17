@@ -1,7 +1,6 @@
 import { renderSchematicSvg } from './printSchematic';
 import { BomEntry, ComponentDef, GostTitleBlockData, NetClassDef, PlacedComponent, SchShape, SchematicProject, SchematicSheet, SheetFormatId, Units } from '../../../../core/types';
 import { transformPoint, uid } from '../../../../core/geometry';
-import { saveTextFile } from '../../../../core/utils/fileIo';
 import { buildGostFrameAndStampGeometry, createDefaultGostTitleBlock, SHEET_FORMATS } from '../../../../gost/gostTitleBlock';
 import { findComponentById } from '../../../../gost/libraries/gostComponents';
 /** Creates an empty single-sheet A4_L schematic project seeded with existing net classes. */
@@ -167,11 +166,6 @@ export function buildNextSchematicSheet(project: SchematicProject, activeSheet: 
 /** Generates a printable monochrome GOST SVG drawing string from a sheet. */
 export function generateSchematicSvg(activeSheet: SchematicSheet, customCompMap: Record<string, ComponentDef>): string {
     return renderSchematicSvg(activeSheet, customCompMap);
-}
-/** Exports text content via browser file download. */
-export async function exportTextFileViaNativeOrBrowser(filename: string, content: string, ext: string, desc = 'Файл SIPTrace'): Promise<string> {
-    await saveTextFile(filename, content, [{ name: desc, extensions: [ext] }]);
-    return `Файл ${filename} сформирован для загрузки.`;
 }
 /** Converts generated GOST BOM entries into an editable schematic table shape positioned clear of Графа 26 & Title Block. */
 export function buildBomTableShape(entries: BomEntry[], format: SheetFormatId = 'A3_L', titleBlock?: GostTitleBlockData): SchShape {

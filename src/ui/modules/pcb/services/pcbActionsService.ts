@@ -197,8 +197,8 @@ export function buildBoardOutlinePolygon(
   const ox = origin.x;
   const oy = origin.y;
   if (isCircle) {
-    const rx = Math.max(5, widthMm / 2);
-    const ry = Math.max(5, heightMm / 2);
+    const rx = widthMm / 2;
+    const ry = heightMm / 2;
     const pts: Point2D[] = [];
     const segs = 64;
     for (let i = 0; i < segs; i++) {
@@ -210,7 +210,7 @@ export function buildBoardOutlinePolygon(
     }
     return pts;
   }
-  const r = Math.max(0, Math.min(cornerRadiusMm, widthMm / 2 - 1, heightMm / 2 - 1));
+  const r = Math.max(0, Math.min(cornerRadiusMm, widthMm / 2, heightMm / 2));
   if (r <= 0.1) {
     return [
       { x: ox, y: oy },
@@ -286,29 +286,24 @@ export function buildPlacedPcbComponent(
 }
 
 /** Creates a PcbCopperPour definition either tied to board outline or from a custom polygon. */
+export type PcbCopperPourSettings = Pick<PcbCopperPour,
+  'layer' | 'netName' | 'fillType' | 'clearance' | 'thermalType' | 'thermalGap' | 'thermalSpokeWidth' | 'removeIslands'
+>;
+
 export function buildPcbCopperPour(opts: {
   pcb: PcbProject;
-  layer: PcbCopperPour['layer'];
-  netName: string;
   outline: Point2D[];
   dependOnBoardOutline: boolean;
-  fillType: PcbCopperPour['fillType'];
+  settings: PcbCopperPourSettings;
 }): PcbCopperPour {
   return {
     id: uid('pour'),
-    layer: opts.layer,
-    netName: opts.netName,
+    ...opts.settings,
     outline: opts.outline,
     dependOnBoardOutline: opts.dependOnBoardOutline,
     boardClearance: opts.pcb.designRules.clearanceCopperToBoard,
-    clearance: opts.pcb.designRules.clearanceTraceToPad,
-    fillType: opts.fillType,
     lineWidth: 0.25,
     lineSpacing: 0.5,
-    thermalType: '4Spoke',
-    thermalSpokeWidth: 0.35,
-    thermalGap: 0.25,
-    removeIslands: true,
     priority: 1,
     poured: true
   };

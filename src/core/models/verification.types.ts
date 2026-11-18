@@ -2,13 +2,15 @@ import { PcbLayerId } from './pcb.types';
 
 export interface ErcError {
   id: string;
-  severity: 'Error' | 'Warning';
+  severity: 'Error' | 'Warning' | 'Info';
   sheetId: string;
   x: number;
   y: number;
   code: string;
   message: string;
   objectId?: string;
+  netName?: string;
+  pinNumber?: string;
 }
 
 export interface DrcError {
@@ -49,5 +51,7 @@ export interface SpiceSimResult {
   waveforms: Record<string, number[]>;
   frequencies?: number[];
   acMagnitudeDb?: Record<string, number[]>;
+  acPhaseDeg?: Record<string, number[]>;
+  branchCurrents?: Record<string, number>;
   spiceNetlist: string;
 }

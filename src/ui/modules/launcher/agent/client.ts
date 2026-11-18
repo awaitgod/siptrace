@@ -12,10 +12,14 @@ type Attempt = { name: string; args?: unknown; ok: boolean; error?: string };
 type ToolFailure = { code: string; error: string; conflicts?: RouteConflict['conflicts'] };
 type PreparedCall = { call: ToolCall; name: CommandName; args?: unknown; signature?: string; failure?: ToolFailure };
 
-const endpoint = 'https://api.aitunnel.ru/v1/chat/completions';
 const maxTurns = 50;
+const schematicTools = new Set<CommandName>([
+  'create_schematic', 'add_sheet', 'set_frame', 'configure_document', 'define_pattern', 'define_component',
+  'place_component', 'set_component_labels', 'set_component_values', 'sync_board_from_schematic', 'move_schematic', 'delete_schematic', 'wire', 'connect_net',
+  'add_sheet_text', 'mark_no_connect', 'simulate', 'bom'
+]);
 const reviewCommands = new Set<CommandName>(['check', 'compare_requirements', 'finalize_project', 'screenshot', 'render_review']);
-const routingCommands: CommandName[] = ['route_net', 'route_between_pads', 'route_trace', 'add_via', 'inspect'];
+const routingCommands: CommandName[] = ['route_net', 'route_remaining', 'route_between_pads', 'route_trace', 'add_via', 'inspect'];
 
 function prepare(call: ToolCall): PreparedCall {
   const name = call.function.name as CommandName;
@@ -46,8 +50,16 @@ function prepare(call: ToolCall): PreparedCall {
 }
 
 function focusAfterTruncation(progress: Progress): { tools: CommandName[]; instruction: string } {
+  if (progress.phase === 'placement') {
+    return { tools: ['place_target_footprints', 'place_footprints', 'inspect', 'query_library'],
+      instruction: 'Установи отсутствующие корпуса. Если координаты и назначения уже заданы в targets, используй place_target_footprints.' };
+  }
   if (progress.phase === 'routing' && progress.unrouted.length) {
     const first = progress.unrouted[0];
+    if (progress.unrouted.length > 1) {
+      return { tools: routingCommands,
+        instruction: 'При готовых ограничениях платы вызови route_remaining для оставшихся связей. Если пакет уже сообщил об отсутствии прогресса, проверь конкретную сеть через inspect с pcbNet.' };
+    }
     return {
       tools: routingCommands,
       instruction: 'Следующая операция: попробуй route_net для одной связи ' + first.netName + ' ' +
@@ -71,16 +83,31 @@ function focusAfterTruncation(progress: Progress): { tools: CommandName[]; instr
 
 export async function runAgent(
   workspace: Workspace,
-  settings: { key: string; model: string; task: string; previousTask?: string; signal: AbortSignal; onEvent?: (event: AgentEvent) => void },
+  settings: {
+    key: string;
+    model: string;
+    task: string;
+    previousTask?: string;
+    signal: AbortSignal;
+    onEvent?: (event: AgentEvent) => void;
+    endpoint?: string;
+  },
   onStep: (message: string) => void,
   checkpoint: () => void
 ): Promise<void> {
   const { key, model, task, signal, previousTask } = settings;
+  const baseUrl = (settings.endpoint || 'https://api.aitunnel.ru/v1').replace(/\/+$/, '').replace(/\/chat\/completions$/, '');
+  const chatEndpoint = `${baseUrl}/chat/completions`;
+  const requestHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (key) requestHeaders.Authorization = 'Bearer ' + key;
   // Structured user input anchors acceptance. Ordinary text still uses set_targets.
   let userInput: unknown;
+  let taskContext: unknown = task;
   try { userInput = JSON.parse(task); } catch { /* Natural-language task. */ }
   if (userInput && typeof userInput === 'object' && 'requirements' in userInput) {
     workspace.setUserTargets(userInput.requirements);
+    const { requirements, ...instructions } = userInput;
+    taskContext = instructions;
   }
 
   const messages: RequestMessage[] = [];
@@ -98,8 +125,7 @@ export async function runAgent(
   let reviewDeferrals = 0;
   let recovery: ReturnType<typeof focusAfterTruncation> | undefined;
   let lastIssue = workspace.draft.progress?.lastIssue;
-  const recordProgress = () => {
-    const { phase } = workspace.getProgress();
+  const recordProgress = ({ phase } = workspace.getProgress()) => {
     workspace.draft.progress = {
       phase, lastIssue,
       recent: history.slice(-8).map(({name, ok, error}) => ({ name, ok, error: error?.slice(0, 500) }))
@@ -109,7 +135,7 @@ export async function runAgent(
   function compact(progress: Progress, instruction?: string) {
     messages.splice(0, messages.length, { role: 'system', content: AGENT_INSTRUCTIONS }, {
       role: 'user', content: JSON.stringify({
-        task, previousTask, plan: workspace.draft.plan, targets: workspace.draft.targets,
+        task: taskContext, previousTask: previousTask === task ? undefined : previousTask, plan: workspace.draft.plan, targets: workspace.draft.targets,
         previousReport: workspace.draft.report, progress, lastIssue, recent: history.slice(-8), instruction
       })
     });
@@ -141,27 +167,31 @@ export async function runAgent(
       if (stagnantTurns >= 4) restricted = ['finish'];
     }
     onStep('Запрос к модели ' + (turn + 1) + '/' + maxTurns);
-    const response = await fetch(endpoint, {
+    const response = await fetch(chatEndpoint, {
       method: 'POST',
       signal: AbortSignal.any([signal, AbortSignal.timeout(180_000)]),
-      headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+      headers: requestHeaders,
       body: JSON.stringify({
         model, messages,
-        tools: restricted ? toolDefinitions.filter(tool => restricted.includes(tool.function.name as CommandName)) : toolDefinitions,
+        tools: toolDefinitions.filter(tool => {
+          const name = tool.function.name as CommandName;
+          if (restricted) return restricted.includes(name);
+          return workspace.draft.targets?.documents !== 'pcb' || !schematicTools.has(name);
+        }),
         tool_choice: restricted?.length === 1 ? { type: 'function', function: { name: restricted[0] } } : 'required',
         max_tokens: 8192
       })
     });
     if (!response.ok) {
-      if (response.status === 401 || response.status === 403) throw new Error('AITUNNEL отклонил ключ или доступ к модели.');
-      if (response.status === 402) throw new Error('AITUNNEL отклонил запрос по балансу.');
-      if (response.status === 429) throw new Error('Достигнут лимит запросов AITUNNEL. Черновик можно продолжить.');
+      if (response.status === 401 || response.status === 403) throw new Error('Сервер ИИ отклонил ключ или доступ к модели.');
+      if (response.status === 402) throw new Error('Сервер ИИ отклонил запрос по балансу/квоте.');
+      if (response.status === 429) throw new Error('Достигнут лимит запросов сервера ИИ. Черновик можно продолжить.');
       if (response.status === 400 && restricted) {
         recovery = undefined;
         compact(before, 'Выполни один ближайший шаг по текущей фазе.');
         continue;
       }
-      throw new Error('Ошибка AITUNNEL (HTTP ' + response.status + '). Проверьте доступность модели и поддержку инструментов.');
+      throw new Error('Ошибка сервера ИИ (HTTP ' + response.status + '). Проверьте доступность модели и поддержку инструментов.');
     }
     const data = await response.json() as { id?: string; usage?: unknown; choices?: { message?: RequestMessage; finish_reason?: string }[] };
     emit({ kind: 'chat', id: data.id, model, usage: data.usage, response: data });
@@ -178,7 +208,7 @@ export async function runAgent(
       recovery = ready ? { tools: ['finish'], instruction: 'Просмотр текущей ревизии выполнен. Подготовь итоговый отчёт.' } : focusAfterTruncation(before);
       lastIssue = isTruncated ? 'Модель исчерпала лимит ответа до вызова команды.' : 'Ответ модели не содержал команды.';
       emit({ kind: 'checkpoint', intervention: lastIssue, next: recovery.instruction, phase: before.phase });
-      recordProgress();
+      recordProgress(before);
       if (truncatedAnswers >= 4 || emptyAnswers >= 3) exhausted(lastIssue);
       compact(before, lastIssue + ' ' + recovery.instruction);
       continue;
@@ -194,18 +224,19 @@ export async function runAgent(
     const prepared = calls.map(prepare);
     const signature = (operation: PreparedCall) => workspace.revision + ':' + operation.name + ':' + operation.signature;
     const candidates = prepared.filter(operation => !operation.failure && !failed.has(signature(operation)) &&
-      !(operation.name === 'finish' && (calls.length !== 1 || !didReview)));
+      !(operation.name === 'finish' && (calls.length !== 1 || !didReview ||
+        ((operation.args as {status?: string}).status !== 'draft' && !ready))));
     const risky = candidates.some(({name}) => ['finish', 'delete_schematic', 'delete_board', 'restore_verified'].includes(name));
     let intercepted: string | undefined;
     if (risky && reviewDeferrals < 2) {
       try {
         onStep('Проверка действий · d1.2-ultra');
+        const { plan, targets, currentChecks, ...actual } = workspace.execute('inspect', {}) as Record<string, unknown>;
         const state = {
-          task, plan: workspace.draft.plan, targets: workspace.draft.targets,
-          actual: workspace.execute('inspect', {}), currentChecks: workspace.draft.checks, stagnantTurns,
+          task: taskContext, plan, targets, actual, currentChecks, stagnantTurns,
           proposed: candidates.map(({name, args}) => ({ name, arguments: JSON.stringify(args) })), recent: history.slice(-8)
         };
-        const decision = await reviewAgentActions(state, key, signal, emit);
+        const decision = await reviewAgentActions(state, key, signal, emit, baseUrl);
         if (decision.action === 'restore' && (state.actual as {canRestoreVerified?: boolean}).canRestoreVerified) {
           workspace.execute('restore_verified', {});
           intercepted = 'Контролёр восстановил последнюю проверенную версию. Проверь её и получи новые снимки.';
@@ -227,6 +258,7 @@ export async function runAgent(
     const images: AgentCapture[] = [];
     let hadSuccessfulCall = false;
     for (const operation of prepared) {
+      const toolStarted = performance.now();
       signal.throwIfAborted();
       const { call, name, args } = operation;
       const key = signature(operation);
@@ -245,7 +277,16 @@ export async function runAgent(
         if (reviewCommands.has(name) && reviewed.has(key) && didReview) {
           output = { unchanged: true, revision: workspace.revision, next: 'Используйте результаты этой ревизии. Исправьте указанный блокер или вызовите finish.' };
         } else {
-          output = workspace.execute(name, args);
+          const input = name === 'check' || name === 'finalize_project' ? { detail: 'summary', ...args as object } : args;
+          output = workspace.execute(name, input);
+          const route = output as { closed?: number; remaining?: number; applied?: boolean; previewId?: string; addedTraces?: number };
+          if ((name === 'route_remaining' && !route.closed && route.remaining !== 0) ||
+              (name === 'route_net' && route.applied === false && !route.previewId) ||
+              (name === 'auto_route' && !route.addedTraces)) {
+            failure = { code: 'NO_ROUTING_PROGRESS',
+              error: 'Разводка не дала результата. Сверьте оставшиеся пары и причины отказов, затем измените подход.' };
+            output = { ...failure, ...(output as object) };
+          }
           if (reviewCommands.has(name)) reviewed.add(key);
           if (name === 'finalize_project') {
             const result = output as { report: unknown; captures: AgentCapture[]; revision: number; next: string };
@@ -259,8 +300,18 @@ export async function runAgent(
             output = { label: capture.label, captured: true };
           }
         }
-        history.push({ name, args: JSON.stringify(args)?.slice(0, 600), ok: true });
-        emit({ kind: 'tool', name, args, ok: true, output });
+        const ok = !failure;
+        if (failure) {
+          failed.set(key, failure);
+          lastIssue = failure.error;
+        }
+        history.push({ name, args: JSON.stringify(args)?.slice(0, 600), ok, error: failure?.error });
+        emit({ kind: 'tool', name, args, ok, output, durationMs: performance.now() - toolStarted });
+        if (!ok) {
+          onStep('Нет продвижения · ' + name);
+          messages.push({ role: 'tool', tool_call_id: call.id, content: JSON.stringify(output) });
+          continue;
+        }
         hadSuccessfulCall = true;
         onStep('Готово · ' + name);
         if (name === 'finish') {
@@ -278,7 +329,8 @@ export async function runAgent(
         output = failure;
         lastIssue = failure.error;
         history.push({ name, args: call.function.arguments.slice(0, 600), ok: false, error: failure.error });
-        emit({ kind: 'tool', name, args: call.function.arguments, ok: false, output, intercepted: isIntercepted });
+        emit({ kind: 'tool', name, args: call.function.arguments, ok: false, output, intercepted: isIntercepted,
+          durationMs: performance.now() - toolStarted });
         onStep('Ошибка · ' + name);
       }
       messages.push({ role: 'tool', tool_call_id: call.id, content: JSON.stringify(output) });
@@ -290,7 +342,7 @@ export async function runAgent(
     stagnantTurns = advanced ? 0 : stagnantTurns + 1;
     failingBatches = hadSuccessfulCall ? 0 : failingBatches + Number(!intercepted);
     if (advanced) lastIssue = undefined;
-    recordProgress();
+    recordProgress(current);
     if (failingBatches >= 5) exhausted('Пять пакетов подряд не выполнили ни одной команды.');
     if (stagnantTurns >= 10) exhausted('Агент исчерпал попытки без изменения рабочей версии.');
     if (stagnantTurns === 4 || (!hadSuccessfulCall && !intercepted)) {

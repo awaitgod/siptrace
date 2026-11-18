@@ -41,11 +41,14 @@ export function parseMultiEcadSchematic(input: string | Uint8Array, name = 'Impo
 }
 
 /** Parses multi-ECAD PCB formats (KiCad, Eagle, EasyEDA, Altium, P-CAD, PADS, DXF, Gerber, Excellon). */
-export function parseMultiEcadPcb(text: string, name = 'Imported_PCB'): {
+export function parseMultiEcadPcb(input: string | Uint8Array, name = 'Imported_PCB'): {
   pcb: PcbProject;
   report: GostConversionReport;
 } {
-  const t = text.trim();
+  if (input instanceof Uint8Array) {
+    return parseAltiumOrPcadPcb(input, name);
+  }
+  const t = input.trim();
   if (t.startsWith('{')) return parseEasyEdaPcbJson(t, name);
   if (t.includes('(kicad_pcb') || t.startsWith('PCBNEW-BOARD')) return parseKicadPcb(t, name);
   if (t.includes('<eagle') || t.includes('<board')) {

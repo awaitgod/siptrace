@@ -26,9 +26,33 @@ import {
   snapAngle90
 } from './ecadFactories';
 import { isOle2Binary, readOle2Streams } from './ole2Reader';
+import { decodeAnsiOrUtf8 } from '../diptrace/binaryEncoding';
 
 type AltiumRec = Record<string, string>;
 const ALTIUM_UNIT_TO_MM = 0.254; // 1 DXP schematic unit = 10 mil = 0.254 mm
+
+export function decodeAltiumWideString(wideString: string | undefined): string {
+  if (!wideString) return '';
+  if (!/^\d+(?:,\d+)*$/u.test(wideString)) return wideString;
+  try {
+    return String.fromCodePoint(...wideString.split(',').map((codePoint) => Number(codePoint)));
+  } catch {
+    return wideString;
+  }
+}
+
+export function getAltiumString(rec: AltiumRec, key: string, fallback = ''): string {
+  const up = key.toUpperCase();
+  const low = key.toLowerCase();
+  if (rec[`%UTF8%${key}`]) return rec[`%UTF8%${key}`];
+  if (rec[`%UTF8%${up}`]) return rec[`%UTF8%${up}`];
+  if (rec[`${key}_WIDE`]) return decodeAltiumWideString(rec[`${key}_WIDE`]);
+  if (rec[`${up}_WIDE`]) return decodeAltiumWideString(rec[`${up}_WIDE`]);
+  if (key === 'Text' && rec.WIDESTRING) return decodeAltiumWideString(rec.WIDESTRING);
+  const raw = rec[key] ?? rec[up] ?? rec[low];
+  if (raw && /^\d+(?:,\d+)+$/.test(raw)) return decodeAltiumWideString(raw);
+  return raw ?? fallback;
+}
 
 function parsePipeRecord(line: string): AltiumRec {
   const rec: AltiumRec = {};
@@ -41,15 +65,17 @@ function parsePipeRecord(line: string): AltiumRec {
 }
 
 function altiumNum(rec: AltiumRec, key: string, fallback = 0): number {
-  const base = Number(rec[key]);
-  const frac = Number(rec[`${key}_FRAC`] ?? '0');
+  const up = key.toUpperCase();
+  const low = key.toLowerCase();
+  const raw = rec[key] ?? rec[up] ?? rec[low];
+  const base = Number(raw);
+  const frac = Number(rec[`${key}_FRAC`] ?? rec[`${up}_FRAC`] ?? '0');
   const val = (Number.isFinite(base) ? base : fallback) + (Number.isFinite(frac) ? frac / 100000 : 0);
   return Number.isFinite(val) ? val : fallback;
 }
 
 function parseOle2FileHeaderRecords(payload: Uint8Array): AltiumRec[] {
   const recs: AltiumRec[] = [];
-  const decoder = new TextDecoder('latin1');
   let offset = 0;
 
   while (offset + 4 <= payload.length) {
@@ -59,7 +85,7 @@ function parseOle2FileHeaderRecords(payload: Uint8Array): AltiumRec[] {
     if (len === 0 || offset + len > payload.length) break;
 
     if (kind === 0) {
-      const str = decoder.decode(payload.subarray(offset, offset + len)).replace(/\0+$/, '');
+      const str = decodeAnsiOrUtf8(payload.subarray(offset, offset + len)).replace(/\0+$/, '');
       recs.push(str.includes('=') ? parsePipeRecord(str) : {});
     } else {
       recs.push({});
@@ -68,7 +94,7 @@ function parseOle2FileHeaderRecords(payload: Uint8Array): AltiumRec[] {
   }
 
   if (recs.length === 0) {
-    const raw = decoder.decode(payload);
+    const raw = decodeAnsiOrUtf8(payload);
     for (const seg of raw.split(/\r?\n|(?=\|RECORD=)/)) {
       if (seg.includes('RECORD=')) recs.push(parsePipeRecord(seg));
     }
@@ -104,10 +130,10 @@ function buildAltiumSchematicFromRecords(records: AltiumRec[], name: string, isB
 
     if (type === '1') {
       comps.set(i, {
-        libRef: rec['%UTF8%LibReference'] || rec.LibReference || rec.DesignItemId || 'PART',
-        designator: rec.Designator || '',
-        value: rec.Comment || '',
-        footprint: rec.CurrentPartId || '',
+        libRef: getAltiumString(rec, 'LibReference', rec.DesignItemId || 'PART'),
+        designator: getAltiumString(rec, 'Designator', ''),
+        value: getAltiumString(rec, 'Comment', ''),
+        footprint: getAltiumString(rec, 'CurrentPartId', ''),
         x: altiumNum(rec, 'Location.X', 100),
         y: altiumNum(rec, 'Location.Y', 100),
         pins: []
@@ -122,7 +148,7 @@ function buildAltiumSchematicFromRecords(records: AltiumRec[], name: string, isB
         const vx = dir === 0 ? 1 : dir === 2 ? -1 : 0;
         const vy = dir === 1 ? 1 : dir === 3 ? -1 : 0;
         comp.pins.push({
-          name: rec['%UTF8%Name'] || rec.Name || rec.Designator || `${comp.pins.length + 1}`,
+          name: getAltiumString(rec, 'Name', rec.Designator || `${comp.pins.length + 1}`),
           num: rec.Designator || `${comp.pins.length + 1}`,
           x: px + vx * len,
           y: py + vy * len,
@@ -132,15 +158,20 @@ function buildAltiumSchematicFromRecords(records: AltiumRec[], name: string, isB
       }
     } else if (type === '34') {
       const comp = comps.get(Number(rec.OwnerIndex));
-      if (comp && rec.Text) comp.designator = rec['%UTF8%Text'] || rec.Text;
+      if (comp) {
+        const text = getAltiumString(rec, 'Text', '');
+        if (text) comp.designator = text;
+      }
     } else if (type === '41') {
       const comp = comps.get(Number(rec.OwnerIndex));
-      if (comp && rec.Text && rec.Text !== '*') {
+      if (comp) {
         const pname = (rec.Name || '').toLowerCase();
-        const text = rec['%UTF8%Text'] || rec.Text;
-        if (pname === 'value' || pname === 'comment') comp.value = text;
-        else if (pname === 'footprint') comp.footprint = text;
-        else if (!comp.value && !pname.includes('time') && !pname.includes('date')) comp.value = text;
+        const text = getAltiumString(rec, 'Text', '');
+        if (text && text !== '*') {
+          if (pname === 'value' || pname === 'comment') comp.value = text;
+          else if (pname === 'footprint') comp.footprint = text;
+          else if (!comp.value && !pname.includes('time') && !pname.includes('date')) comp.value = text;
+        }
       }
     } else if (type === '27') {
       const count = Number(rec.LocationCount || '2') || 2;
@@ -154,11 +185,11 @@ function buildAltiumSchematicFromRecords(records: AltiumRec[], name: string, isB
     } else if (type === '29') {
       rawJunctions.push({ x: altiumNum(rec, 'Location.X'), y: altiumNum(rec, 'Location.Y') });
     } else if (type === '17') {
-      const net = rec['%UTF8%Text'] || rec.Text || 'VCC';
+      const net = getAltiumString(rec, 'Text', 'VCC');
       const style: SchNetPort['style'] = /GND|VSS/i.test(net) || Number(rec.Style) === 4 ? 'Ground' : 'Power';
       rawPorts.push({ name: net, x: altiumNum(rec, 'Location.X'), y: altiumNum(rec, 'Location.Y'), style, orientation: Number(rec.Orientation || '0') || 0 });
     } else if (type === '25') {
-      const net = rec['%UTF8%Text'] || rec.Text || 'NET';
+      const net = getAltiumString(rec, 'Text', 'NET');
       rawLabels.push({ text: net, x: altiumNum(rec, 'Location.X'), y: altiumNum(rec, 'Location.Y') });
     } else if (type === '6' && (rec.OwnerIndex === undefined || rec.OwnerIndex === '-1')) {
       const count = Number(rec.LocationCount || '0') || 0;
@@ -302,8 +333,8 @@ export function parseAltiumOrPcadSchematic(input: string | Uint8Array, name = 'A
   return convertImportedSchematicToGost(makeEcadSchematicProject({ name, components: comps, wires, customDefs }), text.includes('(edif') ? 'EDIF (.edf)' : 'P-CAD ASCII');
 }
 
-/** Parses Altium Designer ASCII .PcbDoc or P-CAD ASCII PCB into PcbProject. */
-export function parseAltiumOrPcadPcb(text: string, name = 'Altium_PCB'): {
+/** Parses Altium Designer (binary OLE2 or ASCII .PcbDoc) or P-CAD ASCII PCB into PcbProject. */
+export function parseAltiumOrPcadPcb(input: string | Uint8Array, name = 'Altium_PCB'): {
   pcb: PcbProject;
   report: GostConversionReport;
 } {
@@ -312,17 +343,152 @@ export function parseAltiumOrPcadPcb(text: string, name = 'Altium_PCB'): {
   const vias: PcbVia[] = [];
   const boardOutline: Point2D[] = [];
 
+  if (input instanceof Uint8Array && isOle2Binary(input)) {
+    const streams = readOle2Streams(input);
+    const netNames: Record<number, string> = {};
+
+    const netsData = streams.get('Nets6/Data');
+    if (netsData) {
+      const netText = decodeAnsiOrUtf8(netsData);
+      const netPipes = netText.split(/\0+|(?=\|RECORD=)|(?=\|SELECTION=)/).filter((s) => s.includes('|NAME='));
+      let netIdx = 2;
+      for (const np of netPipes) {
+        const rec = parsePipeRecord(np);
+        if (rec.NAME) {
+          netNames[netIdx] = rec.NAME;
+        }
+        netIdx++;
+      }
+    }
+
+    const tracksData = streams.get('Tracks6/Data');
+    if (tracksData) {
+      let trackPos = 0;
+      while (trackPos + 5 < tracksData.length) {
+        if (tracksData[trackPos] !== 0x04) {
+          trackPos++;
+          continue;
+        }
+        trackPos++;
+        const len = tracksData[trackPos] | (tracksData[trackPos + 1] << 8) | (tracksData[trackPos + 2] << 16) | (tracksData[trackPos + 3] << 24);
+        trackPos += 4;
+        if (len < 33 || trackPos + len > tracksData.length) break;
+        const rec = tracksData.subarray(trackPos, trackPos + len);
+        trackPos += len;
+        const dv = new DataView(rec.buffer, rec.byteOffset, rec.byteLength);
+        const layerByte = rec[0];
+        const netIdx = dv.getInt16(3, true) + 2;
+        const x1 = (dv.getInt32(13, true) / 10000) * 0.0254;
+        const y1 = (dv.getInt32(17, true) / 10000) * 0.0254;
+        const x2 = (dv.getInt32(21, true) / 10000) * 0.0254;
+        const y2 = (dv.getInt32(25, true) / 10000) * 0.0254;
+        const width = Math.max(0.15, (dv.getInt32(29, true) / 10000) * 0.0254);
+        traces.push({
+          id: uid('apcb_t'),
+          layer: layerByte === 32 ? 'BottomCopper' : 'TopCopper',
+          netName: netNames[netIdx] || '',
+          points: [{ x: x1, y: y1 }, { x: x2, y: y2 }],
+          width
+        });
+      }
+    }
+
+    const viasData = streams.get('Vias6/Data');
+    if (viasData) {
+      let viaPos = 0;
+      while (viaPos + 5 < viasData.length) {
+        if (viasData[viaPos] !== 0x03) {
+          viaPos++;
+          continue;
+        }
+        viaPos++;
+        const len = viasData[viaPos] | (viasData[viaPos + 1] << 8) | (viasData[viaPos + 2] << 16) | (viasData[viaPos + 3] << 24);
+        viaPos += 4;
+        if (len < 29 || viaPos + len > viasData.length) break;
+        const rec = viasData.subarray(viaPos, viaPos + len);
+        viaPos += len;
+        const dv = new DataView(rec.buffer, rec.byteOffset, rec.byteLength);
+        const netIdx = dv.getInt16(3, true) + 2;
+        const x = (dv.getInt32(13, true) / 10000) * 0.0254;
+        const y = (dv.getInt32(17, true) / 10000) * 0.0254;
+        const dia = Math.max(0.4, (dv.getInt32(21, true) / 10000) * 0.0254);
+        const hole = Math.max(0.2, (dv.getInt32(25, true) / 10000) * 0.0254);
+        vias.push({
+          id: uid('apcb_v'),
+          x,
+          y,
+          netName: netNames[netIdx] || '',
+          outerDiameter: dia,
+          holeDiameter: hole,
+          startLayer: 'TopCopper',
+          endLayer: 'BottomCopper',
+          viaStyle: 'Through'
+        });
+      }
+    }
+
+    const compsData = streams.get('Components6/Data');
+    if (compsData) {
+      const text = decodeAnsiOrUtf8(compsData);
+      const compPipes = text.split(/\0+|(?=\|RECORD=)|(?=\|SELECTION=)/).filter((s) => s.includes('|LAYER='));
+      compPipes.forEach((part, idx) => {
+        const rec = parsePipeRecord(part);
+        const rawX = rec.X !== undefined ? parseFloat(rec.X) : 0;
+        const rawY = rec.Y !== undefined ? parseFloat(rec.Y) : 0;
+        const pattern = rec.PATTERN || 'SMD';
+        components.push(makePcbPlacedComp({
+          refDes: getAltiumString(rec, 'SOURCEDESIGNATOR', getAltiumString(rec, 'NAME', `U${idx + 1}`)),
+          value: getAltiumString(rec, 'COMMENT', pattern),
+          typeName: pattern,
+          side: rec.LAYER === 'BOTTOM' ? 'Bottom' : 'Top',
+          x: Math.round(rawX * 0.0254 * 100) / 100,
+          y: Math.round(rawY * 0.0254 * 100) / 100,
+          angle: parseFloat(rec.ROTATION || '0') || 0,
+          pads: [makePadDef({ number: '1', x: -1, y: 0, width: 1.2, height: 1.2 })]
+        }));
+      });
+    }
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const c of components) {
+      minX = Math.min(minX, c.x - 5); maxX = Math.max(maxX, c.x + 5);
+      minY = Math.min(minY, c.y - 5); maxY = Math.max(maxY, c.y + 5);
+    }
+    for (const v of vias) {
+      minX = Math.min(minX, v.x - 2); maxX = Math.max(maxX, v.x + 2);
+      minY = Math.min(minY, v.y - 2); maxY = Math.max(maxY, v.y + 2);
+    }
+    if (Number.isFinite(minX) && minX < maxX) {
+      boardOutline.push({ x: minX, y: minY }, { x: maxX, y: minY }, { x: maxX, y: maxY }, { x: minX, y: maxY }, { x: minX, y: minY });
+    } else {
+      boardOutline.push({ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 80 }, { x: 0, y: 80 }, { x: 0, y: 0 });
+    }
+
+    const pcb = makeEcadPcbProject({
+      name,
+      components,
+      traces,
+      vias,
+      boardOutline
+    });
+    return convertImportedPcbToGost(pcb, 'Altium Designer Binary (.PcbDoc)');
+  }
+
+  const text = input instanceof Uint8Array ? decodeAnsiOrUtf8(input) : input;
+
   for (const line of text.split(/\r?\n/)) {
     if (!line.includes('RECORD=')) continue;
     const rec = parsePipeRecord(line);
     if (rec.RECORD === 'Component') {
+      const rawX = rec.X !== undefined ? parseFloat(rec.X) : 20;
+      const rawY = rec.Y !== undefined ? parseFloat(rec.Y) : 20;
       components.push(makePcbPlacedComp({
-        refDes: rec.SOURCEDESIGNATOR || rec.NAME || `U${components.length + 1}`,
-        value: rec.COMMENT || rec.PATTERN || '',
+        refDes: getAltiumString(rec, 'SOURCEDESIGNATOR', getAltiumString(rec, 'NAME', `U${components.length + 1}`)),
+        value: getAltiumString(rec, 'COMMENT', rec.PATTERN || ''),
         typeName: rec.PATTERN || 'DIP',
         side: rec.LAYER === 'BOTTOM' ? 'Bottom' : 'Top',
-        x: Math.round(parseFloat(rec.X || '20') * 0.0254 * 100) / 100 || 20,
-        y: Math.round(parseFloat(rec.Y || '20') * 0.0254 * 100) / 100 || 20,
+        x: Number.isFinite(rawX) ? Math.round(rawX * 0.0254 * 100) / 100 : 20,
+        y: Number.isFinite(rawY) ? Math.round(rawY * 0.0254 * 100) / 100 : 20,
         angle: parseFloat(rec.ROTATION || '0') || 0,
         pads: [makePadDef({ number: '1', x: -1, y: 0, width: 1.2, height: 1.2 })]
       }));

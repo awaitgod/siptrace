@@ -7,7 +7,10 @@ interface PreviewOptions {
   finishGold: boolean;
   showComponents: boolean;
   showSilk: boolean;
+  showCopper?: boolean;
+  showMask?: boolean;
   explodeFactor: number;
+  inspectedRefDes?: string | null;
 }
 
 function getMaskedTraceColor(maskColor: string, finishGold: boolean): string {
@@ -23,7 +26,7 @@ export function buildPcbScene(
   pcbGroup: THREE.Group,
   pcb: PcbProject,
   boardCenter: { cx: number; cy: number; w: number },
-  { maskColor, finishGold, showComponents, showSilk, explodeFactor }: PreviewOptions
+  { maskColor, finishGold, showComponents, showSilk, showCopper = true, showMask = true, explodeFactor, inspectedRefDes }: PreviewOptions
 ): void {
   const cx = boardCenter.cx;
   const cy = boardCenter.cy;
@@ -44,21 +47,33 @@ export function buildPcbScene(
     roughness: 0.3,
     side: THREE.DoubleSide
   });
-  const traceCopperMat = new THREE.MeshStandardMaterial({
-    color: getMaskedTraceColor(maskColor, finishGold),
-    metalness: isWhiteMask ? 0.22 : 0.4,
-    roughness: isWhiteMask ? 0.5 : 0.45
-  });
+  const traceCopperMat = showMask
+    ? new THREE.MeshStandardMaterial({
+        color: getMaskedTraceColor(maskColor, finishGold),
+        metalness: isWhiteMask ? 0.22 : 0.4,
+        roughness: isWhiteMask ? 0.5 : 0.45
+      })
+    : new THREE.MeshStandardMaterial({
+        color: '#c87533',
+        metalness: 0.85,
+        roughness: 0.25
+      });
   const innerCopperMat = new THREE.MeshStandardMaterial({
     color: '#c87533',
     metalness: 0.55,
     roughness: 0.4
   });
-  const maskMat = new THREE.MeshStandardMaterial({
-    color: maskColor,
-    roughness: 0.35,
-    metalness: 0.08
-  });
+  const maskMat = showMask
+    ? new THREE.MeshStandardMaterial({
+        color: maskColor,
+        roughness: 0.35,
+        metalness: 0.08
+      })
+    : new THREE.MeshStandardMaterial({
+        color: '#c2b168',
+        roughness: 0.75,
+        metalness: 0.05
+      });
   const fr4EdgeMat = new THREE.MeshStandardMaterial({
     color: '#9aa462',
     roughness: 0.75
@@ -138,64 +153,66 @@ export function buildPcbScene(
   const topCopperY = thick / 2 + 0.03 + ex * 0.55;
   const botCopperY = -thick / 2 - 0.03 - ex * 0.55;
 
-  for (const tr of pcb.traces) {
-    const isOuter = tr.layer === 'TopCopper' || tr.layer === 'BottomCopper';
-    const isInner = tr.layer === 'Inner1' || tr.layer === 'Inner2';
-    if (!isOuter && (!isInner || ex <= 0.1)) continue;
-    const yPos =
-      tr.layer === 'TopCopper'
-        ? topCopperY
-        : tr.layer === 'BottomCopper'
-          ? botCopperY
-          : tr.layer === 'Inner1'
-            ? thick * 0.18 + ex * 0.25
-            : -thick * 0.18 - ex * 0.25;
-    const mat = isInner ? innerCopperMat : traceCopperMat;
-    for (let i = 1; i < tr.points.length; i++) {
-      addTraceSegmentMesh(tr.points[i - 1].x, tr.points[i - 1].y, tr.points[i].x, tr.points[i].y, tr.width, yPos, mat);
+  if (showCopper) {
+    for (const tr of pcb.traces) {
+      const isOuter = tr.layer === 'TopCopper' || tr.layer === 'BottomCopper';
+      const isInner = tr.layer === 'Inner1' || tr.layer === 'Inner2';
+      if (!isOuter && (!isInner || ex <= 0.1)) continue;
+      const yPos =
+        tr.layer === 'TopCopper'
+          ? topCopperY
+          : tr.layer === 'BottomCopper'
+            ? botCopperY
+            : tr.layer === 'Inner1'
+              ? thick * 0.18 + ex * 0.25
+              : -thick * 0.18 - ex * 0.25;
+      const mat = isInner ? innerCopperMat : traceCopperMat;
+      for (let i = 1; i < tr.points.length; i++) {
+        addTraceSegmentMesh(tr.points[i - 1].x, tr.points[i - 1].y, tr.points[i].x, tr.points[i].y, tr.width, yPos, mat);
+      }
     }
-  }
 
-  // 3. Copper Pour polygons (real extruded shapes + holes)
-  for (const pour of pcb.copperPours) {
-    if (!pour.poured || !pour.computedIslands) continue;
-    const isOuter = pour.layer === 'TopCopper' || pour.layer === 'BottomCopper';
-    if (!isOuter && ex <= 0.1) continue;
-    const yPos =
-      pour.layer === 'TopCopper'
-        ? thick / 2 + 0.015 + ex * 0.55
-        : pour.layer === 'BottomCopper'
-          ? -thick / 2 - 0.045 - ex * 0.55
-          : pour.layer === 'Inner1'
-            ? thick * 0.18 + ex * 0.25
-            : -thick * 0.18 - ex * 0.25;
-    const mat = isOuter ? traceCopperMat : innerCopperMat;
-    for (const isl of pour.computedIslands) {
-      if (isl.outer.length < 3) continue;
-      const pShape = new THREE.Shape();
-      isl.outer.forEach((pt, idx) => {
-        const sx = pt.x - cx;
-        const sy = -(pt.y - cy);
-        if (idx === 0) pShape.moveTo(sx, sy);
-        else pShape.lineTo(sx, sy);
-      });
-      pShape.closePath();
-      for (const h of isl.holes ?? []) {
-        if (h.length < 3) continue;
-        const hole = new THREE.Path();
-        h.forEach((pt, idx) => {
+    // 3. Copper Pour polygons (real extruded shapes + holes)
+    for (const pour of pcb.copperPours) {
+      if (!pour.poured || !pour.computedIslands) continue;
+      const isOuter = pour.layer === 'TopCopper' || pour.layer === 'BottomCopper';
+      if (!isOuter && ex <= 0.1) continue;
+      const yPos =
+        pour.layer === 'TopCopper'
+          ? thick / 2 + 0.015 + ex * 0.55
+          : pour.layer === 'BottomCopper'
+            ? -thick / 2 - 0.045 - ex * 0.55
+            : pour.layer === 'Inner1'
+              ? thick * 0.18 + ex * 0.25
+              : -thick * 0.18 - ex * 0.25;
+      const mat = isOuter ? traceCopperMat : innerCopperMat;
+      for (const isl of pour.computedIslands) {
+        if (isl.outer.length < 3) continue;
+        const pShape = new THREE.Shape();
+        isl.outer.forEach((pt, idx) => {
           const sx = pt.x - cx;
           const sy = -(pt.y - cy);
-          if (idx === 0) hole.moveTo(sx, sy);
-          else hole.lineTo(sx, sy);
+          if (idx === 0) pShape.moveTo(sx, sy);
+          else pShape.lineTo(sx, sy);
         });
-        hole.closePath();
-        pShape.holes.push(hole);
+        pShape.closePath();
+        for (const h of isl.holes ?? []) {
+          if (h.length < 3) continue;
+          const hole = new THREE.Path();
+          h.forEach((pt, idx) => {
+            const sx = pt.x - cx;
+            const sy = -(pt.y - cy);
+            if (idx === 0) hole.moveTo(sx, sy);
+            else hole.lineTo(sx, sy);
+          });
+          hole.closePath();
+          pShape.holes.push(hole);
+        }
+        const m = new THREE.Mesh(new THREE.ExtrudeGeometry(pShape, { depth: 0.035, bevelEnabled: false }), mat);
+        m.rotation.x = -Math.PI / 2;
+        m.position.y = yPos;
+        pcbGroup.add(m);
       }
-      const m = new THREE.Mesh(new THREE.ExtrudeGeometry(pShape, { depth: 0.035, bevelEnabled: false }), mat);
-      m.rotation.x = -Math.PI / 2;
-      m.position.y = yPos;
-      pcbGroup.add(m);
     }
   }
 
@@ -404,7 +421,14 @@ export function buildPcbScene(
     const bw = Math.max(0.6, m3.bodyWidth);
     const bl = Math.max(0.6, m3.bodyLength);
     const bh = Math.max(0.4, m3.bodyHeight);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: m3.color || '#222222', roughness: 0.45, metalness: 0.1 });
+    const isSelected = inspectedRefDes === c.refDes;
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: m3.color || '#222222',
+      roughness: 0.45,
+      metalness: 0.1,
+      emissive: isSelected ? new THREE.Color('#0369a1') : new THREE.Color('#000000'),
+      emissiveIntensity: isSelected ? 0.6 : 0
+    });
     const silverMat = new THREE.MeshStandardMaterial({ color: '#cfd6dc', metalness: 0.85, roughness: 0.22 });
 
     if (m3.shape === 'RadialCap' || m3.shape === 'Cylinder') {
@@ -462,8 +486,15 @@ export function buildPcbScene(
 
       if (m3.shape === 'Header') {
         const isGreenScrewTerminal = (m3.color || '').toLowerCase() === '#196f3d';
-        const isUsbConnector = (c.patternId ?? '').includes('USBC') || c.pads.some((p) => p.type === 'SMD');
-        if (!isUsbConnector) {
+        const isUsbConnector = (c.patternId ?? '').includes('USBC') || (c.patternId ?? '').includes('USB') || c.pads.some((p) => p.type === 'SMD');
+        if (isUsbConnector) {
+          const usbShell = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.95, bh * 0.95, bl * 0.95), silverMat);
+          usbShell.position.y = dirY * (bh / 2 + 0.1);
+          grp.add(usbShell);
+          const socketHole = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.65, bh * 0.45, 0.4), bodyMat);
+          socketHole.position.set(0, dirY * (bh / 2 + 0.1), -bl * 0.48);
+          grp.add(socketHole);
+        } else {
           const goldPinMat = new THREE.MeshStandardMaterial({ color: '#e0b838', metalness: 0.85, roughness: 0.2 });
           for (const p of c.pads) {
             if (isGreenScrewTerminal) {
@@ -477,7 +508,7 @@ export function buildPcbScene(
             }
           }
         }
-      } else if (m3.shape === 'DIP' || m3.shape === 'SOIC' || m3.shape === 'TO92') {
+      } else if (m3.shape === 'DIP' || m3.shape === 'SOIC' || m3.shape === 'TO92' || m3.shape === 'QFP' || (m3.shape as string) === 'LQFP' || (m3.shape as string) === 'TQFP') {
         const pinH = lift + bh * 0.35;
         for (const p of c.pads) {
           const lead = new THREE.Mesh(new THREE.BoxGeometry(0.42, pinH, 0.35), silverMat);
@@ -486,6 +517,22 @@ export function buildPcbScene(
         }
       }
     }
+
+    if (isSelected) {
+      const padSpanX = Math.max(bw + 1.2, ...c.pads.map((p) => Math.abs(p.x) * 2 + p.width));
+      const padSpanZ = Math.max(bl + 1.2, ...c.pads.map((p) => Math.abs(p.y) * 2 + p.height));
+      const selBox = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.BoxGeometry(padSpanX, bh + 0.8, padSpanZ)),
+        new THREE.LineBasicMaterial({ color: 0x38bdf8 })
+      );
+      selBox.position.y = dirY * (bh / 2 + 0.3);
+      grp.add(selBox);
+    }
+
+    grp.userData = { component: c, refDes: c.refDes };
+    grp.traverse((child) => {
+      child.userData = { component: c, refDes: c.refDes };
+    });
 
     pcbGroup.add(grp);
   };

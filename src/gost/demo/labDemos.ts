@@ -196,9 +196,31 @@ export function createLabEncoderSchematic(): SchematicProject {
     comp('e_hl1', 'COMP_VD_AL307', 'HL1', 'АЛ307БМ', 'АЛ307БМ', 'PAT_LED_5MM', 285, 125),
     comp('e_g1', 'COMP_GND', '#GND1', 'GND', 'Земля', '', 305, 145)
   ];
-  const wires = [
-    orthoWire('ew1', comps, 'B1', '1', 'DD1', '23', 'ENC_A', 150),
-    orthoWire('ew2', comps, 'B1', '2', 'DD1', '24', 'ENC_B', 155),
+  const wires: SchWire[] = [
+    {
+      id: 'ew1',
+      points: [
+        { x: 122.5, y: 122.5 },
+        { x: 150, y: 122.5 },
+        { x: 150, y: 85 },
+        { x: 235, y: 85 },
+        { x: 235, y: 100 },
+        { x: 222.5, y: 100 }
+      ],
+      netName: 'ENC_A'
+    },
+    {
+      id: 'ew2',
+      points: [
+        { x: 122.5, y: 127.5 },
+        { x: 155, y: 127.5 },
+        { x: 155, y: 80 },
+        { x: 240, y: 80 },
+        { x: 240, y: 105 },
+        { x: 222.5, y: 105 }
+      ],
+      netName: 'ENC_B'
+    },
     orthoWire('ew3', comps, 'DD1', '2', 'R1', '1', 'LED0_DRV'),
     orthoWire('ew4', comps, 'R1', '2', 'HL1', '1', 'LED0_A'),
     orthoWire('ew5', comps, 'HL1', '2', '#GND1', '1', 'GND')

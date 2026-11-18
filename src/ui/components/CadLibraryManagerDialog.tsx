@@ -2,7 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ComponentDef, PatternDef } from '../../core/types';
 import {
   CadLibraryBundle,
+  createUserLibrary,
   deleteImportedLibraryBundle,
+  deleteUserComponent,
+  deleteUserPattern,
+  duplicateUserComponent,
+  duplicateUserPattern,
   exportLibraryBundleAsGostlib,
   loadImportedLibraryBundles,
   loadUserComponents,
@@ -147,6 +152,37 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
     );
   }, [activeTab, filteredPatterns, selectedPatId, selectedComp, userPatterns]);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (activeTab === 'components' && filteredComponents.length > 0) {
+          e.preventDefault();
+          const curId = selectedComp?.id;
+          const idx = filteredComponents.findIndex((c) => c.id === curId);
+          const nextIdx =
+            e.key === 'ArrowDown'
+              ? (idx + 1) % filteredComponents.length
+              : (idx - 1 + filteredComponents.length) % filteredComponents.length;
+          setSelectedCompId(filteredComponents[nextIdx].id);
+        } else if (activeTab === 'patterns' && filteredPatterns.length > 0) {
+          e.preventDefault();
+          const curId = resolvedLinkedPattern?.id;
+          const idx = filteredPatterns.findIndex((p) => p.id === curId);
+          const nextIdx =
+            e.key === 'ArrowDown'
+              ? (idx + 1) % filteredPatterns.length
+              : (idx - 1 + filteredPatterns.length) % filteredPatterns.length;
+          setSelectedPatId(filteredPatterns[nextIdx].id);
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose, activeTab, filteredComponents, filteredPatterns, selectedComp, resolvedLinkedPattern]);
+
   const handleImportFiles = async () => {
     const pickedList = await pickCadFiles(SUPPORTED_EXT_ACCEPT);
     if (pickedList.length === 0) return;
@@ -252,6 +288,47 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
     setStatusMsg(`Удалена библиотека "${bundle.name}".`);
   };
 
+  const handleCreateNewLibrary = () => {
+    const name = window.prompt('Введите имя новой библиотеки:');
+    if (!name || !name.trim()) return;
+    const bundle = createUserLibrary(name.trim());
+    refreshFromStore();
+    setSelectedBundleId(bundle.id);
+    setStatusMsg(`Создана новая библиотека «${bundle.name}».`);
+  };
+
+  const handleDuplicateComponent = (c: ComponentDef) => {
+    const clone = duplicateUserComponent(c.id);
+    if (clone) {
+      refreshFromStore();
+      setSelectedCompId(clone.id);
+      setStatusMsg(`Компонент «${c.name}» сдублирован как «${clone.name}».`);
+    }
+  };
+
+  const handleDeleteComponent = (c: ComponentDef) => {
+    if (!window.confirm(`Удалить компонент «${c.name}» из библиотеки?`)) return;
+    deleteUserComponent(c.id);
+    refreshFromStore();
+    setStatusMsg(`Компонент «${c.name}» удалён.`);
+  };
+
+  const handleDuplicatePattern = (p: PatternDef) => {
+    const clone = duplicateUserPattern(p.id);
+    if (clone) {
+      refreshFromStore();
+      setSelectedPatId(clone.id);
+      setStatusMsg(`Корпус «${p.name}» сдублирован как «${clone.name}».`);
+    }
+  };
+
+  const handleDeletePattern = (p: PatternDef) => {
+    if (!window.confirm(`Удалить корпус «${p.name}» из библиотеки?`)) return;
+    deleteUserPattern(p.id);
+    refreshFromStore();
+    setStatusMsg(`Корпус «${p.name}» удалён.`);
+  };
+
   const openComponent = (component: ComponentDef) => {
     if (onSelectComponent && onSelectComponent(component) !== false) onClose();
   };
@@ -262,9 +339,9 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
 
   return (
     <div className="dt-modal-backdrop" data-testid="cad-library-manager-modal">
-      <div className="dt-modal" style={{ width: 960, maxWidth: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+      <div className="dt-modal" role="dialog" aria-modal="true" aria-label="Библиотеки внешних CAD" aria-labelledby="cad-lib-title" style={{ width: 960, maxWidth: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
         <div className="dt-modal-title">
-          <span>Библиотеки внешних CAD (DipTrace .eli/.lib, KiCad, Eagle, EasyEDA, ZIP)</span>
+          <span id="cad-lib-title">Библиотеки внешних CAD (DipTrace .eli/.lib, KiCad, Eagle, EasyEDA, ZIP)</span>
           <button className="dt-btn" aria-label="Закрыть менеджер библиотек" style={{ minWidth: 22, height: 18, padding: 0 }} onClick={onClose}>×</button>
         </div>
 
@@ -278,6 +355,13 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
               onClick={handleImportFiles}
             >
               {busy ? 'Импорт...' : '+ Импортировать библиотеку CAD...'}
+            </button>
+            <button
+              className="dt-btn"
+              data-testid="cadlib-new-btn"
+              onClick={handleCreateNewLibrary}
+            >
+              + Новая библиотека...
             </button>
             <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
               <input
@@ -515,6 +599,24 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                   <div><b>Выводов по секциям:</b> {selectedComp.parts.map((part) => part.pins.length).join(' / ')}</div>
                   <div><b>Корпус:</b> {selectedComp.patternId || 'не назначен'}</div>
                   <div><b>ГОСТ:</b> {selectedComp.gostStandard || '—'}</div>
+                  <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+                    <button
+                      className="dt-btn"
+                      style={{ flex: 1 }}
+                      title="Дублировать выбранный компонент"
+                      onClick={() => handleDuplicateComponent(selectedComp)}
+                    >
+                      Дублировать
+                    </button>
+                    <button
+                      className="dt-btn"
+                      style={{ flex: 1, color: '#d9534f' }}
+                      title="Удалить выбранный компонент"
+                      onClick={() => handleDeleteComponent(selectedComp)}
+                    >
+                      Удалить
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -524,6 +626,24 @@ export const CadLibraryManagerDialog: React.FC<CadLibraryManagerDialogProps> = (
                   <div><b>Площадок:</b> {resolvedLinkedPattern.pads.length}</div>
                   <div><b>3D-модель:</b> {resolvedLinkedPattern.model3d?.shape ?? 'Box'}</div>
                   <div><b>Описание:</b> {resolvedLinkedPattern.description}</div>
+                  <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+                    <button
+                      className="dt-btn"
+                      style={{ flex: 1 }}
+                      title="Дублировать выбранный корпус"
+                      onClick={() => handleDuplicatePattern(resolvedLinkedPattern)}
+                    >
+                      Дублировать
+                    </button>
+                    <button
+                      className="dt-btn"
+                      style={{ flex: 1, color: '#d9534f' }}
+                      title="Удалить выбранный корпус"
+                      onClick={() => handleDeletePattern(resolvedLinkedPattern)}
+                    >
+                      Удалить
+                    </button>
+                  </div>
                 </div>
               )}
 

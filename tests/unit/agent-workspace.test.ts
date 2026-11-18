@@ -2,6 +2,78 @@ import { describe, expect, it } from 'vitest';
 import { createAgentWorkspace } from '../../src/ui/modules/launcher/agent/workspace';
 
 describe('agent schematic and PCB acceptance', () => {
+  it('edits values and renames an existing inter-sheet net in place on both documents', () => {
+    const agent = createAgentWorkspace({ documents: {}, plan: '' }, 'light');
+    agent.execute('create_schematic', { name: 'Revision' });
+    const second = agent.execute('add_sheet', { name: 'Output' }) as { sheet: string };
+    const sides = [
+      { sheet: 'sheet_1', ref: 'R1', pin: '2', port: 'OffPageOut', x: 130 },
+      { sheet: second.sheet, ref: 'R2', pin: '1', port: 'OffPageIn', x: 50 }
+    ] as const;
+    for (const { sheet, ref, pin, port, x } of sides) {
+      agent.execute('place_component', { sheet, component: 'COMP_R_R1_12_0805', ref, x: 95, y: 60 });
+      agent.execute('connect_net', { sheet, net: 'N3', terminals: [{ref, pin}], port, portPosition: {x, y: 60} });
+    }
+    agent.execute('create_board', { width: 60, height: 45 });
+    agent.execute('route_between_pads', {
+      from: {ref:'R1',pin:'2'}, to: {ref:'R2',pin:'1'}, net:'N3', layer:'TopCopper', width:.3
+    });
+    const initial = structuredClone(agent.draft.documents);
+    expect(() => agent.execute('set_component_values', { values: { R1: '22 кОм', R99: '1 кОм' } })).toThrow();
+    expect(agent.draft.documents).toEqual(initial);
+    agent.execute('set_component_values', { values: { R1: '22 кОм' } });
+    agent.execute('rename_net', { from: 'N3', to: 'MID' });
+    for (const oldSheet of initial.schematic!.sheets) {
+      const newSheet = agent.draft.documents.schematic!.sheets.find(item => item.id === oldSheet.id);
+      expect(newSheet?.wires).toEqual(oldSheet.wires.map(wire => ({...wire, netName:'MID'})));
+      expect(newSheet?.netPorts).toEqual(oldSheet.netPorts.map(port => ({...port, netName:'MID'})));
+      expect(newSheet?.components).toEqual(oldSheet.components.map(part =>
+        part.refDes === 'R1' ? {...part, value:'22 кОм'} : part));
+    }
+    const pcb = agent.draft.documents.pcb!;
+    expect(pcb.traces).toEqual(initial.pcb!.traces.map(trace => ({...trace, netName:'MID'})));
+    expect(pcb.components[0]).toMatchObject({ id:initial.pcb!.components[0].id, value:'22 кОм', padNets:{'2':'MID'} });
+    expect(agent.execute('check', {})).toMatchObject({ comparison:{inSync:true}, unrouted:0 });
+    const revised = structuredClone(agent.draft.documents);
+    expect(() => agent.execute('rename_net', { from: 'MID', to: 'Net_1' })).toThrow('занято');
+    expect(agent.draft.documents).toEqual(revised);
+  });
+
+  it('syncs a new schematic stage without replacing PCB placement, geometry or old copper', () => {
+    const agent = createAgentWorkspace({ documents: {}, plan: '' }, 'light');
+    const place = (ref: string, x: number) => agent.execute('place_component', {
+      sheet:'sheet_1', component:'COMP_R_R1_12_0805', ref, x, y:60
+    });
+    const connect = (net: string, left: string, right: string) => agent.execute('connect_net', {
+      sheet:'sheet_1', net, terminals:[{ref:left,pin:'2'}, {ref:right,pin:'1'}]
+    });
+    agent.execute('create_schematic', { name:'Existing' });
+    place('R1',60);
+    place('R2',140);
+    connect('A','R1','R2');
+    agent.execute('create_board', { width:60, height:45 });
+    agent.execute('route_between_pads', {
+      net:'A', from:{ref:'R1',pin:'2'}, to:{ref:'R2',pin:'1'}, layer:'TopCopper', width:.3
+    });
+    const prior = structuredClone(agent.draft.documents.pcb!);
+    agent.execute('set_targets', { documents:'both', board:{width:60,height:45,layers:2,positions:[{ref:'R3',x:24,y:24}]} });
+    agent.execute('delete_schematic', { sheet:'sheet_1', ids:[agent.draft.documents.schematic!.sheets[0].wires[0].id] });
+    place('R3',100);
+    connect('A','R1','R3');
+    connect('B','R3','R2');
+    expect(agent.execute('sync_board_from_schematic', {})).toMatchObject({
+      added:['R3'], removed:[],
+      affectedNets:expect.arrayContaining([{net:'A',traces:[prior.traces[0].id],vias:[]},{net:'B',traces:[],vias:[]}])
+    });
+    const pcb = agent.draft.documents.pcb!;
+    expect(pcb.boardOutline).toEqual(prior.boardOutline);
+    expect(pcb.traces).toEqual(prior.traces);
+    expect(pcb.components).toEqual([
+      prior.components[0], {...prior.components[1], padNets:{'1':'B'}},
+      expect.objectContaining({ refDes:'R3', x:24, y:24, padNets:{'1':'A','2':'B'} })
+    ]);
+  });
+
   it('configures sheets and validates mechanical and document requirements', () => {
     const agent = createAgentWorkspace({ documents: {}, plan: '' }, 'light');
     agent.execute('create_schematic', { name: 'Requirements' });

@@ -37,6 +37,11 @@ export interface UsePcbHotkeysParams {
   handleRunDrc: () => void;
   zoomToFit: () => void;
   onFind?: () => void;
+  gridStepMm?: number;
+  cycleGridStep?: () => void;
+  cycleRoutingAngleMode?: () => void;
+  polyDraftPtsLength?: number;
+  onFinalizeDraft?: () => void;
 }
 
 /** Registers global keyboard shortcuts for PCB editing, routing layer switches, and DRC. */
@@ -56,8 +61,49 @@ export function usePcbHotkeys(p: UsePcbHotkeysParams): void {
 
       if (inInput) return;
 
+      if (e.key.startsWith('Arrow')) {
+        const step = (e.shiftKey ? 10 : 1) * (p.gridStepMm || 1.27);
+        const dx = (e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0) * step;
+        const dy = (e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0) * step;
+        if (dx !== 0 || dy !== 0) {
+          if (p.selectedCompId) {
+            e.preventDefault();
+            p.commitPcb((prev) => ({
+              ...prev,
+              components: prev.components.map((c) =>
+                c.id === p.selectedCompId && !c.locked ? { ...c, x: Math.round((c.x + dx) * 1000) / 1000, y: Math.round((c.y + dy) * 1000) / 1000 } : c
+              )
+            }));
+            return;
+          }
+          if (p.selectedViaId) {
+            e.preventDefault();
+            p.commitPcb((prev) => ({
+              ...prev,
+              vias: prev.vias.map((v) =>
+                v.id === p.selectedViaId ? { ...v, x: Math.round((v.x + dx) * 1000) / 1000, y: Math.round((v.y + dy) * 1000) / 1000 } : v
+              )
+            }));
+            return;
+          }
+        }
+      }
+
       // Preserve standard activation of focused controls while routing.
       if ((e.key === ' ' || e.key === 'Enter') && t?.closest('button, a, [role="button"], [role^="menuitem"]')) return;
+
+      if (e.key === 'Enter') {
+        if (p.tool === 'routeManual' && p.routeDraftPtsLength >= 2) {
+          e.preventDefault();
+          p.onFinalizeDraft?.();
+          return;
+        }
+        if (p.onFinalizeDraft && (p.polyDraftPtsLength ?? 0) >= 3) {
+          e.preventDefault();
+          p.onFinalizeDraft?.();
+          return;
+        }
+      }
 
       if (e.ctrlKey && (e.key.toLowerCase() === 'n' || e.code === 'KeyN')) {
         e.preventDefault();
@@ -71,18 +117,21 @@ export function usePcbHotkeys(p: UsePcbHotkeysParams): void {
       } else if (matchesHotkey(e, p.hotkeys.redo)) {
         e.preventDefault();
         p.handleRedo();
-      } else if (e.key === '1' && !e.ctrlKey && !e.altKey) {
+      } else if ((e.key === '1' || ((e.key.toLowerCase() === 't' || e.code === 'KeyT') && !p.selectedCompId)) && !e.ctrlKey && !e.altKey) {
         p.switchCopperLayer('TopCopper');
-      } else if (e.key === '2' && !e.ctrlKey && !e.altKey) {
+      } else if ((e.key === '2' || ((e.key.toLowerCase() === 'b' || e.code === 'KeyB') && !p.selectedCompId)) && !e.ctrlKey && !e.altKey) {
         p.switchCopperLayer('BottomCopper');
       } else if (e.key === '3' && !e.ctrlKey && !e.altKey && p.layerCount >= 4) {
         p.switchCopperLayer('Inner1');
       } else if (e.key === '4' && !e.ctrlKey && !e.altKey && p.layerCount >= 4) {
         p.switchCopperLayer('Inner2');
+      } else if ((e.key.toLowerCase() === 'g' || e.code === 'KeyG') && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        p.cycleGridStep?.();
       } else if (matchesHotkey(e, p.hotkeys.find)) {
         e.preventDefault();
         p.onFind?.();
-      } else if (matchesHotkey(e, p.hotkeys.placeVia) && p.tool === 'routeManual') {
+      } else if (((e.key.toLowerCase() === 'v' || e.code === 'KeyV') || matchesHotkey(e, p.hotkeys.placeVia)) && p.tool === 'routeManual') {
         p.switchCopperLayer(p.activeLayer === 'TopCopper' ? 'BottomCopper' : 'TopCopper');
       } else if (matchesHotkey(e, p.hotkeys.routeManual)) {
         p.setRouteDraftPts([]);
@@ -101,8 +150,14 @@ export function usePcbHotkeys(p: UsePcbHotkeysParams): void {
             c.id === p.selectedCompId && !c.locked ? { ...c, side: c.side === 'Top' ? 'Bottom' : 'Top' } : c
           )
         }));
+      } else if (e.key === '/' && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        p.cycleRoutingAngleMode?.();
       } else if (e.key === ' ' || e.code === 'Space') {
-        if (p.tool === 'routeManual' && p.routeDraftPtsLength > 0) {
+        if (e.shiftKey) {
+          e.preventDefault();
+          p.cycleRoutingAngleMode?.();
+        } else if (p.tool === 'routeManual' && p.routeDraftPtsLength > 0) {
           e.preventDefault();
           p.setRouteElbowFlip((v) => !v);
         }

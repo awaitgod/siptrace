@@ -1,5 +1,6 @@
 import { PcbProject } from '../../core/types';
 import { getWorldPads } from '../drc';
+import { isViaOnCamLayer } from './camCommon';
 
 export interface DxfExportOptions {
   units?: 'mm' | 'in';
@@ -168,6 +169,7 @@ export function exportPcbSvg1to1(pcb: PcbProject, copperLayer: 'TopCopper' | 'Bo
     }
   }
   for (const v of pcb.vias) {
+    if (!isViaOnCamLayer(v, copperLayer, pcb.layerCount)) continue;
     els.push(`<circle cx="${v.x}" cy="${v.y}" r="${v.outerDiameter / 2}" fill="#000" />`);
     els.push(`<circle cx="${v.x}" cy="${v.y}" r="${v.holeDiameter / 2}" fill="#fff" />`);
   }

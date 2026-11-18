@@ -69,7 +69,7 @@ export interface AgentDraft {
     lastIssue?: string;
     recent: { name: string; ok: boolean; error?: string }[];
   };
-  report?: { summary: string; limitations: string; status?: 'complete' | 'draft' };
+  report?: { summary: string; limitations: string; verification?: string; status?: 'complete' | 'draft' };
   checks?: {
     erc: number; drc: number; outsideFrame: number; unrouted?: number; inSync?: boolean;
     errors?: number; warnings?: number; blockers?: string[];
@@ -108,7 +108,9 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
   }
 
   function setUserTargets(raw: unknown) {
-    resetTargets(commands.set_targets.parse(raw));
+    const targets = commands.set_targets.parse(raw);
+    if (targets.board) targets.board.allowViaInPad ??= false;
+    resetTargets(targets);
     targetsLocked = true;
   }
 
@@ -140,6 +142,19 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
       { ...options, layers, width, crossing: required?.crossing });
   }
 
+  function targetPadNets(targets: Targets) {
+    const netsByRef = new Map((targets.boardRefs ?? []).map(ref => [ref, Object.create(null) as Record<string, string>]));
+    for (const [net, pins] of Object.entries(targets.boardNets ?? {})) {
+      for (const { ref, pin } of pins) {
+        const nets = netsByRef.get(ref);
+        if (!nets) throw new Error('В контракте отсутствует позиция ' + ref + ' для цепи ' + net + '.');
+        if (Object.hasOwn(nets, pin) && nets[pin] !== net) throw new Error('Несколько цепей на площадке ' + ref + '.' + pin + '.');
+        nets[pin] = net;
+      }
+    }
+    return netsByRef;
+  }
+
   function schematic(): SchematicProject {
     if (!draft.documents.schematic) throw new Error('Сначала создайте или загрузите схему.');
     return draft.documents.schematic;
@@ -148,6 +163,69 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
   function board(): PcbProject {
     if (!draft.documents.pcb) throw new Error('Сначала создайте или загрузите плату.');
     return draft.documents.pcb;
+  }
+
+  function syncBoard(ref?: string) {
+    const project = schematic();
+    const previous = board();
+    const converted = convertSchematicToPcb(project, previous);
+    const byRef = new Map(previous.components.map(component => [component.refDes, component]));
+    const required = project.sheets.flatMap(item => item.components).filter(item =>
+      (!ref || item.refDes === ref) && !item.doNotMount && !item.refDes.startsWith('#'));
+    const missing = required.filter(item => !converted.components.some(component => component.refDes === item.refDes));
+    if (missing.length) throw new Error('Нет посадочного места: ' + missing.map(item => item.refDes).join(', '));
+
+    const added: string[] = [];
+    const changedNets = new Set<string>();
+    const components = converted.components.filter(item => !ref || item.refDes === ref).map(next => {
+      const old = byRef.get(next.refDes);
+      if (!old) added.push(next.refDes);
+      for (const pin of new Set([...Object.keys(old?.padNets ?? {}), ...Object.keys(next.padNets)])) {
+        const from = old?.padNets[pin];
+        const to = next.padNets[pin];
+        if (from === to && old?.patternId === next.patternId) continue;
+        if (from) changedNets.add(from);
+        if (to) changedNets.add(to);
+      }
+      if (old?.patternId === next.patternId &&
+          Object.keys(next.padNets).some(pin => !old.pads.some(pad => pad.number === pin))) {
+        throw new Error('В существующем корпусе нет нужной площадки: ' + next.refDes);
+      }
+      if (old) return {
+        ...(old.patternId === next.patternId ? old : { ...next, showRefDes: old.showRefDes, showValue: old.showValue }),
+        value: next.value, typeName: next.typeName, padNets: next.padNets
+      };
+      const position = draft.targets?.board?.positions?.find(item => item.ref === next.refDes);
+      if (position) {
+        next.x = position.x;
+        next.y = position.y;
+        next.angle = position.angle ?? next.angle;
+        next.side = position.side ?? next.side;
+        next.locked = position.locked ?? next.locked;
+      }
+      return next;
+    });
+    const replacements = new Map(components.map(item => [item.refDes, item]));
+    const boardRefs = draft.targets?.boardRefs;
+    const removed = ref || !boardRefs ? [] : previous.components.filter(item =>
+      !replacements.has(item.refDes) && !boardRefs.includes(item.refDes));
+    const removedRefs = new Set(removed.map(item => item.refDes));
+    for (const item of removed) for (const net of Object.values(item.padNets)) changedNets.add(net);
+    const kept = previous.components.flatMap(old => {
+      return removedRefs.has(old.refDes) ? [] : [replacements.get(old.refDes) ?? old];
+    });
+    draft.documents.pcb = {
+      ...previous,
+      components: [...kept, ...components.filter(item => !byRef.has(item.refDes))]
+    };
+    return {
+      added, removed: removed.map(item => item.refDes),
+      affectedNets: [...changedNets].map(net => ({
+        net,
+        traces: previous.traces.filter(item => item.netName === net).map(item => item.id),
+        vias: previous.vias.filter(item => item.netName === net).map(item => item.id)
+      }))
+    };
   }
 
   function getProgress() {
@@ -159,6 +237,8 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
     if (draft.targets) {
       if (draft.targets.documents !== 'pcb' && !schematic) phase = 'create_schematic';
       else if (draft.targets.documents !== 'schematic' && !pcb) phase = schematic ? 'schematic' : 'create_board';
+      else if (draft.targets.documents === 'pcb' && pcb && draft.targets.boardRefs?.some(ref =>
+        !pcb.components.some(component => component.refDes === ref))) phase = 'placement';
       else if (unrouted.length) phase = 'routing';
       else if (!checked || blocks.length) phase = 'check';
       else phase = 'review';
@@ -253,7 +333,7 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
             ...(title === undefined ? {} : { name: title }),
             ...(organization === undefined ? {} : { organization }),
             ...(developer === undefined ? {} : { developer }),
-            form: options?.form ?? (index === 0 ? 'Form1' : 'Form2a'),
+            form: options?.form ?? current.titleBlock.form,
             sheetNumber: index + 1, totalSheets: project.sheets.length
           }
         };
@@ -261,12 +341,12 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
       return project.sheets.map(item => ({ sheet: item.id, name: item.name, format: item.format, titleBlock: item.titleBlock }));
     },
     compare_requirements: () => handlers.check({}),
-    finalize_project: () => {
+    finalize_project: ({ detail }) => {
       const { schematic, pcb } = draft.documents;
       if (draft.targets && ((!schematic && draft.targets.documents !== 'pcb') || (!pcb && draft.targets.documents !== 'schematic'))) {
         throw new Error('Сначала создайте обязательные документы. Для промежуточной проверки используйте check.');
       }
-      const report = handlers.check({});
+      const report = handlers.check({ detail });
       const images: AgentCapture[] = [];
       for (const item of draft.documents.schematic?.sheets ?? []) {
         images.push(handlers.screenshot({ target: 'schematic', sheet: item.id }) as AgentCapture);
@@ -373,8 +453,8 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
         item.patternId = footprint.id;
       }
       project.customPatternDefs = { ...project.customPatternDefs, [footprint.id]: footprint };
-      if (draft.documents.pcb) draft.documents.pcb = convertSchematicToPcb(project, draft.documents.pcb);
-      return { ref, pattern: footprint.id, comparison: draft.documents.pcb && comparePcbToSchematic(project, draft.documents.pcb) };
+      const sync = draft.documents.pcb && syncBoard(ref);
+      return { ref, pattern: footprint.id, ...sync };
     },
     render_review: ({ target, sheet: id, focusIds }) => {
       if (!focusIds?.length) return handlers.screenshot({ target, sheet: id });
@@ -518,6 +598,65 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
       return { components: components.map(item => item.id),
         labelIssues: findLabelOverlaps(sheet(id), schematic().customComponentDefs) };
     },
+    set_component_values: ({ values }) => {
+      const components = schematic().sheets.flatMap(item => item.components);
+      const byRef = new Set(components.map(item => item.refDes));
+      const entries = Object.entries(values);
+      if (!entries.length || entries.some(([ref]) => ref.startsWith('#') || !byRef.has(ref))) {
+        throw new Error('Укажите номиналы существующих физических позиций схемы.');
+      }
+      for (const part of [...components, ...(draft.documents.pcb?.components ?? [])]) {
+        if (Object.hasOwn(values, part.refDes)) part.value = values[part.refDes];
+      }
+      return { values };
+    },
+    rename_net: ({ from, to }) => {
+      const { schematic: project, pcb } = draft.documents;
+      if (!project && !pcb) throw new Error('Сначала загрузите документ.');
+      const copper = pcb ? [...pcb.traces, ...pcb.vias, ...pcb.copperPours] : [];
+      const labels = project?.sheets.flatMap(item => [...item.wires, ...item.netPorts, ...item.junctions]) ?? [];
+      const pads = pcb?.components.flatMap(item => Object.values(item.padNets)) ?? [];
+      const before = project ? extractSchematicNets(project) : [];
+      const pairs = [...(project?.sheets.flatMap(item => item.diffPairs) ?? []), ...(pcb?.diffPairs ?? [])];
+      const taps = project?.sheets.flatMap(item => item.busTaps) ?? [];
+      const assignments = [project?.netClassAssignments, pcb?.netClassAssignments];
+      const names = [...labels, ...copper, ...before].map(item => item.netName).concat(pads,
+        pairs.flatMap(item => [item.posNet, item.negNet]), taps.map(item => item.signalName),
+        assignments.flatMap(item => Object.keys(item ?? {})));
+      if (from === to) return { from, to, unchanged: true };
+      if (!labels.some(item => item.netName === from) && !pads.includes(from) && !copper.some(item => item.netName === from)) {
+        throw new Error('Именованная цепь не найдена: ' + from);
+      }
+      if (names.includes(to)) throw new Error('Имя уже занято: ' + to);
+      for (const item of [...labels, ...copper]) if (item.netName === from) item.netName = to;
+      for (const item of project?.sheets.flatMap(s => s.netPorts) ?? []) {
+        if (item.netName === to && item.label === from) item.label = to;
+      }
+      for (const item of taps) if (item.signalName === from) item.signalName = to;
+      for (const item of pairs) {
+        if (item.posNet === from) item.posNet = to;
+        if (item.negNet === from) item.negNet = to;
+      }
+      for (const item of pcb?.components ?? []) {
+        item.padNets = Object.fromEntries(Object.entries(item.padNets).map(([pin, net]) => [pin, net === from ? to : net]));
+      }
+      for (const record of assignments) {
+        if (!record || !Object.hasOwn(record, from)) continue;
+        Object.defineProperty(record, to, { value: record[from], enumerable: true, writable: true, configurable: true });
+        delete record[from];
+      }
+      if (project) {
+        const signature = (groups: typeof before, renamed: boolean) => groups.map(group => JSON.stringify([
+          renamed && group.netName === from ? to : group.netName,
+          group.pins.map(pin => [pin.compId, pin.refDes, pin.pinNumber].join(':')).sort(),
+          [...group.wireIds].sort()
+        ])).sort();
+        if (JSON.stringify(signature(before, true)) !== JSON.stringify(signature(extractSchematicNets(project), false))) {
+          throw new Error('Переименование изменило связность или имя задаётся другим объектом (например, глобальным символом питания).');
+        }
+      }
+      return { from, to, traces: copper.filter(item => item.netName === to).length };
+    },
     move_schematic: ({ sheet: id, ids, dx, dy }) => {
       const current = sheet(id);
       replaceSheet(transformEntities(current, ids, { dx, dy }, schematic().customComponentDefs));
@@ -579,6 +718,8 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
     mark_no_connect: ({ sheet: id, pin }) => {
       const current = sheet(id);
       const { x, y } = resolvePin(current, pin);
+      const existing = current.shapes.find(shape => shape.type === 'text' && shape.text === '× NC' && shape.x === x && shape.y === y);
+      if (existing) return { id: existing.id, unchanged: true };
       const marker = uid('nc');
       replaceSheet({ ...current, shapes: [...current.shapes, { id: marker, type: 'text', x, y, text: '× NC', size: 2.5 }] });
       return { id: marker };
@@ -588,10 +729,39 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
       draft.documents = structuredClone(verified);
       return { restored: true };
     },
-    inspect: ({ sheet: id }) => {
+    inspect: ({ sheet: id, pcbNet, detail }) => {
       const project = draft.documents.schematic;
       const pcb = draft.documents.pcb;
+      if (pcbNet !== undefined) {
+        if (id) throw new Error('Выберите лист или сеть платы для инспекции.');
+        const current = board();
+        const pads = getWorldPads(current).filter(pad => pad.netName === pcbNet);
+        if (!pads.length) throw new Error('На плате нет площадок сети ' + pcbNet);
+        return { revision, net: pcbNet, requirements: draft.targets?.board?.routes?.[pcbNet],
+          pads: pads.map(({ refDes, pad, x, y, effectiveLayer }) => ({ ref: refDes, pin: pad.number, x, y, layer: effectiveLayer })),
+          traces: current.traces.filter(item => item.netName === pcbNet), vias: current.vias.filter(item => item.netName === pcbNet),
+          remaining: computeUnroutedRatlines(current).filter(item => item.netName === pcbNet),
+          outline: current.boardOutline, cutouts: current.cutouts, keepouts: current.keepouts };
+      }
       const current = id ? sheet(id) : undefined;
+      if (detail === 'summary' && !current) {
+        return {
+          revision, canRestoreVerified: Boolean(verified),
+          sheets: project?.sheets.map(item => ({
+            id: item.id, name: item.name, format: item.format,
+            refs: item.components.map(part => part.refDes),
+            ports: item.netPorts.map(({id, netName, style}) => ({id, netName, style}))
+          })),
+          pcb: pcb && {
+            outline: pcb.boardOutline, layers: pcb.layerCount,
+            components: pcb.components.map(({refDes, value, patternId, x, y, angle, side, locked}) => ({
+              ref: refDes, value, pattern: patternId, x, y, angle, side, locked
+            })),
+            copper: { traces: pcb.traces.length, vias: pcb.vias.length, pours: pcb.copperPours.length },
+            cutouts: pcb.cutouts.length, keepouts: pcb.keepouts.length
+          }
+        };
+      }
       return {
         plan: draft.plan, targets: draft.targets, revision, currentChecks: draft.checks, canRestoreVerified: Boolean(verified),
         sheets: project?.sheets.map(item => ({ id: item.id, name: item.name, format: item.format, ...sheetWorkspace(item), components: item.components.length })),
@@ -616,7 +786,9 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
       const options = buildDefaultNewProjectOptions();
       const template = previous ?? createBlankPcbProject({
         ...options, projectName: name ?? project?.projectName ?? 'Плата',
-        boardWidthMm: width, boardHeightMm: height, boardLayers: layers, boardCornerRadiusMm: 0
+        boardWidthMm: width ?? draft.targets?.board?.width,
+        boardHeightMm: height ?? draft.targets?.board?.height,
+        boardLayers: layers ?? draft.targets?.board?.layers, boardCornerRadiusMm: 0
       });
       const next = project ? convertSchematicToPcb(project, template) : template;
       const missing = project?.sheets.flatMap(item => item.components).filter(item =>
@@ -627,6 +799,7 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
       draft.documents.pcb = next;
       return { components: next.components.length, outline: next.boardOutline };
     },
+    sync_board_from_schematic: () => syncBoard(),
     board_outline: ({ points }) => {
       board().boardOutline = points;
       return { points: points.length };
@@ -648,6 +821,52 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
       return { id };
     },
     place_footprints: ({ items }) => items.map(item => handlers.place_footprint(item)),
+    place_target_footprints: ({ patterns, defaultPattern }) => {
+      const pcb = board();
+      const { targets } = draft;
+      if (targets?.documents !== 'pcb' || !targets.boardRefs || !targets.boardNets || !targets.board?.positions) {
+        throw new Error('Нужен контракт самостоятельной платы с позициями, корпусами и цепями.');
+      }
+      const netsByRef = targetPadNets(targets);
+      const positions = targets.board.positions;
+      const added = targets.boardRefs.filter(ref => !pcb.components.some(item => item.refDes === ref)).map(ref => {
+        const position = positions.find(item => item.ref === ref);
+        const pattern = Object.hasOwn(patterns, ref) ? patterns[ref] : defaultPattern;
+        if (!position || !pattern) throw new Error('Нужны позиция и корпус для ' + ref + '.');
+        const { x, y, side, angle, locked } = position;
+        return handlers.place_footprint({ ref, x, y, side, angle, locked, pattern, nets: netsByRef.get(ref) });
+      });
+      return { added: added.length };
+    },
+    sync_target_pad_nets: () => {
+      const pcb = board();
+      const { targets } = draft;
+      if (targets?.documents !== 'pcb' || !targets.boardRefs || !targets.boardNets) {
+        throw new Error('Нужен контракт самостоятельной платы с точным составом цепей.');
+      }
+      const byRef = targetPadNets(targets);
+      const changes = [];
+      const copperNets = new Set([...pcb.traces, ...pcb.vias, ...pcb.copperPours].map(item => item.netName));
+      for (const part of pcb.components) {
+        const expected = byRef.get(part.refDes);
+        if (!expected) continue;
+        const pads = new Set(part.pads.map(pad => pad.number));
+        for (const pin of Object.keys(expected)) {
+          if (!pads.has(pin)) throw new Error('Нет площадки ' + part.refDes + '.' + pin);
+        }
+        for (const pin of new Set([...Object.keys(part.padNets), ...Object.keys(expected)])) {
+          const current = Object.hasOwn(part.padNets, pin) ? part.padNets[pin] : undefined;
+          const next = expected[pin];
+          if (current === next) continue;
+          if ((current && copperNets.has(current)) || (next && copperNets.has(next))) {
+            throw new Error('Нельзя менять ' + part.refDes + '.' + pin + ': сеть уже содержит медь.');
+          }
+          changes.push({ ref: part.refDes, pin, previous: current, net: next });
+        }
+        part.padNets = { ...expected };
+      }
+      return { changes };
+    },
     move_footprint: ({ ref, ...coordinates }) => {
       const found = board().components.find(item => item.refDes === ref);
       if (!found) throw new Error('Компонент на плате не найден.');
@@ -737,6 +956,29 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
       draft.documents.pcb = pcb;
       return report;
     },
+    route_remaining: ({ limit = 12 }) => {
+      let pcb = board();
+      const requirements = draft.targets?.board?.routes ?? {};
+      const unrouted = computeUnroutedRatlines(pcb);
+      const nets = [...new Set(unrouted.map(item => item.netName))].sort((a, b) =>
+        Number(Object.hasOwn(requirements, b)) - Number(Object.hasOwn(requirements, a)));
+      const results = nets.slice(0, limit).map(net => {
+        const before = computeUnroutedRatlines(pcb).filter(item => item.netName === net).length;
+        try {
+          const { pcb: candidate, report } = planRouting(pcb, { net });
+          const remaining = computeUnroutedRatlines(candidate).filter(item => item.netName === net).length;
+          if (remaining >= before) return { net, before, remaining: before, conflicts: report.conflicts?.slice(0, 3) };
+          pcb = candidate;
+          return { net, before, remaining, traces: report.addedTraces, vias: report.addedVias };
+        } catch (error) {
+          if (!(error instanceof Error)) throw error;
+          return { net, before, remaining: before, error: error.message };
+        }
+      });
+      draft.documents.pcb = pcb;
+      const remaining = computeUnroutedRatlines(pcb);
+      return { results, closed: unrouted.length - remaining.length, remaining: remaining.length, nextPairs: remaining.slice(0, 8) };
+    },
     route_net: ({ net, layers, width, pair, replace = [], preview }) => {
       const pcb = board();
       const label = (terminal: {ref: string; pin: string}) => terminal.ref + '.' + terminal.pin;
@@ -760,7 +1002,22 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
           vias: result.vias.filter(via => !source.vias.some(item => item.id === via.id)) };
       }
       draft.documents.pcb = result;
-      return { ...report, applied: true, remaining };
+      const oldTraces = new Set(source.traces.map(item => item.id));
+      const added = result.traces.filter(item => !oldTraces.has(item.id));
+      return { ...report, applied: true, remaining, route: added.length ? {
+        layers: [...new Set(added.map(item => item.layer))],
+        bounds: polygonBounds(added.flatMap(item => item.points))
+      } : undefined };
+    },
+    route_nets: ({ nets }) => {
+      if (new Set(nets.map(item => item.net)).size !== nets.length) throw new Error('Повтор цепи в пакете.');
+      return nets.map(item => {
+        const result = handlers.route_net(item) as { applied: boolean; remaining: unknown[] };
+        if (!result.applied || result.remaining.length) {
+          throw new Error('Пакет не применён. Не удалось полностью развести ' + item.net + '. ' + JSON.stringify(result));
+        }
+        return { net: item.net, ...result };
+      });
     },
     commit_route: ({ previewId }) => {
       if (!lastPreview || lastPreview.id !== previewId || lastPreview.revision !== revision) {
@@ -794,6 +1051,7 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
     },
     add_via: ({ x, y, net, diameter, hole, viaInPad = false }) => {
       const pcb = board();
+      if (viaInPad && !draft.targets?.board?.allowViaInPad) throw new Error('Для via-in-pad нужно явное разрешение технологии в ТЗ. Используйте переход вне площадки либо укажите ограничение в черновике.');
       if (hole >= diameter) throw new Error('Диаметр отверстия должен быть меньше наружного.');
       if (!pcb.components.some(item => Object.values(item.padNets).includes(net))) throw new Error('Цепь отсутствует в списке площадок.');
       const smd = getWorldPads(pcb).find(item => item.pad.type === 'SMD' &&
@@ -822,7 +1080,7 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
       pcb.cutouts = pcb.cutouts.filter(item => !ids.includes(item.id));
       return { remaining: pcb.components.length, removed: [...new Set(ids)].map(id => ({ id, kind: available.get(id) })) };
     },
-    check: () => {
+    check: ({ detail }) => {
       const { schematic: sch, pcb } = draft.documents;
       if (!sch && !pcb) throw new Error('Черновик пуст.');
       const erc = sch ? runSchematicErc(sch) : [];
@@ -853,6 +1111,9 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
       Object.assign(draft.checks!, { requirements, revision, errors: erc.filter(row => row.severity === 'Error').length + drc.filter(row => row.severity === 'Error').length,
         warnings: erc.filter(row => row.severity === 'Warning').length + drc.filter(row => row.severity === 'Warning').length });
       blockers = [...targetIssues, ...pcbGeometry];
+      if (pcb?.vias.some(item => item.viaInPad) && !draft.targets?.board?.allowViaInPad) {
+        blockers.push('Плата использует via-in-pad без согласования технологии в ТЗ.');
+      }
       if (pcb && pcb.components.length === 0) blockers.push('Плата не содержит компонентов.');
       if (sch && sch.sheets.every(sheet => sheet.components.length === 0)) blockers.push('Схема не содержит компонентов.');
       if (comparison && !comparison.inSync) blockers.push('Схема и плата расходятся.');
@@ -866,6 +1127,24 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
       draft.checks!.blockers = blockers;
       checked = true;
       if (!blockers.length) verified = structuredClone(draft.documents);
+      if (detail === 'summary' && !blockers.length) {
+        const diagnostics = (issues: typeof erc | typeof drc) => {
+          const byCode: Record<string, { count: number; severity: string; example: string }> = {};
+          for (const issue of issues) {
+            const group = byCode[issue.code] ??= { count: 0, severity: issue.severity, example: issue.message };
+            group.count++;
+          }
+          return { count: issues.length, byCode };
+        };
+        return {
+          revision, blockers, missing: missingTargetFields(draft.targets), checkedRequirements: requirements.length,
+          schematic: sch ? { sheets: sch.sheets.length, erc: diagnostics(erc) } : undefined,
+          pcb: pcb ? { components: pcb.components.length, layers: pcb.layerCount, traces: pcb.traces.length,
+            vias: pcb.vias.length, viaInPad: pcb.vias.filter(item => item.viaInPad).length,
+            unfilledPours, unrouted, drc: diagnostics(drc) } : undefined,
+          inSync: comparison?.inSync, geometryWarnings
+        };
+      }
       return { erc, drc, layout, labelIssues, nets, comparison, unrouted, ratlines, unfilledPours, pcbGeometry, geometryWarnings, targetIssues, requirements, revision, blockers };
     },
     screenshot: ({ target, sheet: id }) => {
@@ -893,7 +1172,14 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
       } else if (!limitations.trim()) {
         throw new Error('Для незавершённого черновика укажите в limitations оставшиеся проблемы.');
       }
-      draft.report = { summary, limitations, status };
+      const checks = draft.checks;
+      const verification = checked && checks?.revision === revision ? [
+        'Ошибок: ' + checks.errors, 'предупреждений: ' + checks.warnings,
+        'блокеров: ' + blockers.length,
+        ...(checks.unrouted === undefined ? [] : ['неразведённых связей: ' + checks.unrouted]),
+        ...(checks.inSync === undefined ? [] : [checks.inSync ? 'плата соответствует схеме' : 'плата расходится со схемой'])
+      ].join(' · ') : undefined;
+      draft.report = { summary, limitations, status, verification };
       return draft.report;
     }
   };
@@ -919,7 +1205,7 @@ export function createAgentWorkspace(initial: AgentDraft, theme: ColorSchemeId) 
       delete draft.report;
       delete draft.checks;
       if (draft.documents.pcb && name !== 'refill_copper' && ['board_outline', 'create_board', 'place_footprint', 'move_footprint',
-        'board_rules', 'set_net_class', 'place_footprints', 'route_net', 'commit_route', 'add_keepout', 'add_cutout', 'add_copper_pour', 'auto_place', 'auto_route', 'route_trace', 'route_between_pads', 'replace_component_pattern', 'add_via', 'delete_board'].some(command => command === name)) {
+        'board_rules', 'set_net_class', 'place_footprints', 'place_target_footprints', 'sync_target_pad_nets', 'sync_board_from_schematic', 'route_net', 'route_nets', 'commit_route', 'add_keepout', 'add_cutout', 'add_copper_pour', 'auto_place', 'auto_route', 'route_remaining', 'route_trace', 'route_between_pads', 'replace_component_pattern', 'add_via', 'delete_board'].some(command => command === name)) {
         for (const pour of draft.documents.pcb.copperPours) {
           pour.poured = false;
           delete pour.computedIslands;

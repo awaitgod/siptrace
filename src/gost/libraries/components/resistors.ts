@@ -99,6 +99,35 @@ export const libResistors: ComponentLibrary = {
       ]
     },
     {
+      id: 'COMP_R_VAR_SP3_4',
+      name: 'СП3-4а (переменный / потенциометр)',
+      library: 'Резисторы (ГОСТ 2.728)',
+      refDesPrefix: 'R',
+      defaultValue: '47к',
+      gostStandard: 'ОЖ0.468.504 ТУ',
+      description: 'Резистор переменный непроволочный с регулировочной стрелкой (ГОСТ 2.728-74)',
+      manufacturer: 'ОАО «Резистор-НН»',
+      patternId: 'PAT_SP3_38',
+      spiceModel: { prefix: 'R', params: { R: 47000 } },
+      parts: [
+        {
+          partIndex: 1,
+          name: 'Part 1',
+          primitives: [
+            { type: 'rect', x: -5, y: -2, w: 10, h: 4, width: 0.35 },
+            { type: 'line', x1: 0, y1: -5, x2: 0, y2: -2.2, width: 0.32 },
+            { type: 'line', x1: -1.1, y1: -3.5, x2: 0, y2: -2.0, width: 0.32 },
+            { type: 'line', x1: 1.1, y1: -3.5, x2: 0, y2: -2.0, width: 0.32 }
+          ],
+          pins: [
+            { id: 'pin_1', number: '1', name: '1', x: -10, y: 0, length: 5, orientation: 0, electricalType: 'Passive', style: 'Line', showName: false, showNumber: false, padMapping: '1' },
+            { id: 'pin_2', number: '2', name: 'Дв', x: 0, y: -7.5, length: 2.5, orientation: 90, electricalType: 'Passive', style: 'Line', showName: false, showNumber: false, padMapping: '2' },
+            { id: 'pin_3', number: '3', name: '3', x: 10, y: 0, length: 5, orientation: 180, electricalType: 'Passive', style: 'Line', showName: false, showNumber: false, padMapping: '3' }
+          ]
+        }
+      ]
+    },
+    {
       id: 'COMP_R_THERM',
       name: 'СТ1-17 (терморезистор NTC)',
       library: 'Резисторы (ГОСТ 2.728)',

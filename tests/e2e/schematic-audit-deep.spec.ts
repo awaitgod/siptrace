@@ -156,7 +156,8 @@ test.describe('Deep Audit of Schematic Capture (SIPTrace EDA)', () => {
 
   test('08: Search and Find Dialog (Ctrl+F)', async ({ page }) => {
     await page.goto('/?module=schematic');
-    await page.waitForTimeout(300);
+    await expect(page.locator('.sch-splash')).toBeHidden();
+    await page.locator('.dt-canvas-wrap canvas').focus();
 
     await page.keyboard.press('Control+f');
     const dialog = page.locator('.dt-modal[role="dialog"]');
@@ -234,12 +235,11 @@ test.describe('Deep Audit of Schematic Capture (SIPTrace EDA)', () => {
 
   test('13: Right-click Context Menu on Component', async ({ page }) => {
     await page.goto('/?module=schematic');
-    await page.waitForTimeout(300);
+    await expect(page.locator('.sch-splash')).toBeHidden();
 
     // Click on canvas with right button
     const canvasWrap = page.locator('.dt-canvas-wrap canvas');
-    const box = (await canvasWrap.boundingBox())!;
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2, { button: 'right' });
+    await canvasWrap.click({ button: 'right', position: { x: 400, y: 300 } });
     await page.waitForTimeout(200);
 
     const contextMenu = page.locator('.dt-dropdown[role="menu"]');

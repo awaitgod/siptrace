@@ -42,6 +42,12 @@ export function validatePatternGenerator(parameters: PatternGeneratorParams): st
   if ((family === 'DIP' || family === 'SOIC') && (pinCount < 4 || pinCount % 2 !== 0)) {
     return 'Для DIP и SOIC задайте чётное число выводов, не меньше 4.';
   }
+  if (family === 'DFN' && (pinCount < 2 || pinCount % 2 !== 0)) {
+    return 'Для DFN задайте чётное число выводов, не меньше 2.';
+  }
+  if (family === 'SIP' && pinCount < 2) {
+    return 'Для SIP задайте не менее 2 выводов.';
+  }
   if ((family === 'QFP' || family === 'QFN') && (pinCount < 8 || pinCount % 4 !== 0)) {
     return 'Для QFP и QFN задайте число выводов, кратное 4 и не меньше 8.';
   }
@@ -60,7 +66,7 @@ export function validatePatternGenerator(parameters: PatternGeneratorParams): st
     return 'Для выбранного семейства проверьте шаг площадок и расстояние между рядами.';
   }
   if (holeDiameter < 0) return 'Диаметр отверстия не может быть отрицательным.';
-  if (['DIP', 'AxialTHT', 'RadialTHT', 'Header'].includes(family)) {
+  if (['DIP', 'AxialTHT', 'RadialTHT', 'Header', 'SIP'].includes(family)) {
     const scale = { A: 1.15, B: 1, C: 0.88 }[parameters.densityLevel];
     if (holeDiameter <= 0 || holeDiameter >= Math.min(padWidth, padHeight) * scale) {
       return 'Для сквозной площадки задайте положительный диаметр отверстия меньше размеров площадки.';

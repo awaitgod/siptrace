@@ -6,6 +6,8 @@ export type PinElectricalType =
   | 'Output'
   | 'Bidirectional'
   | 'Power'
+  | 'PowerIn'
+  | 'PowerOut'
   | 'OpenCollector'
   | 'TriState'
   | 'NotConnected';

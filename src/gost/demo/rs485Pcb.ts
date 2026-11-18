@@ -5,7 +5,12 @@ import { runAutorouter } from '../../engines/autorouter';
 import { updateAllCopperPours } from '../../engines/copperPour';
 import { uid } from '../../core/geometry';
 
+let cachedDemoRs485Pcb: PcbProject | null = null;
+
 export function createDemoRs485Pcb(): PcbProject {
+  if (cachedDemoRs485Pcb) {
+    return structuredClone(cachedDemoRs485Pcb);
+  }
   const sch = createDemoRs485GostSchematic();
   let pcb = convertSchematicToPcb(sch);
   pcb.boardOutline = [
@@ -80,6 +85,7 @@ export function createDemoRs485Pcb(): PcbProject {
     poured: false
   });
   pcb = updateAllCopperPours(pcb);
+  cachedDemoRs485Pcb = structuredClone(pcb);
 
   return pcb;
 }

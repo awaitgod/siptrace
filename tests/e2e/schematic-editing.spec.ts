@@ -5,7 +5,7 @@ async function read(page: Page) { return page.evaluate(k => JSON.parse(localStor
 async function xy(page: Page, x: number, y: number) { const b = (await page.locator('.dt-canvas-wrap canvas').boundingBox())!; const z = Math.max(.4, Math.min((b.width - 36) / 297, (b.height - 28) / 210)); return { x: b.x + b.width / 2 + (x - 148.5) * z, y: b.y + b.height / 2 + (y - 105) * z }; }
 async function click(page: Page, x: number, y: number, button: 'left' | 'right' = 'left') { const p = await xy(page, x, y); await page.mouse.click(p.x, p.y, { button }); }
 async function drag(page: Page, x1: number, y1: number, x2: number, y2: number) { const a = await xy(page, x1, y1), b = await xy(page, x2, y2); await page.mouse.move(a.x, a.y); await page.mouse.down(); await page.mouse.move(b.x, b.y, { steps: 6 }); await page.mouse.up(); }
-test.beforeEach(async ({ page }) => { await page.setViewportSize({ width: 1440, height: 900 }); await page.addInitScript(({ key, project }) => localStorage.setItem(key, JSON.stringify(project)), { key, project: fixture() }); await page.goto('/?module=schematic'); await expect(page.locator('.dt-right-sidebar')).toContainText('R1'); await page.waitForTimeout(150); });
+test.beforeEach(async ({ page }) => { await page.setViewportSize({ width: 1440, height: 900 }); await page.addInitScript(({ key, project }) => localStorage.setItem(key, JSON.stringify(project)), { key, project: fixture() }); await page.goto('/?module=schematic'); await expect(page.locator('.sch-splash')).toBeHidden(); await expect(page.locator('.dt-right-sidebar')).toContainText('R1'); });
 test('a highlighted pin starts a wire in Select, right click and Escape cancel', async ({ page }) => {
     await click(page, 65, 75);
     await expect(page.getByTitle('Проложить провод (W)', { exact: true })).toHaveClass(/active/);
@@ -189,7 +189,7 @@ test('blank left click clears an object or mixed selection and disables destruct
 });
 test('empty space within outline geometry clears selection instead of selecting its bounding box', async ({page}) => {
     const project=fixture();project.sheets[0].shapes.push({id:'outline',type:'rect',x:40,y:40,w:160,h:110,width:.35},{id:'diagonal',type:'line',x1:40,y1:40,x2:200,y2:150,width:.35},{id:'ring',type:'circle',cx:170,cy:130,r:40,width:.35});
-    await page.addInitScript(({key,project})=>localStorage.setItem(key,JSON.stringify(project)),{key,project});await page.reload();await page.waitForTimeout(180);
+    await page.addInitScript(({key,project})=>localStorage.setItem(key,JSON.stringify(project)),{key,project});await page.reload();await expect(page.locator('.sch-splash')).toBeHidden();
     await click(page,40,60);await expect(page.getByRole('button',{name:/^Свойства выделения/})).toBeEnabled();
     await click(page,180,140);await expect(page.getByRole('button',{name:/^Свойства выделения/})).toBeDisabled();
     await page.keyboard.press('Delete');await page.waitForTimeout(300);expect((await read(page)).sheets[0].shapes).toHaveLength(4);

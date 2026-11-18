@@ -142,27 +142,71 @@ export function readOle2Streams(bytes: Uint8Array): Map<string, Uint8Array> {
     }
   }
 
-  for (let i = 1; i < dirEntryCount; i++) {
-    const entry = dirBytes.subarray(i * 128, (i + 1) * 128);
-    const ev = new DataView(entry.buffer, entry.byteOffset, entry.byteLength);
-    const nameLen = readU16(ev, 64);
-    const objType = entry[66];
-    if (objType !== 2 || nameLen < 2) continue; // 2 == Stream Object
-    const name = decodeUtf16Name(entry, nameLen);
-    const startSec = readU32(ev, 116);
-    const size = readU32(ev, 120);
-    if (!name || size === 0 || startSec === FREESECT || startSec === ENDOFCHAIN) continue;
-
-    let payload: Uint8Array;
+  const visited = new Set<number>();
+  function readPayload(ev: DataView, startSec: number, size: number): Uint8Array {
     if (size < miniCutoff && miniStream.length > 0 && miniFat.length > 0) {
-      payload = followChain(miniFat, startSec, miniSectorSize, (ms) => {
+      return followChain(miniFat, startSec, miniSectorSize, (ms) => {
         const off = ms * miniSectorSize;
         return miniStream.subarray(off, Math.min(miniStream.length, off + miniSectorSize));
       }).subarray(0, size);
-    } else {
-      payload = followChain(fat, startSec, sectorSize, readSector).subarray(0, size);
     }
-    result.set(name, payload);
+    return followChain(fat, startSec, sectorSize, readSector).subarray(0, size);
+  }
+
+  function traverse(entryIdx: number, parentPath: string) {
+    if (entryIdx < 0 || entryIdx >= dirEntryCount || visited.has(entryIdx) || entryIdx === 0xffffffff || entryIdx === 0xfffffffe) return;
+    visited.add(entryIdx);
+
+    const entry = dirBytes.subarray(entryIdx * 128, (entryIdx + 1) * 128);
+    const ev = new DataView(entry.buffer, entry.byteOffset, entry.byteLength);
+    const nameLen = readU16(ev, 64);
+    const objType = entry[66];
+    const name = decodeUtf16Name(entry, nameLen);
+    const left = readU32(ev, 68);
+    const right = readU32(ev, 72);
+    const child = readU32(ev, 76);
+    const startSec = readU32(ev, 116);
+    const size = readU32(ev, 120);
+
+    // Red-black siblings within the same parent storage
+    traverse(left, parentPath);
+    traverse(right, parentPath);
+
+    if (objType === 1 || objType === 5) {
+      // Storage object (folder)
+      const currentPath = objType === 5 ? '' : (parentPath ? `${parentPath}/${name}` : name);
+      traverse(child, currentPath);
+    } else if (objType === 2) {
+      // Stream object (file)
+      if (name && size > 0 && startSec !== FREESECT && startSec !== ENDOFCHAIN) {
+        const payload = readPayload(ev, startSec, size);
+        const fullPath = parentPath ? `${parentPath}/${name}` : name;
+        result.set(fullPath, payload);
+        if (!result.has(name)) {
+          result.set(name, payload);
+        }
+      }
+    }
+  }
+
+  traverse(0, '');
+
+  // Fallback flat scan if tree traversal yielded nothing (e.g. corrupted red-black tree links)
+  if (result.size === 0) {
+    for (let i = 1; i < dirEntryCount; i++) {
+      const entry = dirBytes.subarray(i * 128, (i + 1) * 128);
+      const ev = new DataView(entry.buffer, entry.byteOffset, entry.byteLength);
+      const nameLen = readU16(ev, 64);
+      const objType = entry[66];
+      if (objType !== 2 || nameLen < 2) continue;
+      const name = decodeUtf16Name(entry, nameLen);
+      const startSec = readU32(ev, 116);
+      const size = readU32(ev, 120);
+      if (!name || size === 0 || startSec === FREESECT || startSec === ENDOFCHAIN) continue;
+
+      const payload = readPayload(ev, startSec, size);
+      result.set(name, payload);
+    }
   }
 
   return result;

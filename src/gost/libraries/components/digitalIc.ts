@@ -33,6 +33,81 @@ export const libDigitalIC: ComponentLibrary = {
       ]
     },
     {
+      id: 'COMP_DD_K155LI1',
+      name: 'К155ЛИ1 (4 × 2И)',
+      library: 'Цифровые ИМС (ГОСТ 2.743)',
+      refDesPrefix: 'DD',
+      defaultValue: 'К155ЛИ1',
+      gostStandard: 'ГОСТ 2.743-91',
+      description: 'Четыре логических элемента 2И (4 секции + питание, корпус DIP-14)',
+      patternId: 'PAT_DIP14',
+      parts: [
+        makeGostLogicGatePart(1, '&', '1', '2', '3', false),
+        makeGostLogicGatePart(2, '&', '4', '5', '6', false),
+        makeGostLogicGatePart(3, '&', '9', '10', '8', false),
+        makeGostLogicGatePart(4, '&', '12', '13', '11', false),
+        {
+          partIndex: 5,
+          name: 'Питание (VCC/GND)',
+          primitives: [{ type: 'rect', x: -5, y: -5, w: 10, h: 10, width: 0.35 }],
+          pins: [
+            { id: 'p_5_vcc', number: '14', name: 'VCC', x: 0, y: -10, length: 5, orientation: 90, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '14' },
+            { id: 'p_5_gnd', number: '7', name: 'GND', x: 0, y: 10, length: 5, orientation: 270, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '7' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'COMP_DD_K155LL1',
+      name: 'К155ЛЛ1 (4 × 2ИЛИ)',
+      library: 'Цифровые ИМС (ГОСТ 2.743)',
+      refDesPrefix: 'DD',
+      defaultValue: 'К155ЛЛ1',
+      gostStandard: 'ГОСТ 2.743-91',
+      description: 'Четыре логических элемента 2ИЛИ (4 секции + питание, корпус DIP-14)',
+      patternId: 'PAT_DIP14',
+      parts: [
+        makeGostLogicGatePart(1, '1', '1', '2', '3', false),
+        makeGostLogicGatePart(2, '1', '4', '5', '6', false),
+        makeGostLogicGatePart(3, '1', '9', '10', '8', false),
+        makeGostLogicGatePart(4, '1', '12', '13', '11', false),
+        {
+          partIndex: 5,
+          name: 'Питание (VCC/GND)',
+          primitives: [{ type: 'rect', x: -5, y: -5, w: 10, h: 10, width: 0.35 }],
+          pins: [
+            { id: 'p_5_vcc', number: '14', name: 'VCC', x: 0, y: -10, length: 5, orientation: 90, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '14' },
+            { id: 'p_5_gnd', number: '7', name: 'GND', x: 0, y: 10, length: 5, orientation: 270, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '7' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'COMP_DD_K155LP5',
+      name: 'К155ЛП5 (4 × 2ИСКЛ-ИЛИ)',
+      library: 'Цифровые ИМС (ГОСТ 2.743)',
+      refDesPrefix: 'DD',
+      defaultValue: 'К155ЛП5',
+      gostStandard: 'ГОСТ 2.743-91',
+      description: 'Четыре логических элемента 2ИСКЛ-ИЛИ (XOR) (4 секции + питание, корпус DIP-14)',
+      patternId: 'PAT_DIP14',
+      parts: [
+        makeGostLogicGatePart(1, '=1', '1', '2', '3', false),
+        makeGostLogicGatePart(2, '=1', '4', '5', '6', false),
+        makeGostLogicGatePart(3, '=1', '9', '10', '8', false),
+        makeGostLogicGatePart(4, '=1', '12', '13', '11', false),
+        {
+          partIndex: 5,
+          name: 'Питание (VCC/GND)',
+          primitives: [{ type: 'rect', x: -5, y: -5, w: 10, h: 10, width: 0.35 }],
+          pins: [
+            { id: 'p_5_vcc', number: '14', name: 'VCC', x: 0, y: -10, length: 5, orientation: 90, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '14' },
+            { id: 'p_5_gnd', number: '7', name: 'GND', x: 0, y: 10, length: 5, orientation: 270, electricalType: 'Power', style: 'Line', showName: true, showNumber: true, padMapping: '7' }
+          ]
+        }
+      ]
+    },
+    {
       id: 'COMP_DD_K555LE1',
       name: 'К555ЛЕ1 (4 × 2ИЛИ-НЕ)',
       library: 'Цифровые ИМС (ГОСТ 2.743)',

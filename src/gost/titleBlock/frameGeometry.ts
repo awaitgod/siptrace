@@ -33,8 +33,8 @@ export function appendInnerFrameAndZones(
 
   // Optional coordinate zones along margins (ГОСТ 2.104-2006 п. 5.4: Latin letters bottom-to-top, digits right-to-left)
   if (tb.showZones) {
-    const colCount = format === 'A4_P' ? 4 : format === 'A4_L' || format === 'A3_L' ? 8 : 12;
-    const rowCount = format === 'A4_P' ? 6 : 4;
+    const colCount = format === 'A4_P' ? 4 : format === 'A3_P' ? 6 : format === 'A4_L' || format === 'A3_L' ? 8 : 12;
+    const rowCount = format === 'A4_P' ? 6 : format === 'A3_P' ? 8 : 4;
     const colW = frame.width / colCount;
     const rowH = frame.height / rowCount;
     const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M'];

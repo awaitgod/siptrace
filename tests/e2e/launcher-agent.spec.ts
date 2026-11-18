@@ -60,7 +60,7 @@ test('launcher agent edits a draft, sends the final screenshots and reopens the 
   await page.getByRole('button', { name: 'Запустить агента' }).click();
   await page.getByRole('button', { name: 'Открыть схему', exact: true }).click();
   const viewer = page.getByRole('dialog', { name: 'Просмотр проекта агента' });
-  await expect(viewer.getByText('Агент работает')).toBeVisible();
+  await expect(viewer.locator('.agent-live-status')).toBeVisible();
   const schematic = viewer.getByRole('img', { name: 'Лист схемы' });
   const initialFrame = await schematic.evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
   resumeUpdates();

@@ -1,6 +1,7 @@
 /* DIPTR / SIPTrace вЂ” Professional Start Hub & Project Manager */
 
 .launch-workspace {
+  --launch-sidebar-bg: var(--ui-bg);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -9,6 +10,10 @@
   color: var(--ui-text);
   overflow: hidden;
   user-select: none;
+}
+
+:root[data-theme="dark"] .launch-workspace {
+  --launch-sidebar-bg: #111619;
 }
 
 .launch-workspace > .dt-menubar {
@@ -32,7 +37,7 @@
   flex: none;
   display: flex;
   flex-direction: column;
-  background: var(--ui-surface);
+  background: var(--launch-sidebar-bg);
   border-right: 1px solid var(--ui-border);
   overflow: hidden;
 }
@@ -133,15 +138,15 @@
 /* Top Action Bar */
 .launch-action-bar {
   flex: none;
-  min-height: 40px;
-  padding: 4px 12px;
+  min-height: 27px;
+  padding: 0 8px 0 12px;
   background: var(--ui-surface);
   border-bottom: 1px solid var(--ui-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 2px 8px;
 }
 
 .launch-action-buttons {
@@ -183,9 +188,9 @@
   color: var(--ui-muted);
 }
 
-.launch-search-input {
+.launch-search-wrap .launch-search-input {
   width: 100%;
-  height: 24px;
+  height: 22px;
   padding-left: 28px !important;
   padding-right: 22px;
   font-family: inherit;
@@ -481,15 +486,18 @@
 }
 
 .launch-action-bar .dt-btn {
-  height: 28px;
+  height: 22px;
   font-size: 12px;
 }
 
 .launch-action-bar .dt-toolbar {
+  min-height: 0;
   gap: 2px;
   background: transparent;
   border: 0;
 }
+
+.launch-action-bar .dt-toolbar .dt-tb-btn { width: 24px; height: 22px; padding: 0; justify-content: center; }
 
 .launch-filter-bar {
   display: flex;
@@ -513,34 +521,46 @@
 .launch-filter-btn.active { border-bottom-color: var(--ui-accent); color: var(--ui-text); }
 .launch-filter-btn span { margin-left: 3px; color: var(--ui-muted); }
 
+.launch-tables {
+  display: grid;
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+  margin-inline-end: -12px;
+}
+
+.launch-tables[data-split=true] { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+
 .launch-table {
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
 }
 
-.launch-type-col { width: 76px; }
-.launch-spec-col { width: 92px; }
-.launch-date-col { width: 132px; }
+.launch-document-col { width: 128px; }
+.launch-date-col { width: 142px; }
 
 .launch-table th {
   text-align: left;
   background: var(--ui-subtle);
-  color: var(--ui-muted);
+  font-size: 11px;
   font-weight: 600;
 }
 
 .launch-table td, .launch-table th {
-  padding: 5px 8px;
-  border-bottom: 1px solid var(--ui-border);
-  border-inline: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--ui-border);
+  color: var(--ui-muted);
 }
 
 .launch-table td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.launch-table th:first-child { padding-inline-start: 34px; }
+.launch-table td:first-child { padding: 0; }
+.launch-table :is(th, td):last-child { text-align: right; font-variant-numeric: tabular-nums; }
 .launch-table-row { background: var(--ui-surface); cursor: default; }
 .launch-table-row:hover { background: var(--ui-accent-soft); }
-.launch-table-row.selected { background: var(--ui-selected); }
+.launch-table-row.selected { background: color-mix(in srgb, var(--ui-selected) 42%, var(--ui-bg)); }
 .launch-table-row.selected td:first-child { box-shadow: inset 2px 0 var(--ui-accent); }
+.launch-table .launch-project { min-height: 38px; padding: 4px 12px 4px 10px; }
 
 .launch-project {
   display: flex;
@@ -651,8 +671,7 @@
 }
 @media (max-width: 710px) {
   .launch-sidebar { width: 135px; min-width: 135px; }
-  .launch-type-col { width: 56px; }
-  .launch-spec-col { width: 0; }
-  .launch-table :is(td, th):nth-child(3) { display: none; }
-  .launch-date-col { width: 92px; }
+  .launch-document-col { width: 100px; }
+  .launch-date-col { width: 128px; }
+  .launch-table :is(td, th):not(:first-child) { padding-inline: 6px; }
 }

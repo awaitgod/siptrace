@@ -2,8 +2,9 @@ import { DrcError, PcbProject, Point2D } from '../../../../core/types';
 import { dist } from '../../../../core/geometry';
 import { snapPoint } from '../../../../core/units';
 import { RatlineSegment } from '../../../../engines/drc';
-import { CopperLayerId, MeasureRulerState, PcbExtraSelection, PcbToolId, PcbViewport } from '../types';
+import { CopperLayerId, MeasureRulerState, PcbExtraSelection, PcbToolId, PcbViewport, RoutingAngleMode } from '../types';
 import { LayerLookup } from './drawBoardAndKeepouts';
+import { computeRouteDraftPoints } from '../services/pcbRouteGeometry';
 
 export interface PcbOverlayState {
   pcb: PcbProject;
@@ -20,6 +21,7 @@ export interface PcbOverlayState {
   polyDraftPts: Point2D[];
   cursorMm: Point2D;
   routeElbowFlip: boolean;
+  routeAngleMode?: RoutingAngleMode;
   measurePts: MeasureRulerState | null;
   drcErrors: DrcError[];
 }
@@ -101,16 +103,11 @@ export function drawPcbOverlays(ctx: CanvasRenderingContext2D, st: PcbOverlaySta
     }
   }
 
-  // Active 45-degree manual route preview
+  // Active manual route preview (45°, 90°, or Free angle)
   if (st.tool === 'routeManual' && st.routeDraftPts.length > 0) {
     const last = st.routeDraftPts[st.routeDraftPts.length - 1];
     const cur = snapPoint(st.cursorMm, pcb.gridSize);
-    const dx = cur.x - last.x;
-    const dy = cur.y - last.y;
-    const minD = Math.min(Math.abs(dx), Math.abs(dy));
-    const midPt: Point2D = st.routeElbowFlip
-      ? { x: last.x + Math.sign(dx) * minD, y: last.y + Math.sign(dy) * minD }
-      : { x: cur.x - Math.sign(dx) * minD, y: cur.y - Math.sign(dy) * minD };
+    const segPts = computeRouteDraftPoints(last, cur, st.routeAngleMode ?? '45', st.routeElbowFlip);
 
     ctx.strokeStyle = layers.getColor(st.activeLayer, '#FF3030');
     ctx.lineWidth = pcb.designRules.defaultTraceWidth;
@@ -119,8 +116,7 @@ export function drawPcbOverlays(ctx: CanvasRenderingContext2D, st: PcbOverlaySta
     ctx.beginPath();
     ctx.moveTo(st.routeDraftPts[0].x, st.routeDraftPts[0].y);
     for (let i = 1; i < st.routeDraftPts.length; i++) ctx.lineTo(st.routeDraftPts[i].x, st.routeDraftPts[i].y);
-    ctx.lineTo(midPt.x, midPt.y);
-    ctx.lineTo(cur.x, cur.y);
+    for (const pt of segPts) ctx.lineTo(pt.x, pt.y);
     ctx.stroke();
   }
 

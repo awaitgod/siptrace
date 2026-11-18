@@ -1,6 +1,6 @@
 import { DrcError, PcbLayerId, PcbProject, Point2D } from '../../../../core/types';
 import { RatlineSegment } from '../../../../engines/drc';
-import { CopperLayerId, MeasureRulerState, PcbExtraSelection, PcbToolId, PcbViewport } from '../types';
+import { CopperLayerId, MeasureRulerState, PcbExtraSelection, PcbToolId, PcbViewport, RoutingAngleMode } from '../types';
 import {
   drawBoardAndKeepouts,
   drawCopperPours,
@@ -30,6 +30,7 @@ export interface RenderPcbCanvasParams {
   polyDraftPts: Point2D[];
   cursorMm: Point2D;
   routeElbowFlip: boolean;
+  routeAngleMode?: RoutingAngleMode;
   measurePts: MeasureRulerState | null;
   drcErrors: DrcError[];
 }
@@ -80,6 +81,7 @@ export function renderPcbCanvas(params: RenderPcbCanvasParams): void {
     polyDraftPts: params.polyDraftPts,
     cursorMm: params.cursorMm,
     routeElbowFlip: params.routeElbowFlip,
+    routeAngleMode: params.routeAngleMode,
     measurePts: params.measurePts,
     drcErrors: params.drcErrors
   });

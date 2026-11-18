@@ -131,6 +131,8 @@ export function parseKicadSchematic(text: string, name = 'KiCad_Import'): {
     const x = sxNum(atNode, 1, 50), y = sxNum(atNode, 2, 50);
     const angle = snapAngle90(sxNum(atNode, 3, 0));
     const mirror = sxStr(sxFind(sym, 'mirror'), 1);
+    const unitNode = sxFind(sym, 'unit');
+    const unit = unitNode ? sxNum(unitNode, 1, 1) : 1;
 
     const props = new Map<string, string>();
     for (const pr of sxFindAll(sym, 'property')) props.set(sxStr(pr, 1).toLowerCase(), sxStr(pr, 2));
@@ -153,7 +155,7 @@ export function parseKicadSchematic(text: string, name = 'KiCad_Import'): {
       });
       pwrDef.isNetPort = true;
       pwrDef.portNetName = pwrNet;
-      components.push(placeDefOnSheet({ def: pwrDef, customDefs, refDes, value: pwrNet, x, y, angle, showValue: true }));
+      components.push(placeDefOnSheet({ def: pwrDef, customDefs, refDes, value: pwrNet, x, y, angle, showValue: true, partIndex: unit }));
       continue;
     }
 
@@ -166,7 +168,55 @@ export function parseKicadSchematic(text: string, name = 'KiCad_Import'): {
       def = makeChipComponentDef(libId.split(':').pop() || 'IC', Math.max(2, sxFindAll(sym, 'pin').length), refDes.replace(/\d+.*$/, '') || 'U', 'KiCad');
     }
 
-    components.push(placeDefOnSheet({ def, customDefs, refDes, value, x, y, angle, flipX: mirror === 'y', flipY: mirror === 'x' }));
+    components.push(placeDefOnSheet({ def, customDefs, refDes, value, x, y, angle, flipX: mirror === 'y', flipY: mirror === 'x', partIndex: unit }));
+  }
+
+  for (const sheetNode of sxFindAll(root, 'sheet')) {
+    const at = sxFind(sheetNode, 'at');
+    const sx = sxNum(at, 1, 50), sy = sxNum(at, 2, 50);
+    const size = sxFind(sheetNode, 'size');
+    const sw = sxNum(size, 1, 30), sh = sxNum(size, 2, 20);
+    const props = new Map<string, string>();
+    for (const pr of sxFindAll(sheetNode, 'property')) props.set(sxStr(pr, 1).toLowerCase(), sxStr(pr, 2));
+    const sheetName = props.get('sheetname') || 'Sheet';
+    const sheetFile = props.get('sheetfile') || '';
+    const sheetPins = sxFindAll(sheetNode, 'pin').map((p, idx) => {
+      const pinAt = sxFind(p, 'at');
+      const px = pinAt ? sxNum(pinAt, 1, 0) - sx : 0;
+      const py = pinAt ? sxNum(pinAt, 2, 0) - sy : (idx + 1) * 5;
+      return {
+        id: uid('s_pin'),
+        number: String(idx + 1),
+        name: sxStr(p, 1),
+        x: px,
+        y: py,
+        length: 2.54,
+        orientation: 0 as const,
+        electricalType: 'Passive' as const,
+        style: 'Line' as const,
+        showName: true,
+        showNumber: false
+      };
+    });
+    const sheetDef = makeComponentDef({
+      name: sheetName,
+      library: 'KiCad Hierarchical Sheet',
+      refDesPrefix: 'SHEET',
+      defaultValue: sheetFile,
+      patternId: '',
+      description: `Hierarchical Sheet: ${sheetFile}`,
+      pins: sheetPins,
+      primitives: [{ type: 'rect', x: 0, y: 0, w: sw, h: sh, width: 0.5 }]
+    });
+    components.push(placeDefOnSheet({
+      def: sheetDef,
+      customDefs,
+      refDes: sheetName,
+      value: sheetFile,
+      x: sx,
+      y: sy,
+      showValue: true
+    }));
   }
 
   for (const w of sxFindAll(root, 'wire')) {

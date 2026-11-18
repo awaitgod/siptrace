@@ -32,6 +32,14 @@ export function getWorldPads(pcb: PcbProject): WorldPad[] {
       const polyMaxR = pad.shape === 'Polygon' && pad.polygonPoints?.length
         ? Math.max(...pad.polygonPoints.map((pt2) => Math.hypot(pt2.x, pt2.y)))
         : 0;
+      const rx = pad.width * 0.5;
+      const ry = pad.height * 0.5;
+      const radius =
+        pad.shape === 'Polygon' && pad.polygonPoints?.length
+          ? polyMaxR
+          : pad.shape === 'Round'
+            ? Math.max(rx, ry)
+            : Math.hypot(rx, ry);
       result.push({
         compId: comp.id,
         refDes: comp.refDes,
@@ -41,7 +49,7 @@ export function getWorldPads(pcb: PcbProject): WorldPad[] {
         padAngleDeg,
         netName: comp.padNets[pad.number] ?? '',
         effectiveLayer,
-        radius: Math.max(pad.width * 0.5, pad.height * 0.5, polyMaxR)
+        radius
       });
     }
   }
@@ -53,8 +61,12 @@ const copperLayerOrder = ['TopCopper', 'Inner1', 'Inner2', 'BottomCopper'] as co
 type LayerSpan = [number, number];
 
 function viaLayerSpan(via: PcbVia): LayerSpan {
+  if (!via.startLayer || !via.endLayer) {
+    return [0, copperLayerOrder.length - 1];
+  }
   const a = copperLayerOrder.indexOf(via.startLayer);
   const b = copperLayerOrder.indexOf(via.endLayer);
+  if (a === -1 || b === -1) return [0, copperLayerOrder.length - 1];
   return [Math.min(a, b), Math.max(a, b)];
 }
 
@@ -227,8 +239,13 @@ export interface RatlineSegment {
 // Computes Minimum Spanning Tree of unrouted connections per net, accounting for traces, vias & copper pours!
 function padToCopperDistance(pad: WorldPad, region: CopperRegion): number {
   if (inCopperRegion(pad, region)) return 0;
+  const b = polygonBounds(region.outer);
+  const dx = Math.max(0, b.minX - pad.x, pad.x - b.maxX);
+  const dy = Math.max(0, b.minY - pad.y, pad.y - b.maxY);
+  const boxDist = Math.hypot(dx, dy) - pad.radius;
+  if (boxDist > 2.0) return boxDist;
   let distance = Infinity;
-  for (const [a, b] of copperEdges(region)) distance = Math.min(distance, segmentToPadDistance(a, b, pad));
+  for (const [a, bEdge] of copperEdges(region)) distance = Math.min(distance, segmentToPadDistance(a, bEdge, pad));
   return distance;
 }
 
@@ -360,6 +377,7 @@ export function computeUnroutedRatlines(pcb: PcbProject): RatlineSegment[] {
     for (const [index, {region, span}] of islands.entries()) {
       const node = islandNodes[index];
       for (let other = 0; other < index; other++) {
+        if (find(node) === find(islandNodes[other])) continue;
         if (spansOverlap(span, islands[other].span) && copperRegionDistance(region, islands[other].region, SNAP) <= SNAP) {
           union(node, islandNodes[other]);
         }
@@ -1068,14 +1086,18 @@ export function runPcbDrc(pcb: PcbProject): DrcError[] {
     const a = pcb.components[i];
     if (a.pads.every((p) => p.type === 'MountingHole')) continue;
     const ar = (a.angle * Math.PI) / 180;
-    const aw = Math.abs(a.courtyard.width * Math.cos(ar)) + Math.abs(a.courtyard.height * Math.sin(ar));
-    const ah = Math.abs(a.courtyard.width * Math.sin(ar)) + Math.abs(a.courtyard.height * Math.cos(ar));
+    const aCw = a.courtyard?.width ?? Math.max(1.0, ...a.pads.map((p) => (Math.abs(p.x) + p.width * 0.5) * 2));
+    const aCh = a.courtyard?.height ?? Math.max(1.0, ...a.pads.map((p) => (Math.abs(p.y) + p.height * 0.5) * 2));
+    const aw = Math.abs(aCw * Math.cos(ar)) + Math.abs(aCh * Math.sin(ar));
+    const ah = Math.abs(aCw * Math.sin(ar)) + Math.abs(aCh * Math.cos(ar));
     for (let j = i + 1; j < pcb.components.length; j++) {
       const b = pcb.components[j];
       if (a.side !== b.side || b.pads.every((p) => p.type === 'MountingHole')) continue;
       const br = (b.angle * Math.PI) / 180;
-      const bw = Math.abs(b.courtyard.width * Math.cos(br)) + Math.abs(b.courtyard.height * Math.sin(br));
-      const bh = Math.abs(b.courtyard.width * Math.sin(br)) + Math.abs(b.courtyard.height * Math.cos(br));
+      const bCw = b.courtyard?.width ?? Math.max(1.0, ...b.pads.map((p) => (Math.abs(p.x) + p.width * 0.5) * 2));
+      const bCh = b.courtyard?.height ?? Math.max(1.0, ...b.pads.map((p) => (Math.abs(p.y) + p.height * 0.5) * 2));
+      const bw = Math.abs(bCw * Math.cos(br)) + Math.abs(bCh * Math.sin(br));
+      const bh = Math.abs(bCw * Math.sin(br)) + Math.abs(bCh * Math.cos(br));
       if (Math.abs(a.x - b.x) < (aw + bw) * 0.48 && Math.abs(a.y - b.y) < (ah + bh) * 0.48) {
         pushErr({
           sigKey: [a.refDes, b.refDes].sort().join('_'),

@@ -13,7 +13,7 @@ import {
 import { uid } from '../../core/geometry';
 import { ALL_GOST_COMPONENTS, findComponentById } from '../../gost/libraries/gostComponents';
 import { ALL_GOST_PATTERNS, findPatternById } from '../../gost/libraries/gostPatterns';
-import { makeGostRectangularIcPart } from '../../gost/libraries/components/helpers';
+import { makeGostLogicGatePart, makeGostRectangularIcPart } from '../../gost/libraries/components/helpers';
 
 export interface GostConversionItem {
   originalRef: string;
@@ -69,9 +69,12 @@ const FOREIGN_CROSS_REF: AnalogCrossRef[] = [
   { pattern: /\b(LM741|UA741|OP07|TL071)\b/i, gostDefId: 'COMP_DA_KR140UD708', gostValue: 'КР140УД708', gostTypeName: 'КР140УД708', gostPrefix: 'DA', gostPatternId: 'PAT_DIP8' },
   { pattern: /\b(NE555|LM555|TLC555)\b/i, gostDefId: 'COMP_DA_KR1006VI1', gostValue: 'КР1006ВИ1 (NE555)', gostTypeName: 'КР1006ВИ1', gostPrefix: 'DA', gostPatternId: 'PAT_DIP8' },
   { pattern: /\b(?:SN)?74HC595D?\b/i, gostDefId: 'COMP_DD_K555IR23_595', gostValue: '74HC595', gostTypeName: '74HC595 (ГОСТ)', gostPrefix: 'DD', gostPatternId: 'PAT_SOIC16_N' },
-  { pattern: /\b(74HC00|74LS00|SN7400|CD4011)\b/i, gostDefId: 'COMP_DD_K155LA3', gostValue: 'К155ЛА3', gostTypeName: 'К155ЛА3', gostPrefix: 'DD', gostPatternId: 'PAT_DIP14' },
-  { pattern: /\b(74HC02|74LS02)\b/i, gostDefId: 'COMP_DD_K555LE1', gostValue: 'К555ЛЕ1', gostTypeName: 'К555ЛЕ1', gostPrefix: 'DD', gostPatternId: 'PAT_DIP14' },
-  { pattern: /\b(74HC04|74LS04|CD4069)\b/i, gostDefId: 'COMP_DD_K561LN2', gostValue: 'К561ЛН2', gostTypeName: 'К561ЛН2', gostPrefix: 'DD', gostPatternId: 'PAT_DIP14' },
+  { pattern: /\b(74HC00|74LS00|SN7400|CD4011)\b/i, gostDefId: 'COMP_DD_K155LA3', gostValue: 'К155ЛА3', gostTypeName: 'К155ЛА3 (2И-НЕ)', gostPrefix: 'DD', gostPatternId: 'PAT_DIP14' },
+  { pattern: /\b(74HC08|74LS08|SN7408|CD4081)\b/i, gostDefId: 'COMP_DD_K155LI1', gostValue: 'К155ЛИ1', gostTypeName: 'К155ЛИ1 (2И)', gostPrefix: 'DD', gostPatternId: 'PAT_DIP14' },
+  { pattern: /\b(74HC02|74LS02)\b/i, gostDefId: 'COMP_DD_K555LE1', gostValue: 'К555ЛЕ1', gostTypeName: 'К555ЛЕ1 (2ИЛИ-НЕ)', gostPrefix: 'DD', gostPatternId: 'PAT_DIP14' },
+  { pattern: /\b(74HC32|74LS32|SN7432|CD4071)\b/i, gostDefId: 'COMP_DD_K155LL1', gostValue: 'К155ЛЛ1', gostTypeName: 'К155ЛЛ1 (2ИЛИ)', gostPrefix: 'DD', gostPatternId: 'PAT_DIP14' },
+  { pattern: /\b(74HC86|74LS86|SN7486|CD4070)\b/i, gostDefId: 'COMP_DD_K155LP5', gostValue: 'К155ЛП5', gostTypeName: 'К155ЛП5 (2XOR)', gostPrefix: 'DD', gostPatternId: 'PAT_DIP14' },
+  { pattern: /\b(74HC04|74LS04|CD4069)\b/i, gostDefId: 'COMP_DD_K561LN2', gostValue: 'К561ЛН2', gostTypeName: 'К561ЛН2 (НЕ)', gostPrefix: 'DD', gostPatternId: 'PAT_DIP14' },
   { pattern: /\b(74HC74|74LS74)\b/i, gostDefId: 'COMP_DD_K555TM2', gostValue: 'К555ТМ2', gostTypeName: 'К555ТМ2', gostPrefix: 'DD', gostPatternId: 'PAT_DIP14' },
   { pattern: /\b(MAX485|ADM485|SN75176|SP485)\b/i, gostDefId: 'COMP_DA_K5559IN10A', gostValue: 'К5559ИН10А (RS-485)', gostTypeName: 'К5559ИН10А', gostPrefix: 'DA', gostPatternId: 'PAT_SOIC8' },
   { pattern: /\b(PC817|4N25|4N35|EL817)\b/i, gostDefId: 'COMP_U_AOT128A', gostValue: 'АОТ128А', gostTypeName: 'АОТ128А', gostPrefix: 'U', gostPatternId: 'PAT_DIP6' },
@@ -140,6 +143,10 @@ export function convertValueToGost(rawValue: string, gostPrefix: string): string
     }
     const rNotation = /^(\d+)[kK](\d+)$/.exec(v);
     if (rNotation) return `${rNotation[1]},${rNotation[2]} кОм`;
+    const ohmNotation = /^(\d+)[rR](\d+)$/.exec(v);
+    if (ohmNotation) return `${ohmNotation[1]},${ohmNotation[2]} Ом`;
+    const megNotation = /^(\d+)[mM](\d+)$/.exec(v);
+    if (megNotation) return `${megNotation[1]},${megNotation[2]} МОм`;
   }
   if (gostPrefix === 'C') {
     const m = /^([\d.,]+)\s*(p|pF|пФ|n|nF|нФ|u|uF|µF|μF|мкФ|mF)?$/i.exec(v);
@@ -155,6 +162,12 @@ export function convertValueToGost(rawValue: string, gostPrefix: string): string
         return `${String(num).replace('.', ',')} мкФ`;
       }
     }
+    const nNotation = /^(\d+)[nN](\d+)$/.exec(v);
+    if (nNotation) return `${nNotation[1]},${nNotation[2]} нФ`;
+    const uNotation = /^(\d+)[uUµμ](\d+)$/.exec(v);
+    if (uNotation) return `${uNotation[1]},${uNotation[2]} мкФ`;
+    const pNotation = /^(\d+)[pP](\d+)$/.exec(v);
+    if (pNotation) return `${pNotation[1]},${pNotation[2]} пФ`;
   }
   if (gostPrefix === 'L') {
     const m = /^([\d.,]+)\s*(nH|uH|µH|mH|H)$/i.exec(v);
@@ -360,6 +373,60 @@ export function resolveOrBuildGostComponent(opts: {
   }
   if (gostPrefix === 'SB') {
     return { defId: 'COMP_SB_KN1', gostRefPrefix: 'SB', gostValue: gostValue || 'КМ1-1', gostTypeName: 'КМ1-1', gostPatternId: 'PAT_KN_TACT', convertedToUgo: true };
+  }
+
+  // 3.4. Generic single logic gates (ANSI AND, OR, XOR, NOT, NAND, NOR) -> GOST 2.743-91 UGO
+  const logicGateMatch = /^(AND|2AND|AND2|NAND|2NAND|NAND2|OR|2OR|OR2|NOR|2NOR|NOR2|XOR|2XOR|XOR2|INV|NOT)$/i.exec(opts.rawName.trim())
+    || /^(AND|2AND|AND2|NAND|2NAND|NAND2|OR|2OR|OR2|NOR|2NOR|NOR2|XOR|2XOR|XOR2|INV|NOT)$/i.exec(opts.rawValue.trim());
+  if (logicGateMatch) {
+    const gateType = logicGateMatch[1].toUpperCase();
+    const isInv = gateType.startsWith('N') || gateType === 'INV' || gateType === 'NOT';
+    const funcSymbol = gateType.includes('AND') ? '&' : gateType.includes('XOR') ? '=1' : '1';
+    const isSingleInput = gateType === 'INV' || gateType === 'NOT';
+    const gateDefId = `CUST_GOST_GATE_${gateType}`;
+    if (!opts.customDefs[gateDefId]) {
+      opts.customDefs[gateDefId] = {
+        id: gateDefId,
+        name: `${gateType} (ГОСТ 2.743)`,
+        library: 'Логика (ГОСТ 2.743)',
+        refDesPrefix: 'DD',
+        defaultValue: gateType,
+        gostStandard: 'ГОСТ 2.743-91',
+        description: `Логический элемент ${gateType} по ГОСТ 2.743-91`,
+        patternId: 'PAT_DIP14',
+        parts: [
+          isSingleInput
+            ? {
+                partIndex: 1,
+                name: 'Инвертор',
+                primitives: [
+                  { type: 'rect' as const, x: -5, y: -5, w: 10, h: 10, width: 0.4 },
+                  { type: 'text' as const, x: 0, y: -2.0, text: '1', size: 3.2, align: 'center' as const }
+                ],
+                pins: [
+                  { id: 'p_in', number: opts.pins?.[0]?.number || '1', name: '', x: -10, y: 0, length: 5, orientation: 0 as const, electricalType: 'Input' as const, style: 'Line' as const, showName: false, showNumber: true, padMapping: '1' },
+                  { id: 'p_out', number: opts.pins?.[1]?.number || '2', name: '', x: 10, y: 0, length: 5, orientation: 180 as const, electricalType: 'Output' as const, style: 'Inverted' as const, showName: false, showNumber: true, padMapping: '2' }
+                ]
+              }
+            : makeGostLogicGatePart(
+                1,
+                funcSymbol,
+                opts.pins?.[0]?.number || '1',
+                opts.pins?.[1]?.number || '2',
+                opts.pins?.[2]?.number || '3',
+                isInv
+              )
+        ]
+      };
+    }
+    return {
+      defId: gateDefId,
+      gostRefPrefix: 'DD',
+      gostValue: gateType,
+      gostTypeName: `${gateType} (ГОСТ)`,
+      gostPatternId: 'PAT_DIP14',
+      convertedToUgo: true
+    };
   }
 
   // 3.5. Existing custom component definition from embedded CAD library

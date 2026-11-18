@@ -98,18 +98,20 @@ export function extractKicadSymbolGeometry(symNodes: SExprList[], scale = 1.0): 
 /** Maps a KiCad PCB layer name to DipTrace/GOST PcbLayerId. */
 export function mapKicadLayer(layerName: string): PcbLayerId {
   const l = (layerName || '').trim();
-  if (l === 'B.Cu') return 'BottomCopper';
-  if (l === 'In1.Cu') return 'Inner1';
-  if (l === 'In2.Cu') return 'Inner2';
-  if (l === 'F.SilkS' || l === 'F.Silkscreen') return 'TopSilk';
-  if (l === 'B.SilkS' || l === 'B.Silkscreen') return 'BottomSilk';
-  if (l === 'F.Mask') return 'TopMask';
-  if (l === 'B.Mask') return 'BottomMask';
-  if (l === 'F.Paste') return 'TopPaste';
-  if (l === 'B.Paste') return 'BottomPaste';
-  if (l === 'F.Fab') return 'TopAssembly';
-  if (l === 'B.Fab') return 'BottomAssembly';
-  if (l === 'F.CrtYd' || l === 'B.CrtYd') return 'Courtyard';
-  if (l === 'Edge.Cuts') return 'BoardOutline';
+  if (l === 'B.Cu' || l === 'Bottom') return 'BottomCopper';
+  if (l === 'In1.Cu' || l === 'Inner1') return 'Inner1';
+  if (l === 'In2.Cu' || l === 'Inner2') return 'Inner2';
+  if (/^In\d+\.Cu$/i.test(l)) return 'Inner2';
+  if (l === 'F.SilkS' || l === 'F.Silkscreen' || l === 'TopSilk') return 'TopSilk';
+  if (l === 'B.SilkS' || l === 'B.Silkscreen' || l === 'BottomSilk') return 'BottomSilk';
+  if (l === 'F.Mask' || l === 'TopMask') return 'TopMask';
+  if (l === 'B.Mask' || l === 'BottomMask') return 'BottomMask';
+  if (l === 'F.Paste' || l === 'TopPaste') return 'TopPaste';
+  if (l === 'B.Paste' || l === 'BottomPaste') return 'BottomPaste';
+  if (l === 'F.Fab' || l === 'TopAssembly') return 'TopAssembly';
+  if (l === 'B.Fab' || l === 'BottomAssembly') return 'BottomAssembly';
+  if (l === 'F.CrtYd' || l === 'B.CrtYd' || /Courtyard/i.test(l)) return 'Courtyard';
+  if (l === 'Edge.Cuts' || l === 'Margin' || l === 'BoardOutline') return 'BoardOutline';
+  if (/Keepout/i.test(l)) return 'Keepout';
   return 'TopCopper';
 }

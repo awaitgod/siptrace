@@ -31,7 +31,19 @@ export interface SchematicRightSidebarProps {
     updateActiveSheet: (sheetUpdater: (s: SchematicSheet) => SchematicSheet, pushUndo?: boolean) => void;
 }
 /** Right docked sidebar displaying Properties, Project Manager (Components/Nets/ERC), and Pinout. */
-export const SchematicRightSidebar: React.FC<SchematicRightSidebarProps> = (p) => (<div className="dt-right-sidebar" id="schematic-properties">
+export const SchematicRightSidebar: React.FC<SchematicRightSidebarProps> = (p) => {
+  const [ercFilter, setErcFilter] = React.useState<'all' | 'Error' | 'Warning' | 'Info'>('all');
+
+  const filteredErcErrors = p.ercErrors.filter((e) => {
+    if (ercFilter === 'all') return true;
+    return e.severity === ercFilter;
+  });
+  const errorCount = p.ercErrors.filter((e) => e.severity === 'Error').length;
+  const warnCount = p.ercErrors.filter((e) => e.severity === 'Warning').length;
+  const infoCount = p.ercErrors.filter((e) => e.severity === 'Info').length;
+
+  return (
+    <div className="dt-right-sidebar" id="schematic-properties">
     <button className="dt-btn" onClick={p.onProperties} disabled={!p.selectedIds?.length}>Свойства выделения ({p.selectedIds?.length ?? 0}) — E</button>
     {/* Свойства */}
     <div className="dt-panel-card" style={{ height: '31%' }}>
@@ -216,19 +228,83 @@ export const SchematicRightSidebar: React.FC<SchematicRightSidebarProps> = (p) =
               {net.netName} ({net.pins.length} выв.)
             </div>))}
 
-        {p.managerTab === 'erc' &&
-        (p.ercErrors.length === 0 ? (<div style={{ padding: 8, color: p.ercStale ? '#775500' : '#2b7a2b' }}>{p.ercStale ? 'Схема изменена или ещё не проверена. Нажмите F9.' : 'Нарушений ERC не найдено.'}</div>) : (p.ercErrors.map((err) => (<div key={err.id} className="dt-tree-row" style={{ color: err.severity === 'Error' ? '#c00' : '#996000', whiteSpace: 'normal', lineHeight: '14px', padding: '3px 6px', borderBottom: '1px solid #f0f0f0' }} onClick={() => {
-                if (err.sheetId !== p.project.activeSheetId) {
-                    p.commitProject((prev) => ({ ...prev, activeSheetId: err.sheetId }), false);
-                }
-                if (err.objectId)
-                    p.setSelectedCompIds([err.objectId]);
-                if (typeof err.x === 'number' && typeof err.y === 'number') {
-                    p.onCenterWorldPt?.(err.x, err.y);
-                }
-            }}>
-                <b>[{err.code}]</b> {err.message}
-              </div>))))}
+        {p.managerTab === 'erc' && (
+          <div>
+            {p.ercErrors.length > 0 && (
+              <div style={{ display: 'flex', gap: 2, padding: '3px 4px', borderBottom: '1px solid #e0e0e0', background: '#fafafa', fontSize: 10 }}>
+                <button
+                  className={`dt-btn ${ercFilter === 'all' ? 'primary' : ''}`}
+                  style={{ padding: '1px 5px', height: 18, fontSize: 10 }}
+                  onClick={() => setErcFilter('all')}
+                >
+                  Все ({p.ercErrors.length})
+                </button>
+                <button
+                  className={`dt-btn ${ercFilter === 'Error' ? 'primary' : ''}`}
+                  style={{ padding: '1px 5px', height: 18, fontSize: 10, color: ercFilter === 'Error' ? '#fff' : '#c00' }}
+                  onClick={() => setErcFilter('Error')}
+                >
+                  Ошибки ({errorCount})
+                </button>
+                <button
+                  className={`dt-btn ${ercFilter === 'Warning' ? 'primary' : ''}`}
+                  style={{ padding: '1px 5px', height: 18, fontSize: 10, color: ercFilter === 'Warning' ? '#fff' : '#b87700' }}
+                  onClick={() => setErcFilter('Warning')}
+                >
+                  Предупр. ({warnCount})
+                </button>
+                {infoCount > 0 && (
+                  <button
+                    className={`dt-btn ${ercFilter === 'Info' ? 'primary' : ''}`}
+                    style={{ padding: '1px 5px', height: 18, fontSize: 10, color: ercFilter === 'Info' ? '#fff' : '#1890ff' }}
+                    onClick={() => setErcFilter('Info')}
+                  >
+                    Инфо ({infoCount})
+                  </button>
+                )}
+              </div>
+            )}
+            {p.ercErrors.length === 0 ? (
+              <div style={{ padding: 8, color: p.ercStale ? '#775500' : '#2b7a2b' }}>
+                {p.ercStale ? 'Схема изменена или ещё не проверена. Нажмите F9.' : 'Нарушений ERC не найдено.'}
+              </div>
+            ) : filteredErcErrors.length === 0 ? (
+              <div style={{ padding: 8, color: '#888', fontStyle: 'italic' }}>
+                Нет записей в категории «{ercFilter === 'Error' ? 'Ошибки' : ercFilter === 'Warning' ? 'Предупреждения' : 'Инфо'}».
+              </div>
+            ) : (
+              filteredErcErrors.map((err) => {
+                const badgeColor = err.severity === 'Error' ? '#c00' : err.severity === 'Warning' ? '#996000' : '#0066cc';
+                return (
+                  <div
+                    key={err.id}
+                    className="dt-tree-row"
+                    style={{
+                      color: badgeColor,
+                      whiteSpace: 'normal',
+                      lineHeight: '14px',
+                      padding: '4px 6px',
+                      borderBottom: '1px solid #f0f0f0',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => {
+                      if (err.sheetId !== p.project.activeSheetId) {
+                        p.commitProject((prev) => ({ ...prev, activeSheetId: err.sheetId }), false);
+                      }
+                      if (err.objectId) p.setSelectedCompIds([err.objectId]);
+                      if (err.netName) p.setHighlightedNet(err.netName);
+                      if (typeof err.x === 'number' && typeof err.y === 'number') {
+                        p.onCenterWorldPt?.(err.x, err.y);
+                      }
+                    }}
+                  >
+                    <b style={{ color: badgeColor }}>[{err.code}]</b> {err.message}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
       </div>
     </div>
 
@@ -253,4 +329,6 @@ export const SchematicRightSidebar: React.FC<SchematicRightSidebarProps> = (p) =
     })()) : (<div style={{ padding: 8, color: '#777' }}>Выберите компонент</div>)}
       </div>
     </div>
-  </div>);
+  </div>
+  );
+};

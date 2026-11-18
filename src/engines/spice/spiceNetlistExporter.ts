@@ -51,16 +51,17 @@ export function exportSpiceNetlist(sch: SchematicProject): string {
       const n2 = pinToNet.get(`${c.refDes}:2`) ?? '0';
       const n3 = pinToNet.get(`${c.refDes}:3`) ?? '0';
       const hint = `${c.typeName} ${c.value}`.toUpperCase();
-      if (c.refDes.startsWith('R')) {
+      const up = c.refDes.toUpperCase();
+      if (up.startsWith('R')) {
         lines.push(`${c.refDes} ${n1} ${n2} ${parseMetricValue(c.value, 1000)}`);
-      } else if (c.refDes.startsWith('C')) {
+      } else if (up.startsWith('C')) {
         lines.push(`${c.refDes} ${n1} ${n2} ${parseMetricValue(c.value, 1e-7)}`);
-      } else if (c.refDes.startsWith('L')) {
+      } else if (up.startsWith('L')) {
         lines.push(`${c.refDes} ${n1} ${n2} ${parseMetricValue(c.value, 1e-4)}`);
-      } else if (c.refDes.startsWith('VD') || c.refDes.startsWith('HL')) {
+      } else if (up.startsWith('VD') || up.startsWith('HL') || up.startsWith('D') || up.startsWith('LED')) {
         lines.push(`D_${c.refDes} ${n1} ${n2} D_GOST`);
-      } else if (c.refDes.startsWith('VT')) {
-        if (/MOS|FET|IRF|FDN|AO34|BS170|2N700|КП50/i.test(hint)) {
+      } else if (up.startsWith('VT') || up.startsWith('Q') || up.startsWith('M')) {
+        if (up.startsWith('M') || /MOS|FET|IRF|FDN|AO34|BS170|2N700|КП50/i.test(hint)) {
           const mModel = /PMOS|P-CH|FDN340|IRF9|9540/i.test(hint) ? 'PMOS_GOST' : 'NMOS_GOST';
           lines.push(`M_${c.refDes} ${n3} ${n1} ${n2} ${n2} ${mModel}`);
         } else {

@@ -331,11 +331,26 @@ export const PatternPreviewCanvas: React.FC<{ pattern: PatternDef | null; colorS
         ctx.beginPath();
         ctx.roundRect(-pad.width / 2, -pad.height / 2, pad.width, pad.height, cr);
         ctx.fill();
-      } else if (pad.shape === 'Polygon' && pad.polygonPoints && pad.polygonPoints.length >= 3) {
+      } else if (pad.shape === 'Polygon') {
+        const hw = pad.width / 2;
+        const hh = pad.height / 2;
+        const c = Math.min(hw, hh) * 0.3;
+        const pts = (pad.polygonPoints && pad.polygonPoints.length >= 3)
+          ? pad.polygonPoints
+          : [
+              { x: -hw + c, y: -hh },
+              { x: hw - c, y: -hh },
+              { x: hw, y: -hh + c },
+              { x: hw, y: hh - c },
+              { x: hw - c, y: hh },
+              { x: -hw + c, y: hh },
+              { x: -hw, y: hh - c },
+              { x: -hw, y: -hh + c }
+            ];
         ctx.beginPath();
-        ctx.moveTo(pad.polygonPoints[0].x, pad.polygonPoints[0].y);
-        for (let i = 1; i < pad.polygonPoints.length; i++) {
-          ctx.lineTo(pad.polygonPoints[i].x, pad.polygonPoints[i].y);
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) {
+          ctx.lineTo(pts[i].x, pts[i].y);
         }
         ctx.closePath();
         ctx.fill();

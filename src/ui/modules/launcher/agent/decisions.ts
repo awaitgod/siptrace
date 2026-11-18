@@ -25,13 +25,18 @@ export async function reviewAgentActions(
   state: Record<string, unknown>,
   key: string,
   signal: AbortSignal,
-  emit: (event: AgentEvent) => void
+  emit: (event: AgentEvent) => void,
+  baseUrl = 'https://api.aitunnel.ru/v1'
 ) {
   const started = Date.now();
-  const response = await fetch('https://api.aitunnel.ru/v1/decisions', {
+  const decisionUrl = `${baseUrl.replace(/\/+$/, '')}/decisions`;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (key) headers.Authorization = 'Bearer ' + key;
+
+  const response = await fetch(decisionUrl, {
     method: 'POST',
     signal: AbortSignal.any([signal, AbortSignal.timeout(90_000)]),
-    headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       model: DECISION_MODEL, state,
       questions: {
@@ -51,12 +56,11 @@ export async function reviewAgentActions(
       }
     })
   });
-  const body: unknown = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error('Decisions HTTP ' + response.status);
+  const body: unknown = await response.json().catch(() => ({}));
   const result = answerSchema.parse(body);
   const selected = result.answers.action;
   const confidence = Math.min(selected.confidence, selected.probabilities[selected.choice] ?? 0);
-  // The threshold is provisional and is logged for calibration against engineering review.
   const enforced = confidence >= 0.8 && selected.choice !== 'continue';
   emit({ kind: 'decision', model: DECISION_MODEL, id: result.id, durationMs: Date.now() - started,
     state, answers: result.answers, usage: result.usage, threshold: .8, enforced });

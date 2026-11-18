@@ -33,10 +33,11 @@ import { PatternPreviewCanvas, drawSymbolPrimitives } from '../../components/Cad
 import { nextAvailableNumber } from '../libraryEditors/numbering';
 import { useLibraryDraft } from '../libraryEditors/useLibraryDraft';
 import { validateComponent } from './componentValidation';
+import { findDuplicatePinNumbers, generateRangePins, parsePinRange, renumberPins, sortPins } from './pinManagerHelpers';
 import './componentEditor.css';
 import '../libraryEditors/libraryEditor.css';
 
-type CompToolId = 'select' | 'pin' | 'line' | 'rect' | 'circle' | 'text';
+type CompToolId = 'select' | 'pin' | 'line' | 'rect' | 'circle' | 'arc' | 'text';
 
 const createEmptyGostComponent = (): ComponentDef => ({
   id: uid('ucomp'),
@@ -81,6 +82,12 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
   const [statusText, setStatusText] = useState('Редактор компонентов (УГО ГОСТ 2.721 / 2.743). Выберите элемент или создавайте УГО.');
   const [showPatternDialog, setShowPatternDialog] = useState(false);
   const [showIcWizard, setShowIcWizard] = useState(false);
+  const [showRangeDialog, setShowRangeDialog] = useState(false);
+  const [rangeExpr, setRangeExpr] = useState('D0..D7');
+  const [rangeType, setRangeType] = useState<PinElectricalType>('Bidirectional');
+  const [rangeSide, setRangeSide] = useState<'left' | 'right'>('left');
+  const [sortMode, setSortMode] = useState<'number' | 'name' | 'y'>('number');
+  const [icSections, setIcSections] = useState('1');
   const [icName, setIcName] = useState('К561ИЕ10');
   const [icPrefix, setIcPrefix] = useState('DD');
   const [icLeftPins, setIcLeftPins] = useState('4');
@@ -143,7 +150,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
       }
     });
     const onKeyDown = (e: KeyboardEvent) => {
-      if (showPatternDialog || showIcWizard || verificationIssues || conversionReport || showCadLibDialog) return;
+      if (showPatternDialog || showIcWizard || showRangeDialog || verificationIssues || conversionReport || showCadLibDialog) return;
       if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's' || e.code === 'KeyS')) {
         e.preventDefault();
         handleSaveToUserLibrary();
@@ -177,6 +184,9 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
     [comp.patternId, userPatterns]
   );
 
+  const duplicatePinNumbers = useMemo(() => findDuplicatePinNumbers(comp), [comp]);
+  const totalSymbolPins = useMemo(() => comp.parts.reduce((acc, p) => acc + p.pins.length, 0), [comp.parts]);
+
   const updateActivePart = useCallback(
     (updater: (pt: ComponentDef['parts'][0]) => ComponentDef['parts'][0]) => {
       setComp((prev) => ({
@@ -189,6 +199,27 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
 
   // Save current component to user library
   const handleSaveToUserLibrary = async () => {
+    const issues = validateComponent(comp, attachedPattern);
+    const criticalIssues = issues.filter(
+      (iss) =>
+        iss.includes('отсутствует в корпусе') ||
+        iss.includes('дубликат номера') ||
+        iss.includes('задайте номер') ||
+        iss.includes('вне сетки')
+    );
+    if (criticalIssues.length > 0) {
+      const proceed = window.confirm(
+        `Внимание: обнаружены замечания целостности УГО (${criticalIssues.length}):\n\n` +
+          criticalIssues.slice(0, 5).join('\n') +
+          (criticalIssues.length > 5 ? `\n...и ещё ${criticalIssues.length - 5}` : '') +
+          '\n\nСохранить компонент в библиотеку несмотря на замечания?'
+      );
+      if (!proceed) {
+        setStatusText('Сохранение отменено инженером. Исправьте замечания в УГО.');
+        return;
+      }
+    }
+
     const toSave = structuredClone(comp);
     if (!toSave.id.startsWith('ucomp') || toSave.library !== 'lib_user') toSave.id = uid('ucomp');
     toSave.library = 'lib_user';
@@ -220,17 +251,30 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
     if (!icInputsValid || !acceptReplacement()) return;
     const leftCount = Number(icLeftPins);
     const rightCount = Number(icRightPins);
-    const leftPins = Array.from({ length: leftCount }, (_, i) => ({
-      num: String(i + 1),
-      name: `IN${i + 1}`,
-      type: 'Input' as const
-    }));
-    const rightPins = Array.from({ length: rightCount }, (_, i) => ({
-      num: String(leftCount + i + 1),
-      name: `OUT${i + 1}`,
-      type: 'Output' as const
-    }));
+    const sectionsCount = Math.max(1, Math.min(8, Number(icSections) || 1));
     const name = icName.trim();
+    const parts = Array.from({ length: sectionsCount }, (_, secIdx) => {
+      const partIndex = secIdx + 1;
+      const baseNum = secIdx * (leftCount + rightCount);
+      const leftPins = Array.from({ length: leftCount }, (_, i) => ({
+        num: String(baseNum + i + 1),
+        name: `IN${i + 1}`,
+        type: 'Input' as const
+      }));
+      const rightPins = Array.from({ length: rightCount }, (_, i) => ({
+        num: String(baseNum + leftCount + i + 1),
+        name: `OUT${i + 1}`,
+        type: 'Output' as const
+      }));
+      return makeGostRectangularIcPart({
+        partIndex,
+        name: sectionsCount > 1 ? `Секция ${partIndex}` : undefined,
+        leftPins,
+        rightPins,
+        headerText: sectionsCount > 1 ? `${name}.${partIndex}` : name
+      });
+    });
+
     replaceDraft({
       id: uid('ucomp'),
       name,
@@ -240,11 +284,31 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
       defaultValue: name,
       patternId: '',
       description: `ИМС ${name} (создано Мастером УГО ГОСТ)`,
-      parts: [makeGostRectangularIcPart({ leftPins, rightPins, headerText: name })]
+      parts
     });
     setPartIdx(1);
     setShowIcWizard(false);
-    setStatusText(`Создано УГО «${name}» с ${leftCount + rightCount} выводами. Назначьте корпус и проверьте распиновку.`);
+    const totalPins = parts.reduce((acc, p) => acc + p.pins.length, 0);
+    setStatusText(`Создано УГО «${name}» с ${totalPins} выводами. Назначьте корпус и проверьте распиновку.`);
+  };
+
+  const handleAddRangePins = () => {
+    const nextStartNum = parseInt(nextAvailableNumber(activePart.pins), 10) || (activePart.pins.length + 1);
+    const newPins = generateRangePins({
+      rangeExpr,
+      electricalType: rangeType,
+      style: 'Line',
+      orientation: rangeSide === 'left' ? 0 : 180,
+      startNumber: nextStartNum,
+      startX: rangeSide === 'left' ? -12.5 : 12.5,
+      startY: -Math.floor(parsePinRange(rangeExpr).length / 2) * 5,
+      stepY: 5.0
+    });
+    if (newPins.length > 0) {
+      updateActivePart((p) => ({ ...p, pins: [...p.pins, ...newPins] }));
+      setStatusText(`Добавлено ${newPins.length} выводов из диапазона «${rangeExpr}».`);
+      setShowRangeDialog(false);
+    }
   };
 
   const openComponent = (component: ComponentDef) => {
@@ -376,6 +440,10 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
         ctx.beginPath();
         ctx.arc(draftStart.x, draftStart.y, Math.max(1, dist(draftStart, cur)), 0, Math.PI * 2);
         ctx.stroke();
+      } else if (tool === 'arc') {
+        ctx.beginPath();
+        ctx.arc(draftStart.x, draftStart.y, Math.max(1, dist(draftStart, cur)), 0, Math.PI);
+        ctx.stroke();
       }
       ctx.setLineDash([]);
     }
@@ -435,7 +503,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
       return;
     }
 
-    if (tool === 'line' || tool === 'rect' || tool === 'circle') {
+    if (tool === 'line' || tool === 'rect' || tool === 'circle' || tool === 'arc') {
       if (!draftStart) setDraftStart(pt);
       else {
         let prim: SymbolPrimitive;
@@ -450,8 +518,10 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
             h: Math.max(1, Math.abs(pt.y - draftStart.y)),
             width: 0.4
           };
-        } else {
+        } else if (tool === 'circle') {
           prim = { type: 'circle', cx: draftStart.x, cy: draftStart.y, r: Math.max(1, dist(draftStart, pt)), width: 0.4 };
+        } else {
+          prim = { type: 'arc', cx: draftStart.x, cy: draftStart.y, r: Math.max(1, dist(draftStart, pt)), startAngle: 0, endAngle: Math.PI, width: 0.4 };
         }
         updateActivePart((p) => ({ ...p, primitives: [...p.primitives, prim] }));
         setDraftStart(null);
@@ -509,6 +579,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
         { label: 'Линия УГО', checked: tool === 'line', onClick: () => changeTool('line') },
         { label: 'Прямоугольник УГО', checked: tool === 'rect', onClick: () => changeTool('rect') },
         { label: 'Окружность УГО', checked: tool === 'circle', onClick: () => changeTool('circle') },
+        { label: 'Дуга УГО', checked: tool === 'arc', onClick: () => changeTool('arc') },
         { label: 'Функциональный текст', checked: tool === 'text', onClick: () => changeTool('text') }
       ]
     },
@@ -541,6 +612,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
         <button className={`dt-tb-btn ${tool === 'line' ? 'active' : ''}`} aria-pressed={tool === 'line'} title="Линия УГО" onClick={() => changeTool('line')}><DipIcon name="shapeLine" /></button>
         <button className={`dt-tb-btn ${tool === 'rect' ? 'active' : ''}`} aria-pressed={tool === 'rect'} title="Прямоугольник УГО" onClick={() => changeTool('rect')}><DipIcon name="shapeRect" /></button>
         <button className={`dt-tb-btn ${tool === 'circle' ? 'active' : ''}`} aria-pressed={tool === 'circle'} title="Окружность УГО" onClick={() => changeTool('circle')}><DipIcon name="shapeCircle" /></button>
+        <button className={`dt-tb-btn ${tool === 'arc' ? 'active' : ''}`} aria-pressed={tool === 'arc'} title="Дуга УГО" onClick={() => changeTool('arc')}><DipIcon name="arc" /></button>
         <button className={`dt-tb-btn ${tool === 'text' ? 'active' : ''}`} aria-pressed={tool === 'text'} title="Функциональный текст" onClick={() => changeTool('text')}><DipIcon name="shapeText" /></button>
         {tool === 'text' && (
           <input className="dt-input" aria-label="Текст УГО" title="Текст для размещения на УГО" style={{ width: 72 }} value={symbolText} onChange={(e) => setSymbolText(e.target.value)} />
@@ -635,6 +707,41 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                 </button>
               )}
             </div>
+            <div style={{ display: 'flex', gap: 4, padding: '3px 6px', background: '#e9ecef', borderBottom: '1px solid #ccc', fontSize: 10, alignItems: 'center' }}>
+              <button
+                className="dt-btn"
+                title="Перенумеровать выводы активной секции 1..N"
+                style={{ padding: '1px 5px', fontSize: 10 }}
+                onClick={() => updateActivePart((p) => ({ ...p, pins: renumberPins(p.pins) }))}
+              >
+                1..N
+              </button>
+              <button
+                className="dt-btn"
+                title={`Сортировка выводов (сейчас: ${sortMode === 'number' ? 'по №' : sortMode === 'name' ? 'по имени' : 'по Y'}). Нажмите для переключения.`}
+                style={{ padding: '1px 5px', fontSize: 10 }}
+                onClick={() => {
+                  const nextMode = sortMode === 'number' ? 'name' : sortMode === 'name' ? 'y' : 'number';
+                  setSortMode(nextMode);
+                  updateActivePart((p) => ({ ...p, pins: sortPins(p.pins, nextMode) }));
+                }}
+              >
+                {sortMode === 'number' ? 'Сорт: №' : sortMode === 'name' ? 'Сорт: Имя' : 'Сорт: Y'}
+              </button>
+              <button
+                className="dt-btn"
+                title="Быстрый ввод диапазона выводов (D0..D7, A0..A15)"
+                style={{ padding: '1px 5px', fontSize: 10 }}
+                onClick={() => setShowRangeDialog(true)}
+              >
+                + Диапазон...
+              </button>
+              {duplicatePinNumbers.size > 0 && (
+                <span style={{ color: '#d9534f', marginLeft: 'auto', fontWeight: 'bold' }} title={`Дубликаты номеров выводов: ${Array.from(duplicatePinNumbers).join(', ')}`}>
+                  ⚠ Дубликаты ({duplicatePinNumbers.size})
+                </span>
+              )}
+            </div>
             <div className="dt-panel-body">
               <table className="dt-table library-editor-table">
                 <thead>
@@ -651,7 +758,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                   {activePart.pins.map((pin) => (
                     <tr
                       key={pin.id}
-                      style={{ background: pin.id === selectedPinId ? '#cce8ff' : '#fff' }}
+                      style={{ background: pin.id === selectedPinId ? '#cce8ff' : duplicatePinNumbers.has(pin.number.trim()) ? '#fff5f5' : '#fff' }}
                       onClick={() => setSelectedPinId(pin.id)}
                       onFocus={() => setSelectedPinId(pin.id)}
                     >
@@ -659,7 +766,12 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                         <input
                           className="dt-prop-input"
                           aria-label={`Номер вывода ${pin.number}`}
-                          style={{ width: 24 }}
+                          style={{
+                            width: 24,
+                            borderColor: duplicatePinNumbers.has(pin.number.trim()) ? '#d9534f' : undefined,
+                            backgroundColor: duplicatePinNumbers.has(pin.number.trim()) ? '#fff0f0' : undefined
+                          }}
+                          title={duplicatePinNumbers.has(pin.number.trim()) ? `Дубликат номера вывода: ${pin.number}` : undefined}
                           value={pin.number}
                           onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === pin.id ? { ...x, number: e.target.value } : x) }))}
                         />
@@ -714,6 +826,8 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                           <option value="Output">Output</option>
                           <option value="Bidirectional">BiDir</option>
                           <option value="Power">Power</option>
+                          <option value="PowerIn">Power In</option>
+                          <option value="PowerOut">Power Out</option>
                           <option value="OpenCollector">OC</option>
                           <option value="TriState">3-State</option>
                           <option value="NotConnected">NC</option>
@@ -733,12 +847,80 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
                 </tbody>
               </table>
             </div>
+            {activePart.pins.find((p) => p.id === selectedPinId) && (() => {
+              const selPin = activePart.pins.find((p) => p.id === selectedPinId)!;
+              return (
+                <div style={{ padding: '6px 8px', borderTop: '1px solid #ddd', background: '#f8f9fa', fontSize: 11, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ fontWeight: 600 }}>
+                    Свойства вывода №{selPin.number} ({selPin.name})
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                    <label>Длина (ГОСТ):
+                      <select
+                        className="dt-select"
+                        style={{ width: '100%' }}
+                        value={selPin.length}
+                        onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === selPin.id ? { ...x, length: parseFloat(e.target.value) || 5 } : x) }))}
+                      >
+                        <option value={2.5}>2,5 мм (ГОСТ)</option>
+                        <option value={5.0}>5,0 мм (ГОСТ)</option>
+                        <option value={7.5}>7,5 мм</option>
+                        <option value={0}>0 мм (скрытый)</option>
+                      </select>
+                    </label>
+                    <label>Ориентация:
+                      <select
+                        className="dt-select"
+                        style={{ width: '100%' }}
+                        value={selPin.orientation}
+                        onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === selPin.id ? { ...x, orientation: Number(e.target.value) as PinOrientation } : x) }))}
+                      >
+                        <option value={0}>0° (Вправо)</option>
+                        <option value={90}>90° (Вниз)</option>
+                        <option value={180}>180° (Влево)</option>
+                        <option value={270}>270° (Вверх)</option>
+                      </select>
+                    </label>
+                    <label>X (мм):
+                      <input
+                        className="dt-input"
+                        type="number"
+                        step={gridMm}
+                        value={selPin.x}
+                        onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === selPin.id ? { ...x, x: parseFloat(e.target.value) || 0 } : x) }))}
+                      />
+                    </label>
+                    <label>Y (мм):
+                      <input
+                        className="dt-input"
+                        type="number"
+                        step={gridMm}
+                        value={selPin.y}
+                        onChange={(e) => updateActivePart((p) => ({ ...p, pins: p.pins.map((x) => x.id === selPin.id ? { ...x, y: parseFloat(e.target.value) || 0 } : x) }))}
+                      />
+                    </label>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
-          <div className="dt-panel-card" style={{ height: 155 }}>
+          <div className="dt-panel-card" style={{ height: 175 }}>
             <div className="dt-panel-header">
               <span>Корпус: {attachedPattern?.name ?? 'Нет'}</span>
               <button className="dt-btn" style={{ minWidth: 66, height: 16, padding: '0 4px', fontSize: 10 }} onClick={() => setShowPatternDialog(true)}>Привязать...</button>
+            </div>
+            <div style={{ padding: '2px 6px', fontSize: 10, background: '#f5f5f5', borderBottom: '1px solid #ddd', display: 'flex', justifyContent: 'space-between' }}>
+              <span>Выв: {totalSymbolPins} / Площ: {attachedPattern?.pads.length ?? 0}</span>
+              {attachedPattern ? (
+                totalSymbolPins === attachedPattern.pads.length ? (
+                  <span style={{ color: '#2e7d32', fontWeight: 600 }}>✓ Совпадает</span>
+                ) : (
+                  <span style={{ color: '#d9534f', fontWeight: 600 }}>⚠ Не совпадает</span>
+                )
+              ) : (
+                <span style={{ color: '#888' }}>Не привязан</span>
+              )}
             </div>
             <div className="dt-preview-area">
               <PatternPreviewCanvas pattern={attachedPattern} />
@@ -805,7 +987,7 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
 
       {showIcWizard && (
         <div className="dt-modal-backdrop" onClick={() => setShowIcWizard(false)}>
-          <div className="dt-modal" style={{ width: 440 }} onClick={(e) => e.stopPropagation()}>
+          <div className="dt-modal" style={{ width: 440 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Мастер создания УГО микросхемы (ГОСТ 2.743-91)">
             <div className="dt-modal-title">
               <strong>Мастер создания УГО микросхемы (ГОСТ 2.743-91)</strong>
               <button className="dt-btn" style={{ minWidth: 22, height: 18, padding: 0 }} onClick={() => setShowIcWizard(false)}>×</button>
@@ -815,13 +997,66 @@ export const ComponentEditorModule: React.FC<{ onSwitchModule?: (m: any) => void
               <label>Префикс (DD/DA): <input className="dt-input" style={{ width: '100%' }} value={icPrefix} onChange={(e) => setIcPrefix(e.target.value)} /></label>
               <label>Входов слева (1–32): <input type="number" min={1} max={32} aria-invalid={!pinCountIsValid(icLeftPins)} className="dt-input" style={{ width: '100%' }} value={icLeftPins} onChange={(e) => setIcLeftPins(e.target.value)} /></label>
               <label>Выходов справа (1–32): <input type="number" min={1} max={32} aria-invalid={!pinCountIsValid(icRightPins)} className="dt-input" style={{ width: '100%' }} value={icRightPins} onChange={(e) => setIcRightPins(e.target.value)} /></label>
-              <div style={{ gridColumn: '1 / -1' }}>Мастер создаёт шаблон. Задайте номера, имена и типы выводов по документации компонента.</div>
+              <label style={{ gridColumn: '1 / -1' }}>Секций (Multi-part 1–8): <input type="number" min={1} max={8} className="dt-input" style={{ width: 64, marginLeft: 6 }} value={icSections} onChange={(e) => setIcSections(e.target.value)} /></label>
+              <div style={{ gridColumn: '1 / -1' }}>Мастер создаёт прямоугольное УГО по ГОСТ 2.743-91 с привязкой выводов к сетке 2,5 мм.</div>
             </div>
             <div className="dt-modal-footer">
               <button className="dt-btn primary" disabled={!icInputsValid} onClick={createIc}>
                 Создать УГО
               </button>
               <button className="dt-btn" onClick={() => setShowIcWizard(false)}>Отмена</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRangeDialog && (
+        <div className="dt-modal-backdrop" onClick={() => setShowRangeDialog(false)}>
+          <div className="dt-modal" style={{ width: 400 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Быстрый ввод диапазона выводов">
+            <div className="dt-modal-title">
+              <strong>Быстрый ввод диапазона выводов</strong>
+              <button className="dt-btn" style={{ minWidth: 22, height: 18, padding: 0 }} onClick={() => setShowRangeDialog(false)}>×</button>
+            </div>
+            <div className="dt-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
+              <label>
+                Диапазон выводов (например: D0..D7, A0..A15, GPIO[0..7]):
+                <input
+                  className="dt-input"
+                  style={{ width: '100%', marginTop: 2 }}
+                  value={rangeExpr}
+                  placeholder="D0..D7"
+                  onChange={(e) => setRangeExpr(e.target.value)}
+                  autoFocus
+                />
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <label>
+                  Тип выводов:
+                  <select className="dt-select" style={{ width: '100%', marginTop: 2 }} value={rangeType} onChange={(e) => setRangeType(e.target.value as PinElectricalType)}>
+                    <option value="Bidirectional">Двунаправленный</option>
+                    <option value="Input">Входной (Input)</option>
+                    <option value="Output">Выходной (Output)</option>
+                    <option value="Power">Питание (Power)</option>
+                    <option value="Passive">Пассивный (Passive)</option>
+                  </select>
+                </label>
+                <label>
+                  Сторона УГО:
+                  <select className="dt-select" style={{ width: '100%', marginTop: 2 }} value={rangeSide} onChange={(e) => setRangeSide(e.target.value as any)}>
+                    <option value="left">Слева (0° Вправо)</option>
+                    <option value="right">Справа (180° Влево)</option>
+                  </select>
+                </label>
+              </div>
+              <div style={{ fontSize: 11, color: '#666' }}>
+                Будет создано {parsePinRange(rangeExpr).length} выводов с шагом 5 мм по ГОСТ 2.743-91.
+              </div>
+            </div>
+            <div className="dt-modal-footer">
+              <button className="dt-btn primary" disabled={parsePinRange(rangeExpr).length === 0} onClick={handleAddRangePins}>
+                Добавить выводы
+              </button>
+              <button className="dt-btn" onClick={() => setShowRangeDialog(false)}>Отмена</button>
             </div>
           </div>
         </div>

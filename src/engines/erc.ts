@@ -158,7 +158,7 @@ export function extractSchematicNets(project: SchematicProject): NetGraphNode[] 
         for (const c of sheet.components.filter(c => c.autoPower)) {
             for (const pin of getComponentWorldPins(c, project.customComponentDefs))
                 if (pin.isHiddenPower || pin.electricalType === 'Power') {
-                    const name = /GND|VSS|AGND|DGND/i.test(pin.pinName) ? 'GND' : /VCC|VDD|AVCC/i.test(pin.pinName) ? pin.pinName.toUpperCase() : '';
+                    const name = /GND|VSS|AGND|DGND|ОБЩ|ЗЕМЛЯ/i.test(pin.pinName) ? 'GND' : /VCC|VDD|AVCC|ПИТ/i.test(pin.pinName) ? pin.pinName.toUpperCase() : '';
                     if (name)
                         items.push({ kind: 'port', x: pin.x, y: pin.y, sheetId: sheet.id, scopeId, netName: name, isGlobal: true });
                 }
@@ -345,21 +345,113 @@ export function extractSchematicNets(project: SchematicProject): NetGraphNode[] 
     }
     return result;
 }
+export type PinElectricalType =
+  | 'Input'
+  | 'Output'
+  | 'Bidirectional'
+  | 'TriState'
+  | 'Power'
+  | 'Passive'
+  | 'NotConnected';
+
+export type ErcMatrixSeverity = 'None' | 'Warning' | 'Error';
+
+export const PIN_ELECTRICAL_TYPES: PinElectricalType[] = [
+  'Input',
+  'Output',
+  'Bidirectional',
+  'TriState',
+  'Power',
+  'Passive',
+  'NotConnected'
+];
+
+export const DEFAULT_PIN_MATRIX: Record<PinElectricalType, Record<PinElectricalType, ErcMatrixSeverity>> = {
+  Input: {
+    Input: 'None',
+    Output: 'None',
+    Bidirectional: 'None',
+    TriState: 'None',
+    Power: 'None',
+    Passive: 'None',
+    NotConnected: 'Error'
+  },
+  Output: {
+    Input: 'None',
+    Output: 'Error',
+    Bidirectional: 'Warning',
+    TriState: 'Warning',
+    Power: 'Error',
+    Passive: 'None',
+    NotConnected: 'Error'
+  },
+  Bidirectional: {
+    Input: 'None',
+    Output: 'Warning',
+    Bidirectional: 'None',
+    TriState: 'None',
+    Power: 'Warning',
+    Passive: 'None',
+    NotConnected: 'Error'
+  },
+  TriState: {
+    Input: 'None',
+    Output: 'Warning',
+    Bidirectional: 'None',
+    TriState: 'None',
+    Power: 'Warning',
+    Passive: 'None',
+    NotConnected: 'Error'
+  },
+  Power: {
+    Input: 'None',
+    Output: 'Error',
+    Bidirectional: 'Warning',
+    TriState: 'Warning',
+    Power: 'None',
+    Passive: 'None',
+    NotConnected: 'Error'
+  },
+  Passive: {
+    Input: 'None',
+    Output: 'None',
+    Bidirectional: 'None',
+    TriState: 'None',
+    Power: 'None',
+    Passive: 'None',
+    NotConnected: 'Error'
+  },
+  NotConnected: {
+    Input: 'Error',
+    Output: 'Error',
+    Bidirectional: 'Error',
+    TriState: 'Error',
+    Power: 'Error',
+    Passive: 'Error',
+    NotConnected: 'Error'
+  }
+};
+
 export interface ErcSettings {
-    checkUnconnectedPins: boolean;
-    checkOutputConflicts: boolean;
-    checkSinglePinNets: boolean;
-    checkDuplicateRefDes: boolean;
-    checkMissingPattern: boolean;
-    checkFloatingInputs: boolean;
+  checkUnconnectedPins: boolean;
+  checkOutputConflicts: boolean;
+  checkSinglePinNets: boolean;
+  checkDuplicateRefDes: boolean;
+  checkMissingPattern: boolean;
+  checkFloatingInputs: boolean;
+  checkPinMatrix?: boolean;
+  pinMatrix?: Record<string, Record<string, ErcMatrixSeverity>>;
 }
+
 export const DEFAULT_ERC_SETTINGS: ErcSettings = {
-    checkUnconnectedPins: true,
-    checkOutputConflicts: true,
-    checkSinglePinNets: true,
-    checkDuplicateRefDes: true,
-    checkMissingPattern: true,
-    checkFloatingInputs: true
+  checkUnconnectedPins: true,
+  checkOutputConflicts: true,
+  checkSinglePinNets: true,
+  checkDuplicateRefDes: true,
+  checkMissingPattern: true,
+  checkFloatingInputs: true,
+  checkPinMatrix: true,
+  pinMatrix: DEFAULT_PIN_MATRIX
 };
 // Electrical Rule Check (ERC) for Schematic Capture
 export function runSchematicErc(project: SchematicProject, settings: ErcSettings = DEFAULT_ERC_SETTINGS): ErcError[] {
@@ -423,7 +515,7 @@ export function runSchematicErc(project: SchematicProject, settings: ErcSettings
             pinToSheet.set(comp.id, sheet.id);
         }
     }
-    const POWER_RAIL_RE = /^(?:[ADPS]?GND[AD]?|0V?|V(?:CC|DD|SS|EE|BAT|BUS|IN|OUT)[A-Z0-9_]*|[AD]V(?:CC|DD|SS)|[+-]\d+(?:[.,]\d+)?(?:V\d*)?|\d+(?:[.,]\d+)?V\d*)$/i;
+    const POWER_RAIL_RE = /^(?:[ADPS]?GND[AD]?|0V?|V(?:CC|DD|SS|EE|BAT|BUS|IN|OUT)[A-Z0-9_]*|[AD]V(?:CC|DD|SS)|ОБЩ(?:ИЙ)?|ЗЕМЛЯ|КОРПУС|ПИТАНИЕ|[+-]?\d+(?:[.,]\d+)?(?:[VВ]\d*)?|\d+(?:[.,]\d+)?[VВ]\d*)$/i;
     const wireLocations = new Map<string, { sheetId: string; x: number; y: number }>();
     for (const sheet of project.sheets) {
         for (const w of sheet.wires) {
@@ -444,7 +536,8 @@ export function runSchematicErc(project: SchematicProject, settings: ErcSettings
                 y: firstPin?.y ?? 0,
                 code: 'ERC-PWR-SHORT',
                 message: `Короткое замыкание цепей питания/земли: ${distinctPowerNames.join(' ↔ ')}.`,
-                objectId: firstPin?.compId
+                objectId: firstPin?.compId,
+                netName: net.netName
             });
         }
         // Exclude #GND / #PWR port dummy components from pin count when checking single-pin nets
@@ -460,7 +553,8 @@ export function runSchematicErc(project: SchematicProject, settings: ErcSettings
                 y: loc?.y ?? 0,
                 code: 'ERC-UNCON',
                 message: `Висячий проводник «${net.netName}» не подключён ни к одному выводу.`,
-                objectId: net.wireIds[0]
+                objectId: net.wireIds[0],
+                netName: net.netName
             });
         }
         // Report NotConnected pins that are wired to a net or other pins
@@ -475,7 +569,9 @@ export function runSchematicErc(project: SchematicProject, settings: ErcSettings
                         y: p.y,
                         code: 'ERC-NC',
                         message: `Вывод типа NotConnected (${p.refDes}.${p.pinNumber}) подключён к цепи «${net.netName}».`,
-                        objectId: p.compId
+                        objectId: p.compId,
+                        netName: net.netName,
+                        pinNumber: p.pinNumber
                     });
                 }
             }
@@ -490,7 +586,9 @@ export function runSchematicErc(project: SchematicProject, settings: ErcSettings
                 y: p.y,
                 code: 'ERC-1PIN',
                 message: `Цепь «${net.netName}» подключена только к одному выводу (${p.refDes}.${p.pinNumber}).`,
-                objectId: p.compId
+                objectId: p.compId,
+                netName: net.netName,
+                pinNumber: p.pinNumber
             });
         }
         if (settings.checkOutputConflicts) {
@@ -505,8 +603,47 @@ export function runSchematicErc(project: SchematicProject, settings: ErcSettings
                     y: p.y,
                     code: 'ERC-OUT',
                     message: `Конфликт выходов в цепи «${net.netName}»: соединены выходы ${outputs.map((o) => `${o.refDes}.${o.pinNumber}`).join(', ')}.`,
-                    objectId: p.compId
+                    objectId: p.compId,
+                    netName: net.netName
                 });
+            }
+        }
+
+        // Check configurable Pin Matrix connection rules
+        if (settings.checkPinMatrix !== false && realPins.length >= 2) {
+            const matrix = settings.pinMatrix ?? DEFAULT_PIN_MATRIX;
+            const reported = new Set<string>();
+            for (let i = 0; i < realPins.length; i++) {
+                for (let j = i + 1; j < realPins.length; j++) {
+                    const p1 = realPins[i];
+                    const p2 = realPins[j];
+                    if (p1.compId === p2.compId && p1.pinNumber === p2.pinNumber) continue;
+                    const t1 = (p1.electricalType as PinElectricalType) || 'Passive';
+                    const t2 = (p2.electricalType as PinElectricalType) || 'Passive';
+
+                    // Output-Output is already handled specifically by checkOutputConflicts
+                    if (t1 === 'Output' && t2 === 'Output' && settings.checkOutputConflicts) continue;
+
+                    const rule = (matrix[t1] && matrix[t1][t2]) ?? (matrix[t2] && matrix[t2][t1]) ?? 'None';
+                    if (rule === 'Error' || rule === 'Warning') {
+                        const pairKey = [p1.refDes + '.' + p1.pinNumber, p2.refDes + '.' + p2.pinNumber].sort().join('::');
+                        if (reported.has(pairKey)) continue;
+                        reported.add(pairKey);
+
+                        errors.push({
+                            id: `erc_${errIdx++}`,
+                            severity: rule,
+                            sheetId: pinToSheet.get(p1.compId) ?? project.activeSheetId,
+                            x: p1.x,
+                            y: p1.y,
+                            code: 'ERC-PIN-MATRIX',
+                            message: `Конфликт матрицы ERC (${rule === 'Error' ? 'Ошибка' : 'Предупреждение'}): соединение выводов ${p1.refDes}.${p1.pinNumber} (${t1}) и ${p2.refDes}.${p2.pinNumber} (${t2}) в цепи «${net.netName}».`,
+                            objectId: p1.compId,
+                            netName: net.netName,
+                            pinNumber: p1.pinNumber
+                        });
+                    }
+                }
             }
         }
         if (realPins.length === 1 && net.wireIds.length === 0 && net.portNames.length === 0) {
@@ -558,7 +695,9 @@ export function runSchematicErc(project: SchematicProject, settings: ErcSettings
                         y: p.y,
                         code: 'ERC-FLOAT',
                         message: `Входной вывод ${p.refDes}.${p.pinNumber}${p.pinName ? ` (${p.pinName})` : ''} в цепи «${net.netName}» не имеет источника сигнала.`,
-                        objectId: p.compId
+                        objectId: p.compId,
+                        netName: net.netName,
+                        pinNumber: p.pinNumber
                     });
                 }
             }

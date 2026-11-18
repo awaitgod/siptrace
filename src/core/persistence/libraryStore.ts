@@ -285,6 +285,52 @@ export function createUserLibrary(name: string, category: string = 'Пользо
 }
 
 /**
+ * Duplicates an individual component in user storage with a new unique ID.
+ */
+export function duplicateUserComponent(componentId: string, newName?: string): ComponentDef | null {
+  const comps = loadUserComponents();
+  const source = comps.find((c) => c.id === componentId);
+  if (!source) return null;
+  const clone: ComponentDef = structuredClone(source);
+  clone.id = `ucomp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  clone.name = newName?.trim() || `${source.name}_копия`;
+  clone.defaultValue = clone.name;
+  saveUserComponents([...comps, clone]);
+  const bundles = loadImportedLibraryBundles().map((b) => {
+    if (b.componentIds.includes(componentId) || b.name === source.library) {
+      return { ...b, componentIds: Array.from(new Set([...b.componentIds, clone.id])) };
+    }
+    return b;
+  });
+  saveImportedLibraryBundles(bundles);
+  broadcastEdaEvent('libraries:updated', { kind: 'components', addedId: clone.id });
+  return clone;
+}
+
+/**
+ * Duplicates an individual pattern in user storage with a new unique ID.
+ */
+export function duplicateUserPattern(patternId: string, newName?: string): PatternDef | null {
+  const pats = loadUserPatterns();
+  const source = pats.find((p) => p.id === patternId);
+  if (!source) return null;
+  const clone: PatternDef = structuredClone(source);
+  clone.id = `upat_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  clone.name = newName?.trim() || `${source.name}_копия`;
+  clone.ipcName = clone.name;
+  saveUserPatterns([...pats, clone]);
+  const bundles = loadImportedLibraryBundles().map((b) => {
+    if (b.patternIds.includes(patternId) || b.name === source.library) {
+      return { ...b, patternIds: Array.from(new Set([...b.patternIds, clone.id])) };
+    }
+    return b;
+  });
+  saveImportedLibraryBundles(bundles);
+  broadcastEdaEvent('libraries:updated', { kind: 'patterns', addedId: clone.id });
+  return clone;
+}
+
+/**
  * Removes an individual component from user storage and removes its reference from library bundles.
  */
 export function deleteUserComponent(componentId: string): void {

@@ -41,7 +41,7 @@ export const SchFindDialog: React.FC<SchFindDialogProps> = ({
 
   return (
     <div className="dt-modal-backdrop" onClick={onClose}>
-      <div className="dt-modal" style={{ width: 400 }} onClick={(e) => e.stopPropagation()}>
+      <div className="dt-modal" role="dialog" aria-modal="true" aria-label="Найти компонент или цепь" style={{ width: 400 }} onClick={(e) => e.stopPropagation()}>
         <div className="dt-modal-title">
           <span>Найти компонент или цепь</span>
           <button className="dt-btn" style={{ minWidth: 22, height: 18, padding: 0 }} onClick={onClose}>×</button>

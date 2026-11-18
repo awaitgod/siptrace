@@ -10,17 +10,18 @@ export interface ParsedDrillHole {
   diameter: number;
 }
 
-function parseExcellonCoord(raw: string, isMetric: boolean, isTrailingZero: boolean): number {
+function parseExcellonCoord(raw: string, isMetric: boolean, isTrailingZero: boolean, customFormat?: { intDigits: number; decDigits: number }): number {
   const unitMul = isMetric ? 1 : 25.4;
   if (raw.includes('.')) return (parseFloat(raw) || 0) * unitMul;
   const sign = raw.startsWith('-') ? -1 : 1;
   const digits = raw.replace(/[+-]/g, '');
+  const intDigits = customFormat?.intDigits ?? (isMetric ? 3 : 2);
+  const decDigits = customFormat?.decDigits ?? (isMetric ? 3 : 4);
   if (isTrailingZero) {
-    const intDigits = isMetric ? 3 : 2, decDigits = isMetric ? 3 : 4;
-    const padded = digits.length >= intDigits + decDigits ? digits : digits.padStart(intDigits + decDigits, '0');
+    const padded = digits.length >= intDigits + decDigits ? digits : digits.padEnd(intDigits + decDigits, '0');
     return sign * parseFloat(`${padded.slice(0, intDigits)}.${padded.slice(intDigits)}`) * unitMul;
   }
-  return sign * (parseInt(digits || '0', 10) / Math.pow(10, isMetric ? 3 : 4)) * unitMul;
+  return sign * (parseInt(digits || '0', 10) / Math.pow(10, decDigits)) * unitMul;
 }
 
 /**
@@ -30,25 +31,31 @@ function parseExcellonCoord(raw: string, isMetric: boolean, isTrailingZero: bool
 export function parseExcellonPreview(drlText: string): ParsedDrillHole[] {
   const tools = new Map<string, number>();
   let currentDia = 0.8, isMetric = true, isTrailingZero = true, lastX = 0, lastY = 0;
+  let customFormat: { intDigits: number; decDigits: number } | undefined;
   const holes: ParsedDrillHole[] = [];
 
   for (const raw of drlText.split(/\r?\n/)) {
     const line = raw.trim();
-    if (!line || line.startsWith(';')) continue;
-    if (line.startsWith('INCH')) { isMetric = false; if (line.includes('LZ')) isTrailingZero = false; if (line.includes('TZ')) isTrailingZero = true; continue; }
-    if (line.startsWith('METRIC')) { isMetric = true; if (line.includes('LZ')) isTrailingZero = false; if (line.includes('TZ')) isTrailingZero = true; continue; }
+    if (!line) continue;
+    if (line.startsWith(';')) {
+      const fmtM = /FILE_FORMAT=(\d+):(\d+)/i.exec(line) ?? /FORMAT=\{(\d+):(\d+)\}/i.exec(line);
+      if (fmtM) customFormat = { intDigits: parseInt(fmtM[1], 10), decDigits: parseInt(fmtM[2], 10) };
+      continue;
+    }
+    if (line.startsWith('INCH') || line === 'M72') { isMetric = false; if (line.includes('LZ')) isTrailingZero = false; if (line.includes('TZ')) isTrailingZero = true; continue; }
+    if (line.startsWith('METRIC') || line === 'M71') { isMetric = true; if (line.includes('LZ')) isTrailingZero = false; if (line.includes('TZ')) isTrailingZero = true; continue; }
 
-    const toolDef = /^(T\d+)\b.*?C([\d.]+)/i.exec(line);
+    const toolDef = /^(T\d+).*?C([\d.]+)/i.exec(line);
     if (toolDef) { tools.set(toolDef[1].toUpperCase(), (parseFloat(toolDef[2]) || 0.8) * (isMetric ? 1 : 25.4)); continue; }
 
-    const toolSel = /^(T\d+)$/i.exec(line);
+    const toolSel = /^(T\d+)\b/i.exec(line);
     if (toolSel) { const key = toolSel[1].toUpperCase(); if (tools.has(key)) currentDia = tools.get(key)!; continue; }
 
     if (line.startsWith('X') || line.startsWith('Y')) {
       const xm = /X([+-]?[\d.]+)/i.exec(line), ym = /Y([+-]?[\d.]+)/i.exec(line);
       if (xm || ym) {
-        if (xm) lastX = parseExcellonCoord(xm[1], isMetric, isTrailingZero);
-        if (ym) lastY = parseExcellonCoord(ym[1], isMetric, isTrailingZero);
+        if (xm) lastX = parseExcellonCoord(xm[1], isMetric, isTrailingZero, customFormat);
+        if (ym) lastY = parseExcellonCoord(ym[1], isMetric, isTrailingZero, customFormat);
         holes.push({ x: Math.round(lastX * 1000) / 1000, y: Math.round(lastY * 1000) / 1000, diameter: Math.round(currentDia * 1000) / 1000 });
       }
     }
@@ -77,7 +84,7 @@ function parseGerberNumber(raw: string, intDig: number, decDig: number, trailing
   const digits = raw.replace(/[+-]/g, '');
   if (digits.includes('.')) return sign * (parseFloat(digits) || 0) * mul;
   if (trailingZero) {
-    const padded = digits.padStart(intDig + decDig, '0');
+    const padded = digits.padEnd(intDig + decDig, '0');
     return sign * parseFloat(`${padded.slice(0, intDig)}.${padded.slice(intDig)}`) * mul;
   }
   return sign * (parseInt(digits || '0', 10) / Math.pow(10, decDig)) * mul;
@@ -137,22 +144,24 @@ export function parseGerberToPcb(gerberText: string, name = 'Gerber_Import'): {
       const xm = /X([+-]?[\d.]+)/.exec(cmd), ym = /Y([+-]?[\d.]+)/.exec(cmd), im = /I([+-]?[\d.]+)/.exec(cmd), jm = /J([+-]?[\d.]+)/.exec(cmd);
       const dm = /D(0?[123])$/.exec(cmd);
       if (dm) curDCode = dm[1].padStart(2, '0');
-      if (!xm && !ym) continue;
+      if (!xm && !ym && !dm) continue;
 
       const mul = isInch ? 25.4 : 1;
       const nx = xm ? parseGerberNumber(xm[1], intDig, decDig, trailingZero, mul) : lastX;
       const ny = ym ? parseGerberNumber(ym[1], intDig, decDig, trailingZero, mul) : lastY;
 
       if (curDCode === '01') {
-        const pts: Point2D[] = (arcMode === '02' || arcMode === '03') && (im || jm)
-          ? tessellateArcCenter(lastX + (im ? parseGerberNumber(im[1], intDig, decDig, trailingZero, mul) : 0), lastY + (jm ? parseGerberNumber(jm[1], intDig, decDig, trailingZero, mul) : 0), lastX, lastY, nx, ny, arcMode === '03')
-          : [{ x: lastX, y: lastY }, { x: nx, y: ny }];
-        if (role.target === 'outline') {
-          for (let i = 0; i + 1 < pts.length; i++) outlineSegs.push({ x1: pts[i].x, y1: pts[i].y, x2: pts[i + 1].x, y2: pts[i + 1].y });
-        } else if (role.target === 'topSilk' || role.target === 'bottomSilk') {
-          for (let i = 0; i + 1 < pts.length; i++) shapes.push(makePcbShapeLine(role.target === 'bottomSilk' ? 'BottomSilk' : 'TopSilk', pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y, curAperture));
-        } else {
-          traces.push({ id: uid('gtr'), layer: role.target === 'bottomCopper' ? 'BottomCopper' : 'TopCopper', netName: '', points: pts, width: Math.max(0.1, curAperture) });
+        if (Math.hypot(nx - lastX, ny - lastY) > 1e-4 || (arcMode !== '01' && (im || jm))) {
+          const pts: Point2D[] = (arcMode === '02' || arcMode === '03') && (im || jm)
+            ? tessellateArcCenter(lastX + (im ? parseGerberNumber(im[1], intDig, decDig, trailingZero, mul) : 0), lastY + (jm ? parseGerberNumber(jm[1], intDig, decDig, trailingZero, mul) : 0), lastX, lastY, nx, ny, arcMode === '03')
+            : [{ x: lastX, y: lastY }, { x: nx, y: ny }];
+          if (role.target === 'outline') {
+            for (let i = 0; i + 1 < pts.length; i++) outlineSegs.push({ x1: pts[i].x, y1: pts[i].y, x2: pts[i + 1].x, y2: pts[i + 1].y });
+          } else if (role.target === 'topSilk' || role.target === 'bottomSilk') {
+            for (let i = 0; i + 1 < pts.length; i++) shapes.push(makePcbShapeLine(role.target === 'bottomSilk' ? 'BottomSilk' : 'TopSilk', pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y, curAperture));
+          } else {
+            traces.push({ id: uid('gtr'), layer: role.target === 'bottomCopper' ? 'BottomCopper' : 'TopCopper', netName: '', points: pts, width: Math.max(0.1, curAperture) });
+          }
         }
       } else if (curDCode === '03' && role.isCopper) {
         vias.push({
@@ -166,6 +175,7 @@ export function parseGerberToPcb(gerberText: string, name = 'Gerber_Import'): {
           endLayer: 'BottomCopper',
           viaStyle: 'Through'
         });
+        curDCode = '02';
       }
       lastX = nx; lastY = ny;
     }

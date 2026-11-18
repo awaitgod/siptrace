@@ -5,7 +5,10 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   server: {
-    port: 5173
+    port: 5173,
+    watch: {
+      ignored: ['**/src-tauri/**', '**/test-results/**', '**/tests/screenshots/**']
+    }
   },
   preview: {
     port: 4173

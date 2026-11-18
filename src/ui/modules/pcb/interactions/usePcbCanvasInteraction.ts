@@ -16,11 +16,14 @@ import {
 import {
   CopperLayerId,
   MeasureRulerState,
+  PcbContextMenuState,
   PcbDragState,
   PcbExtraSelection,
   PcbToolId,
-  PcbViewport
+  PcbViewport,
+  RoutingAngleMode
 } from '../types';
+import { computeRouteDraftPoints } from '../services/pcbRouteGeometry';
 
 export interface UsePcbCanvasInteractionParams {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -45,6 +48,8 @@ export interface UsePcbCanvasInteractionParams {
   polyDraftPts: Point2D[];
   setPolyDraftPts: React.Dispatch<React.SetStateAction<Point2D[]>>;
   routeElbowFlip: boolean;
+  routeAngleMode?: RoutingAngleMode;
+  setContextMenu?: React.Dispatch<React.SetStateAction<PcbContextMenuState | null>>;
   lineStartPt: Point2D | null;
   setLineStartPt: React.Dispatch<React.SetStateAction<Point2D | null>>;
   pourDraft: PcbCopperPourSettings | null;
@@ -232,21 +237,16 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
       if (p.routeDraftPts.length === 0) {
         p.setRouteNetName(nearestPad?.netName ?? '');
         p.setRouteDraftPts([clickPt]);
+        const angleLabel = (p.routeAngleMode ?? '45') === '45' ? '45°' : (p.routeAngleMode === '90' ? '90°' : (p.routeAngleMode === 'arc' ? 'дуги' : 'свободный'));
         p.setStatusMessage(
-          `Трассировка цепи «${nearestPad?.netName || 'без цепи'}». V или 1/2 — сменить слой и поставить переходное отверстие. ПКМ — завершить.`
+          `Трассировка цепи «${nearestPad?.netName || 'без цепи'}». Угол: ${angleLabel} (Shift+Пробел или / — сменить угол, Пробел — инверсия колена). V или 1/2/B/T — переходной слой. ПКМ/Enter — завершить.`
         );
       } else {
         const last = p.routeDraftPts[p.routeDraftPts.length - 1];
-        const dx = clickPt.x - last.x;
-        const dy = clickPt.y - last.y;
-        const minD = Math.min(Math.abs(dx), Math.abs(dy));
-        const midPt = p.routeElbowFlip
-          ? { x: last.x + Math.sign(dx) * minD, y: last.y + Math.sign(dy) * minD }
-          : { x: clickPt.x - Math.sign(dx) * minD, y: clickPt.y - Math.sign(dy) * minD };
+        const segPts = computeRouteDraftPoints(last, clickPt, p.routeAngleMode ?? '45', p.routeElbowFlip);
         const pts = [
           ...p.routeDraftPts,
-          ...(dist(midPt, last) > 0.05 && dist(midPt, clickPt) > 0.05 ? [midPt] : []),
-          clickPt
+          ...segPts
         ];
         const hitSameNetVia = p.pcb.vias.find(
           (v) => v.netName && v.netName === p.routeNetName && dist(v, clickPt) <= v.outerDiameter / 2 + 0.5
@@ -548,6 +548,111 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
     });
   };
 
+  const handleContextMenu = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    if (dragRef.current.mode === 'pan') return;
+
+    if (p.tool === 'routeManual' && p.routeDraftPts.length > 0) {
+      finalizeRightClickDrafts();
+      return;
+    }
+
+    if (p.tool !== 'select') {
+      p.setTool('select');
+      p.setLineStartPt(null);
+      p.setMeasurePts(null);
+      return;
+    }
+
+    const worldPt = screenToWorld(e.clientX, e.clientY);
+
+    // Hit test component
+    const hitComp = [...p.pcb.components]
+      .filter((c) => {
+        const rad = (-c.angle * Math.PI) / 180;
+        const dx = worldPt.x - c.x;
+        const dy = worldPt.y - c.y;
+        const lx = dx * Math.cos(rad) - dy * Math.sin(rad);
+        const ly = dx * Math.sin(rad) + dy * Math.cos(rad);
+        const hw = Math.max(1.5, c.courtyard.width * 0.5);
+        const hh = Math.max(1.5, c.courtyard.height * 0.5);
+        return Math.abs(lx) <= hw && Math.abs(ly) <= hh;
+      })
+      .sort((a, b) => a.courtyard.width * a.courtyard.height - b.courtyard.width * b.courtyard.height)[0];
+
+    if (hitComp) {
+      p.setSelectedCompId(hitComp.id);
+      p.setSelectedTraceId(null);
+      p.setSelectedViaId?.(null);
+      p.setSelectedExtraObj?.(null);
+      p.setContextMenu?.({
+        x: e.clientX,
+        y: e.clientY,
+        target: { kind: 'component', compId: hitComp.id }
+      });
+      return;
+    }
+
+    // Hit test via
+    const hitVia = p.pcb.vias.find((v) => dist(worldPt, v) <= Math.max(0.6, v.outerDiameter * 0.65));
+    if (hitVia) {
+      p.setSelectedViaId?.(hitVia.id);
+      p.setSelectedTraceId(null);
+      p.setSelectedCompId(null);
+      p.setSelectedExtraObj?.(null);
+      p.setHighlightedNet(hitVia.netName || null);
+      p.setContextMenu?.({
+        x: e.clientX,
+        y: e.clientY,
+        target: { kind: 'via', viaId: hitVia.id }
+      });
+      return;
+    }
+
+    // Hit test trace
+    const hitTrace = p.pcb.traces.find((tr) => {
+      for (let i = 1; i < tr.points.length; i++) {
+        if (pointToSegmentDist(worldPt, tr.points[i - 1], tr.points[i]) <= Math.max(0.45, tr.width * 0.8)) return true;
+      }
+      return false;
+    });
+    if (hitTrace) {
+      p.setSelectedTraceId(hitTrace.id);
+      p.setSelectedViaId?.(null);
+      p.setSelectedCompId(null);
+      p.setSelectedExtraObj?.(null);
+      p.setHighlightedNet(hitTrace.netName || null);
+      p.setContextMenu?.({
+        x: e.clientX,
+        y: e.clientY,
+        target: { kind: 'trace', traceId: hitTrace.id }
+      });
+      return;
+    }
+
+    // Hit test pour
+    const hitPour = p.pcb.copperPours.find((cp) => cp.outline.length >= 3 && pointInPolygon(worldPt, cp.outline));
+    if (hitPour) {
+      p.setSelectedCompId(null);
+      p.setSelectedTraceId(null);
+      p.setSelectedViaId?.(null);
+      p.setSelectedExtraObj?.({ kind: 'pour', id: hitPour.id });
+      p.setContextMenu?.({
+        x: e.clientX,
+        y: e.clientY,
+        target: { kind: 'pour', pourId: hitPour.id }
+      });
+      return;
+    }
+
+    // Canvas empty space
+    p.setContextMenu?.({
+      x: e.clientX,
+      y: e.clientY,
+      target: { kind: 'canvas', worldPt }
+    });
+  };
+
   return {
     viewport,
     cursorMm,
@@ -558,6 +663,8 @@ export function usePcbCanvasInteraction(p: UsePcbCanvasInteractionParams) {
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
-    handleWheel
+    handleWheel,
+    handleContextMenu,
+    finalizeDrafts: finalizeRightClickDrafts
   };
 }

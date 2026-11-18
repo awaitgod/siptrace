@@ -1,35 +1,42 @@
 import { PlacedComponent } from '../../core/types';
 import { GOST_REFDES_GROUPS } from '../rules';
 
-/** Splits a GOST reference designator into uppercase prefix and numeric index. */
-export function splitRefDes(refDes: string): { prefix: string; num: number } {
-  const m = /^([A-Za-zА-Яа-я]+)(\d+)$/.exec(refDes.trim());
-  if (!m) return { prefix: refDes, num: 0 };
-  return { prefix: m[1].toUpperCase(), num: parseInt(m[2], 10) };
+/** Splits a GOST reference designator into uppercase prefix, numeric index, and optional sub-unit suffix. */
+export function splitRefDes(refDes: string): { prefix: string; num: number; sub?: string } {
+  const trimmed = refDes.trim();
+  const m = /^([A-Za-zА-Яа-я#]+)(\d+)(?:[._-](\d+|[A-Za-z]+))?$/.exec(trimmed);
+  if (!m) {
+    const fallback = /^([A-Za-zА-Яа-я#]+)/.exec(trimmed);
+    return { prefix: fallback ? fallback[1].toUpperCase() : trimmed, num: 0 };
+  }
+  return { prefix: m[1].toUpperCase(), num: parseInt(m[2], 10), sub: m[3] };
 }
 
-/** Sorts reference designators numerically and collapses 3+ sequential items with ellipsis (R1...R3) per ГОСТ 2.701-2008. */
-export function formatRefDesRange(refs: string[]): string {
-  const sorted = [...refs].sort((a, b) => splitRefDes(a).num - splitRefDes(b).num);
+/** Sorts reference designators numerically and collapses 3+ sequential items (R1...R3 or R1 - R4) per ГОСТ 2.701-2008 / ГОСТ 2.702-2011. */
+export function formatRefDesRange(refs: string[], separator: '...' | ' - ' = '...'): string {
+  const uniqueRefs = Array.from(new Set(refs.filter(Boolean)));
+  const sorted = uniqueRefs.sort((a, b) => {
+    const da = splitRefDes(a);
+    const db = splitRefDes(b);
+    if (da.prefix !== db.prefix) return da.prefix.localeCompare(db.prefix);
+    if (da.num !== db.num) return da.num - db.num;
+    return (da.sub ?? '').localeCompare(db.sub ?? '');
+  });
   if (sorted.length <= 2) return sorted.join(', ');
   const parts: string[] = [];
   let i = 0;
   while (i < sorted.length) {
-    const startItem = splitRefDes(sorted[i]);
     let j = i;
     while (j + 1 < sorted.length) {
       const curr = splitRefDes(sorted[j]);
       const next = splitRefDes(sorted[j + 1]);
-      if (curr.prefix === next.prefix && next.num === curr.num + 1 && curr.num > 0) j++;
+      if (curr.prefix === next.prefix && next.num === curr.num + 1 && curr.num > 0 && !curr.sub && !next.sub) j++;
       else break;
     }
     if (j - i >= 2) {
-      parts.push(`${sorted[i]}...${sorted[j]}`);
+      parts.push(`${sorted[i]}${separator}${sorted[j]}`);
     } else {
       for (let k = i; k <= j; k++) parts.push(sorted[k]);
-    }
-    if (startItem.num === 0 && j === i && i < sorted.length) {
-      // non-numeric fallback already pushed
     }
     i = j + 1;
   }

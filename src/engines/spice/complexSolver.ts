@@ -3,7 +3,9 @@ export interface Complex {
   im: number;
 }
 
-/** Solves a dense complex linear system A * x = b via Gaussian elimination with partial pivoting. */
+/** Solves a dense complex linear system A * x = b via Gaussian elimination with partial pivoting.
+ * Includes diagonal regularization to prevent singularity or NaN.
+ */
 export function solveComplexSystem(A: Complex[][], b: Complex[]): Complex[] {
   const n = b.length;
   if (n === 0) return [];
@@ -23,13 +25,26 @@ export function solveComplexSystem(A: Complex[][], b: Complex[]): Complex[] {
     for (let r = col + 1; r < n; r++) {
       if (abs2(M[r][col]) > abs2(M[pivot][col])) pivot = r;
     }
-    if (abs2(M[pivot][col]) < 1e-18) M[col][col].re += 1e-8;
-    [M[col], M[pivot]] = [M[pivot], M[col]];
+    // Swap rows first
+    if (pivot !== col) {
+      const tmp = M[col];
+      M[col] = M[pivot];
+      M[pivot] = tmp;
+    }
+
+    // Regularize singular diagonal
+    if (abs2(M[col][col]) < 1e-18) {
+      M[col][col].re = M[col][col].re < 0 ? -1e-8 : 1e-8;
+    }
+
     const diag = M[col][col];
-    for (let j = col; j <= n; j++) M[col][j] = divC(M[col][j], diag);
+    for (let j = col; j <= n; j++) {
+      M[col][j] = divC(M[col][j], diag);
+    }
     for (let r = 0; r < n; r++) {
       if (r === col) continue;
       const f = M[r][col];
+      if (abs2(f) < 1e-24) continue;
       for (let j = col; j <= n; j++) {
         const prod = mulC(f, M[col][j]);
         M[r][j] = { re: M[r][j].re - prod.re, im: M[r][j].im - prod.im };

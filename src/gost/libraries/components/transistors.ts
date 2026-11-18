@@ -120,6 +120,48 @@ export const libTransistors: ComponentLibrary = {
       ]
     },
     {
+      id: 'COMP_VT_KP505A',
+      name: 'КП505А (полевой p-МОП)',
+      library: 'Транзисторы (ГОСТ 2.730)',
+      refDesPrefix: 'VT',
+      defaultValue: 'КП505А',
+      gostStandard: 'ГОСТ 2.730-73',
+      description: 'Транзистор полевой p-канал с изолированным затвором обогащенного типа (ГОСТ 2.730-73)',
+      patternId: 'PAT_KT26_TO92',
+      spiceModel: { prefix: 'M', modelName: 'KP505A', params: { VTO: -1.8 } },
+      parts: [
+        {
+          partIndex: 1,
+          name: 'Part 1',
+          primitives: [
+            { type: 'circle', cx: 1.6, cy: 0, r: 5.1, width: 0.3 },
+            { type: 'line', x1: -2.4, y1: -3.2, x2: -2.4, y2: 3.2, width: 0.45 },
+            { type: 'line', x1: -0.9, y1: -3.5, x2: -0.9, y2: -1.8, width: 0.45 },
+            { type: 'line', x1: -0.9, y1: -0.9, x2: -0.9, y2: 0.9, width: 0.45 },
+            { type: 'line', x1: -0.9, y1: 1.8, x2: -0.9, y2: 3.5, width: 0.45 },
+            { type: 'line', x1: -0.9, y1: -2.6, x2: 2.5, y2: -2.6, width: 0.35 },
+            { type: 'line', x1: 2.5, y1: -2.6, x2: 2.5, y2: -5, width: 0.35 },
+            { type: 'line', x1: -0.9, y1: 0, x2: 2.5, y2: 0, width: 0.35 },
+            { type: 'line', x1: 2.5, y1: 0, x2: 2.5, y2: 5, width: 0.35 },
+            { type: 'line', x1: -0.9, y1: 2.6, x2: 2.5, y2: 2.6, width: 0.35 },
+            // Substrate arrow pointing right / outward (p-channel)
+            { type: 'polyline', points: [{ x: 1.1, y: 0 }, { x: -0.5, y: -0.8 }, { x: -0.5, y: 0.8 }], closed: true, fill: true },
+            // Body diode inside circle per ГОСТ (opposite polarity for P-MOS)
+            { type: 'line', x1: 2.5, y1: 2.6, x2: 4.5, y2: 2.6, width: 0.25 },
+            { type: 'line', x1: 4.5, y1: 2.6, x2: 4.5, y2: -2.6, width: 0.25 },
+            { type: 'line', x1: 4.5, y1: -2.6, x2: 2.5, y2: -2.6, width: 0.25 },
+            { type: 'polyline', points: [{ x: 3.7, y: -0.8 }, { x: 5.3, y: -0.8 }, { x: 4.5, y: 0.8 }], closed: true, width: 0.25 },
+            { type: 'line', x1: 3.7, y1: 0.8, x2: 5.3, y2: 0.8, width: 0.3 }
+          ],
+          pins: [
+            { id: 'p_g', number: '3', name: 'З', x: -7.5, y: 0, length: 5.1, orientation: 0, electricalType: 'Input', style: 'Line', showName: false, showNumber: true, padMapping: '3' },
+            { id: 'p_d', number: '2', name: 'С', x: 2.5, y: -10, length: 5, orientation: 90, electricalType: 'Passive', style: 'Line', showName: false, showNumber: true, padMapping: '2' },
+            { id: 'p_s', number: '1', name: 'И', x: 2.5, y: 10, length: 5, orientation: 270, electricalType: 'Passive', style: 'Line', showName: false, showNumber: true, padMapping: '1' }
+          ]
+        }
+      ]
+    },
+    {
       id: 'COMP_VT_KT815G',
       name: 'КТ815Г (силовой n-p-n, КТ-28)',
       library: 'Транзисторы (ГОСТ 2.730)',

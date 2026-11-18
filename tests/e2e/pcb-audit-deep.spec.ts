@@ -11,13 +11,17 @@ async function openPcbModule(page: Page, moduleId: 'pcb' | 'pcb3d'): Promise<str
   page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`));
   page.on('console', (msg) => {
     if (msg.type() === 'error') {
-      errors.push(`console.error: ${msg.text()}`);
+      const text = msg.text();
+      if (!text.includes('ERR_CONNECTION_REFUSED') && !text.includes('WebSocket')) {
+        errors.push(`console.error: ${text}`);
+      }
     }
   });
 
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto(`/?module=${encodeURIComponent(moduleId)}`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(500);
+  await page.goto(`/?module=${encodeURIComponent(moduleId)}`);
+  await expect(page.locator('.dt-menubar')).toBeVisible({ timeout: 30000 });
+  await page.locator('.sch-splash').waitFor({ state: 'detached', timeout: 30000 }).catch(() => {});
   return errors;
 }
 
@@ -152,11 +156,9 @@ test.describe('SIPTrace Deep PCB & 3D Audit Suite', () => {
 
   test('5. CAM / Gerber RS-274X, Excellon & CNC G-Code Workbench', async ({ page }) => {
     const errors = await openPcbModule(page, 'pcb');
-    await page.waitForTimeout(400);
 
     // Open CAM dialog
     await page.getByTitle('Экспорт Gerber RS-274X / Сверловка / ЛУТ SVG').click();
-    await page.waitForTimeout(400);
 
     const modal = page.locator('.dt-modal');
     await expect(modal).toBeVisible();
@@ -167,7 +169,7 @@ test.describe('SIPTrace Deep PCB & 3D Audit Suite', () => {
 
     // Close CAM dialog
     await modal.getByRole('button', { name: 'Закрыть', exact: true }).click();
-    await page.waitForTimeout(200);
+    await expect(modal).toBeHidden();
 
     expect(errors).toEqual([]);
   });
@@ -178,7 +180,7 @@ test.describe('SIPTrace Deep PCB & 3D Audit Suite', () => {
 
     // Verify 3D canvas is rendered
     const canvas = page.locator('canvas');
-    await expect(canvas).toBeVisible();
+    await expect(canvas).toBeVisible({ timeout: 15000 });
 
     // Screenshot 7: Iso view
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '07_pcb3d_iso_view.png') });

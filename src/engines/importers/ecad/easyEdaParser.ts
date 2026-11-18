@@ -123,11 +123,19 @@ export function parseEasyEdaPcbJson(text: string, name = 'EasyEDA_PCB'): {
       if (pts.length >= 2) {
         if (layerId === '10') {
           for (let i = 0; i + 1 < pts.length; i++) outlineSegs.push({ x1: pts[i].x, y1: pts[i].y, x2: pts[i + 1].x, y2: pts[i + 1].y });
-        } else if (layerId === '1' || layerId === '2') {
-          rawTraces.push({ layer: layerId === '2' ? 'BottomCopper' : 'TopCopper', net, pts, width: wMm });
-        } else if (layerId === '3' || layerId === '4') {
-          const silkLayer: PcbShape['layer'] = layerId === '4' ? 'BottomSilk' : 'TopSilk';
-          for (let i = 0; i + 1 < pts.length; i++) rawShapes.push({ layer: silkLayer, x1: pts[i].x, y1: pts[i].y, x2: pts[i + 1].x, y2: pts[i + 1].y, width: wMm });
+        } else if (layerId === '1' || layerId === '2' || layerId === '99' || layerId === '100') {
+          const cuLayer = layerId === '2' ? 'BottomCopper' : layerId === '99' ? 'Inner1' : layerId === '100' ? 'Inner2' : 'TopCopper';
+          rawTraces.push({ layer: cuLayer, net, pts, width: wMm });
+        } else if (layerId === '3' || layerId === '4' || layerId === '5' || layerId === '6' || layerId === '7' || layerId === '8' || layerId === '19' || layerId === '20') {
+          const shapeLayer: PcbShape['layer'] =
+            layerId === '4' ? 'BottomSilk' :
+            layerId === '5' ? 'TopPaste' :
+            layerId === '6' ? 'BottomPaste' :
+            layerId === '7' ? 'TopMask' :
+            layerId === '8' ? 'BottomMask' :
+            layerId === '19' ? 'TopAssembly' :
+            layerId === '20' ? 'BottomAssembly' : 'TopSilk';
+          for (let i = 0; i + 1 < pts.length; i++) rawShapes.push({ layer: shapeLayer, x1: pts[i].x, y1: pts[i].y, x2: pts[i + 1].x, y2: pts[i + 1].y, width: wMm });
         }
       }
     } else if (entry.startsWith('VIA~')) {

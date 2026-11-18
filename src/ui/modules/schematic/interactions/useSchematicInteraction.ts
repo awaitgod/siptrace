@@ -230,8 +230,8 @@ export function useSchematicInteraction(p: UseSchematicInteractionParams) {
         rawCursor.current = pt;
         p.setContextMenu(null);
         if (e.button === 2) {
-            e.preventDefault();
             if (p.tool !== 'select' || drag.current) {
+                e.preventDefault();
                 suppressContext.current = true;
                 cancelOperation();
             }

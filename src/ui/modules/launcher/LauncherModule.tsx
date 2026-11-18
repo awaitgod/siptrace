@@ -319,7 +319,7 @@ export function LauncherModule({ active, onSwitchModule }: Props) {
             )}
 
             {activeTab === 'utilities' && (
-              <LauncherUtilitiesView onShowMessage={showNotification} />
+              <LauncherUtilitiesView onShowMessage={showNotification} onSwitchModule={onSwitchModule} />
             )}
           </div>
         </main>
@@ -370,6 +370,7 @@ export function LauncherModule({ active, onSwitchModule }: Props) {
     {agentOpened && createPortal(
       <React.Suspense fallback={<p role="status">Загрузка агента…</p>}>
         <AgentPanel visible={active && activeTab === 'agent'} theme={settings.colorScheme} selected={selectedProject} selectedDocuments={selectedDocuments}
+          onSwitchModule={onSwitchModule}
           onSaved={id => {
             setSettings(loadSettings());
             selectProject(id);

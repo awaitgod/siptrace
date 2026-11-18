@@ -325,12 +325,20 @@ export async function importCadPcb(input: string | Uint8Array, filename = 'Им�
             const conv = convertImportedPcbToGost(pcb, `${schRes.report.sourceFormat} → Плата ГОСТ`, { preserveEmptyPads: true });
             return { ...conv, detectedFormat: `${schRes.report.sourceFormat} → Плата` };
         }
+        if (isOle2Binary(input)) {
+            const res = parseMultiEcadPcb(input, baseName);
+            return { ...res, detectedFormat: res.report.sourceFormat };
+        }
         return importCadPcbSync(utf8Decode(input), filename);
     }
     const rawPrefixBytes = binaryStringToBytes(input.slice(0, 32));
     const strBinId = detectDipTraceBinaryFormat(rawPrefixBytes);
     if (strBinId?.family === 'pcb') {
         const res = parseDipTraceBinaryPcb(binaryStringToBytes(input), filename);
+        return { ...res, detectedFormat: res.report.sourceFormat };
+    }
+    if (isOle2Binary(rawPrefixBytes)) {
+        const res = parseMultiEcadPcb(binaryStringToBytes(input), filename);
         return { ...res, detectedFormat: res.report.sourceFormat };
     }
     return importCadPcbSync(input, filename);

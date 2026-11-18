@@ -1,7 +1,7 @@
 import { Point2D, Units } from './common.types';
 import { PatternDef } from './pattern.types';
 import { ComponentDef } from './symbol.types';
-export type SheetFormatId = 'A4_P' | 'A4_L' | 'A3_L' | 'A2_L' | 'A1_L' | 'A0_L';
+export type SheetFormatId = 'A4_P' | 'A4_L' | 'A3_L' | 'A3_P' | 'A2_L' | 'A1_L' | 'A0_L';
 export type TitleBlockForm = 'Form1' | 'Form2' | 'Form2a' | 'None';
 export interface GostTitleBlockData {
     enabled: boolean;
@@ -39,6 +39,7 @@ export interface PlacedComponent {
     flipX: boolean;
     flipY: boolean;
     patternId: string;
+    isNetPort?: boolean;
     refDesOffset: Point2D;
     valueOffset: Point2D;
     showRefDes: boolean;

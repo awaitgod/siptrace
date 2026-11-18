@@ -145,7 +145,7 @@ export const libDiodes: ComponentLibrary = {
     {
       id: 'COMP_VD_D814A',
       name: 'Д814А (стабилитрон 7,5В)',
-      library: 'Диоды и Оптопары (ГОСТ 2.730)',
+      library: 'Диоды и Тиристоры (ГОСТ 2.730)',
       refDesPrefix: 'VD',
       defaultValue: 'Д814А',
       gostStandard: 'ГОСТ 2.730-73',
@@ -170,7 +170,7 @@ export const libDiodes: ComponentLibrary = {
     {
       id: 'COMP_VD_KC407A',
       name: 'КЦ407А (диодный мост)',
-      library: 'Диоды и Оптопары (ГОСТ 2.730)',
+      library: 'Диоды и Тиристоры (ГОСТ 2.730)',
       refDesPrefix: 'VD',
       defaultValue: 'КЦ407А',
       gostStandard: 'бК0.347.114 ТУ',

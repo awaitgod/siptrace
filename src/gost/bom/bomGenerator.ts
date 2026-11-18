@@ -7,22 +7,27 @@ import {
   splitRefDes
 } from './refDesUtils';
 
-/** Формирует Перечень элементов строго по ГОСТ 2.701-2008 / ГОСТ 2.106-96. */
-export function generateGostBom(project: SchematicProject): BomEntry[] {
+/** Формирует Перечень элементов строго по ГОСТ 2.701-2008 / ГОСТ 2.702-2011 / ГОСТ 2.106-96. */
+export function generateGostBom(project: SchematicProject, rangeSeparator: '...' | ' - ' = '...'): BomEntry[] {
   const allComponents: PlacedComponent[] = [];
-  const seenRefDes = new Set<string>();
+  const seenPhysicalRefDes = new Set<string>();
+
   for (const sheet of project.sheets) {
     for (const c of sheet.components) {
-      // Исключаем служебные символы цепей (Земля, Питание), если у них нет позиционного обозначения
-      if (!c.refDes || c.refDes.startsWith('#')) continue;
-      // Многосекционные ИМС (DD1.1..DD1.4) учитываются в ПЭ3 как один физический корпус
-      if (seenRefDes.has(c.refDes)) continue;
-      seenRefDes.add(c.refDes);
+      // Исключаем служебные символы цепей (Земля, Питание), порты и пустые обозначения
+      if (!c.refDes || c.refDes.startsWith('#') || c.isNetPort) continue;
+
+      // Нормализуем базовое позиционное обозначение (DD1.1 -> DD1) для предотвращения дублирования многосекционных ИМС
+      const parsed = splitRefDes(c.refDes);
+      const baseRef = parsed.num > 0 ? `${parsed.prefix}${parsed.num}` : c.refDes;
+
+      if (seenPhysicalRefDes.has(baseRef)) continue;
+      seenPhysicalRefDes.add(baseRef);
       allComponents.push(c);
     }
   }
 
-  // Группировка по алфавитному префиксу ГОСТ
+  // Группировка по буквенному префиксу ГОСТ
   const byPrefix = new Map<string, PlacedComponent[]>();
   for (const c of allComponents) {
     const { prefix } = splitRefDes(c.refDes);
@@ -30,8 +35,18 @@ export function generateGostBom(project: SchematicProject): BomEntry[] {
     byPrefix.get(prefix)!.push(c);
   }
 
-  // ГОСТ 2.701-2008 п. 5.7: группы располагаются в алфавитном порядке буквенных позиционных обозначений
-  const prefixes = Array.from(byPrefix.keys()).sort((a, b) => a.localeCompare(b, 'en'));
+  // ГОСТ 2.701-2008 п. 5.7 / ГОСТ 2.702-2011: группы располагаются в порядке GOST_GROUP_ORDER
+  const getOrderIndex = (p: string) => {
+    const idx = GOST_GROUP_ORDER.indexOf(p);
+    return idx >= 0 ? idx : 999;
+  };
+
+  const prefixes = Array.from(byPrefix.keys()).sort((a, b) => {
+    const ia = getOrderIndex(a);
+    const ib = getOrderIndex(b);
+    if (ia !== ib) return ia - ib;
+    return a.localeCompare(b, 'en');
+  });
 
   const entries: BomEntry[] = [];
 
@@ -56,10 +71,13 @@ export function generateGostBom(project: SchematicProject): BomEntry[] {
 
     for (const group of sortedBuckets) {
       const first = group[0];
-      const refs = group.map((g) => g.refDes);
+      const refs = group.map((g) => {
+        const parsed = splitRefDes(g.refDes);
+        return parsed.num > 0 ? `${parsed.prefix}${parsed.num}` : g.refDes;
+      });
       entries.push({
         groupTitle,
-        refDesList: formatRefDesRange(refs),
+        refDesList: formatRefDesRange(refs, rangeSeparator),
         name: buildGostComponentFullName(first),
         quantity: group.length,
         note: first.doNotMount ? 'Не устанавливать' : (first.gostNote ?? ''),

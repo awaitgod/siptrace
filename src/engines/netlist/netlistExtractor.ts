@@ -1,6 +1,4 @@
 import { SchematicProject } from '../../core/types';
-import { loadUserComponents } from '../../core/store';
-import { findComponentById } from '../../gost/libraries/gostComponents';
 import { extractSchematicNets, resolveComponentDef } from '../erc';
 /** Extracted logical net with connected component pads. */
 export interface NetlistItem {
@@ -23,6 +21,7 @@ export function extractSchematicNetlist(sch: SchematicProject): NetlistItem[] {
         }
     }
     return graph
+        .filter(net => net.pins.length > 1 || net.wireIds.length > 0 || net.portNames.length > 0)
         .map((net) => {
         const nodes: {
             refDes: string;

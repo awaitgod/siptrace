@@ -3,6 +3,7 @@ import {
   PadDef,
   PatternDef,
   PatternGraphic,
+  PcbLayerId,
   PcbPlacedComponent,
   PcbProject,
   PcbShape,
@@ -43,6 +44,24 @@ function xmlNum(attrs: Record<string, string>, key: string, fallback: number): n
   if (raw === undefined || raw === '') return fallback;
   const n = Number(raw);
   return Number.isFinite(n) ? n : fallback;
+}
+
+function mapEagleLayerToPcb(layer: string): PcbLayerId | 'outline' | null {
+  if (layer === '20') return 'outline';
+  if (layer === '1') return 'TopCopper';
+  if (layer === '16') return 'BottomCopper';
+  if (layer === '2') return 'Inner1';
+  if (layer === '15' || (parseInt(layer, 10) >= 3 && parseInt(layer, 10) <= 14)) return 'Inner2';
+  if (layer === '21' || layer === '25' || layer === '27') return 'TopSilk';
+  if (layer === '22' || layer === '26' || layer === '28') return 'BottomSilk';
+  if (layer === '29') return 'TopMask';
+  if (layer === '30') return 'BottomMask';
+  if (layer === '31') return 'TopPaste';
+  if (layer === '32') return 'BottomPaste';
+  if (layer === '39' || layer === '40' || layer === '41' || layer === '42') return 'Keepout';
+  if (layer === '51') return 'TopAssembly';
+  if (layer === '52') return 'BottomAssembly';
+  return null;
 }
 
 function parseEagleRot(rotAttr?: string): { angle: number; mirror: boolean } {
@@ -227,11 +246,17 @@ export function parseEagleXml(xml: string, isPcb: boolean, name = 'Eagle_Import'
     for (const plain of xmlFindAll(doc, 'plain')) {
       for (const w of xmlFindAll(plain, 'wire')) {
         const x1 = xmlNum(w.attrs, 'x1', 0), y1 = xmlNum(w.attrs, 'y1', 0), x2 = xmlNum(w.attrs, 'x2', 0), y2 = xmlNum(w.attrs, 'y2', 0);
-        if (w.attrs.layer === '20') outlineSegs.push({ x1, y1, x2, y2 });
-        else if (w.attrs.layer === '21' || w.attrs.layer === '22') shapes.push(makePcbShapeLine(w.attrs.layer === '22' ? 'BottomSilk' : 'TopSilk', x1, y1, x2, y2, Math.max(0.08, xmlNum(w.attrs, 'width', 0.15))));
+        const mapped = mapEagleLayerToPcb(w.attrs.layer || '20');
+        if (mapped === 'outline') outlineSegs.push({ x1, y1, x2, y2 });
+        else if (mapped && mapped !== 'TopCopper' && mapped !== 'BottomCopper' && mapped !== 'Inner1' && mapped !== 'Inner2') {
+          shapes.push(makePcbShapeLine(mapped, x1, y1, x2, y2, Math.max(0.08, xmlNum(w.attrs, 'width', 0.15))));
+        }
       }
       for (const c of xmlFindAll(plain, 'circle')) {
-        if (c.attrs.layer === '21' || c.attrs.layer === '22') shapes.push(makePcbShapeCircle(c.attrs.layer === '22' ? 'BottomSilk' : 'TopSilk', xmlNum(c.attrs, 'x', 0), xmlNum(c.attrs, 'y', 0), Math.max(0.1, xmlNum(c.attrs, 'radius', 0.5))));
+        const mapped = mapEagleLayerToPcb(c.attrs.layer || '21');
+        if (mapped && mapped !== 'outline' && mapped !== 'TopCopper' && mapped !== 'BottomCopper' && mapped !== 'Inner1' && mapped !== 'Inner2') {
+          shapes.push(makePcbShapeCircle(mapped, xmlNum(c.attrs, 'x', 0), xmlNum(c.attrs, 'y', 0), Math.max(0.1, xmlNum(c.attrs, 'radius', 0.5))));
+        }
       }
     }
 

@@ -14,7 +14,7 @@ const coord = (mm: number) => {
   if (!Number.isFinite(mm)) throw new Error('Недопустимая координата в схеме');
   return Math.round(mm * 3e6) / 1e6;
 };
-const quote = (value: string) => '"' + value.replace(/[\u0000-\u001f]/g, ' ').replace(/"/g, '″') + '"';
+const quote = (value: string | undefined | null) => '"' + (value ?? '').replace(/[\u0000-\u001f]/g, ' ').replace(/"/g, '″') + '"';
 const yes = (value: boolean) => value ? '"Y"' : '"N"';
 const xy = ({ x, y }: Point2D) => `${coord(x)} ${coord(y)}`;
 const pt = (point: Point2D) => `(pt ${xy(point)})`;
@@ -131,7 +131,7 @@ function patternRecord(pattern?: PatternDef): string {
   }).replace('(Pads\n)', () => block('Pads', pads)).replace('(Shapes\n)', () => block('Shapes', outline))]);
 }
 
-const electricalTypes = { NotConnected: 0, Passive: 1, Input: 2, Output: 3, Bidirectional: 4, OpenCollector: 5, TriState: 9, Power: 10 };
+const electricalTypes: Record<string, number> = { NotConnected: 0, Passive: 1, Input: 2, Output: 3, Bidirectional: 4, OpenCollector: 5, TriState: 9, Power: 10, PowerIn: 10, PowerOut: 10 };
 const pinStyles = { Line: 0, Inverted: 1, Clock: 13, InvertedClock: 1, OpenCollector: 5, TriState: 8, Schmitt: 0, Bidirectional: 0 };
 
 interface Terminal {
@@ -329,7 +329,7 @@ export function exportDipTraceAsciiSchematic(project: SchematicProject): string 
       const bounds = graphics.flatMap(graphic => graphic.points);
       const extent = (axis: 'x' | 'y') => Math.max(1, ...bounds.map(p => p[axis])) - Math.min(-1, ...bounds.map(p => p[axis]));
       const name = component.typeName || def.name;
-      const label = (visible: boolean, offset: Point2D) => `${visible ? 1 : 2} 0 ${xy(offset)} 0 0 0 0`;
+      const label = (visible: boolean, offset?: Point2D) => `${visible ? 1 : 2} 0 ${xy(offset ?? { x: 0, y: 0 })} 0 0 0 0`;
       const defaults = fields(partDefaults, {
         Value: quote(component.value), BaseName: quote(def.name), BaseRefDes: quote(def.refDesPrefix),
         X: coord(origin.x), Y: coord(origin.y), Number: index, Page: page, PageHiddenId: page,
@@ -447,7 +447,7 @@ export function exportDipTraceAsciiSchematic(project: SchematicProject): string 
   const content = block('Schematic', [
     block('Pages', pages), fields(schematicDefaults, { PartFontVector: '"N"' }), block('Components', components), block('PageConnectors'),
     block('Shapes', shapes), block('Nets', netRecords), block('Buses'), block('Groups'), block('Tables'),
-    block('Settings', [fields(settingsDefaults, { GridSize: coord(project.gridSize), UnitsMM: '"Y"', UnitsINCH: '"N"' })]),
+    block('Settings', [fields(settingsDefaults, { GridSize: coord(project.gridSize ?? 2.5), UnitsMM: '"Y"', UnitsINCH: '"N"' })]),
     schematicFooter
   ]);
   return ['(Source "DipTrace-Schematic" 46)', '(Units "mm")', '(Scale 70%)', '(Xpos 19)', '(Ypos 21)', content, ''].join('\n').replace(/\n/g, '\r\n');

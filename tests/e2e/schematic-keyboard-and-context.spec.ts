@@ -22,6 +22,7 @@ test.beforeEach(async ({ page }) => {
     }
     await page.addInitScript(({ key, project }) => localStorage.setItem(key, JSON.stringify(project)), { key: storageKey, project });
     await page.goto('/?module=schematic');
+    await expect(page.locator('.sch-splash')).toBeHidden();
     await expect(page.getByRole('tab', { name: 'Силовая часть' })).toHaveAttribute('aria-selected', 'true');
 });
 

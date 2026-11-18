@@ -8,7 +8,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   webServer: {
-    command: `npx vite ${preview ? 'preview ' : ''}--host 127.0.0.1 --port ${preview ? '4174' : '4173'} --strictPort`,
+    command: `npx vite ${preview ? 'preview ' : ''}--host 127.0.0.1 --port ${preview ? '4174' : '4173'}`,
     url: preview ? 'http://127.0.0.1:4174' : 'http://127.0.0.1:4173',
     reuseExistingServer: true
   },

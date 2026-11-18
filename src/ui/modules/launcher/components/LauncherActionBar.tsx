@@ -105,9 +105,8 @@ export const LauncherActionBar: React.FC<LauncherActionBarProps> = ({
               type="button"
               className={`dt-tb-btn ${viewMode === 'table' ? 'active' : ''}`}
               onClick={() => onToggleViewMode('table')}
-              title="Таблица"
-              aria-label="Вид таблицей"
-              style={{ width: 24, height: 22, padding: 0, justifyContent: 'center' }}
+              title="Таблица (список)"
+              aria-label="Вид таблицей (список)"
             >
               <IconList size={14} />
             </button>
@@ -115,9 +114,8 @@ export const LauncherActionBar: React.FC<LauncherActionBarProps> = ({
               type="button"
               className={`dt-tb-btn ${viewMode === 'grid' ? 'active' : ''}`}
               onClick={() => onToggleViewMode('grid')}
-              title="Сетка карточек"
-              aria-label="Вид сеткой"
-              style={{ width: 24, height: 22, padding: 0, justifyContent: 'center' }}
+              title="Плитка"
+              aria-label="Вид сеткой (плитка)"
             >
               <IconLayoutGrid size={14} />
             </button>

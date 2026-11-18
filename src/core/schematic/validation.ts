@@ -7,7 +7,7 @@ export function validateSchematic(value: unknown): SchematicProject {
         throw new Error('Схема должна содержать хотя бы один лист.');
     const ids = new Set<string>();
     for (const s of p.sheets) {
-        if (!s || typeof s.id !== 'string' || ids.has(s.id) || !s.titleBlock || !['A4_P', 'A4_L', 'A3_L', 'A2_L', 'A1_L', 'A0_L'].includes(s.format))
+        if (!s || typeof s.id !== 'string' || ids.has(s.id) || !s.titleBlock || !['A4_P', 'A4_L', 'A3_L', 'A3_P', 'A2_L', 'A1_L', 'A0_L'].includes(s.format))
             throw new Error('Некорректные данные листа схемы.');
         ids.add(s.id);
         for (const k of arrays) {

@@ -52,6 +52,21 @@ export interface PcbExtraSelection {
   id: string;
 }
 
+/** Routing angle constraint mode during manual trace drawing. */
+export type RoutingAngleMode = '45' | '90' | 'free' | 'arc';
+
+/** Context menu state for right-clicking on PCB objects or empty canvas. */
+export interface PcbContextMenuState {
+  x: number;
+  y: number;
+  target:
+    | { kind: 'component'; compId: string }
+    | { kind: 'trace'; traceId: string }
+    | { kind: 'via'; viaId: string }
+    | { kind: 'pour'; pourId: string }
+    | { kind: 'canvas'; worldPt: Point2D };
+}
+
 /** Active distance measurement endpoints in world millimeters. */
 export interface MeasureRulerState {
   start: Point2D;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { IconFolderOpen, IconPin, IconTrash } from '@tabler/icons-react';
 import type { RecentProjectItem, RecentProjectSnapshot } from '../../../../core/store';
 import type { ColorSchemeId } from '../../../../core/types';
@@ -41,7 +41,19 @@ export function LauncherProjectsView({
   onTogglePin, onRemoveProject, documents, viewMode, theme
 }: Props) {
   const [context, setContext] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [wideTable, setWideTable] = useState(false);
+  const tableContainer = useRef<HTMLDivElement>(null);
   const contextProject = filtered.find(project => project.id === context?.id);
+  const showTable = viewMode === 'table' && filtered.length > 0;
+
+  useLayoutEffect(() => {
+    const container = tableContainer.current;
+    if (!showTable || !container) return;
+    setWideTable(container.clientWidth >= 820);
+    const observer = new ResizeObserver(([entry]) => setWideTable(entry.contentRect.width >= 820));
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [showTable]);
 
   function rowActions(project: RecentProjectItem, index: number) {
     return {
@@ -93,15 +105,38 @@ export function LauncherProjectsView({
     </>;
   }
 
-  function specs(project: RecentProjectItem) {
+  function documentDescription(project: RecentProjectItem) {
     const document = documents[project.id];
+    const label = types[project.module].label;
     if (project.module === 'schematic') {
       const sheet = document?.schematic?.sheets.find(sheet => sheet.id === document.schematic?.activeSheetId)
         ?? document?.schematic?.sheets[0];
-      return sheet ? sheet.format.split('_')[0].replace('A', 'А') : '—';
+      return sheet ? `${label} · ${sheet.format.split('_')[0].replace('A', 'А')}` : label;
     }
-    return document?.pcb ? document.pcb.layerCount + ' слоя' : '—';
+    if (!document?.pcb) return label;
+    const count = document.pcb.layerCount;
+    const layer = { one: 'слой', few: 'слоя', many: 'слоёв', other: 'слоя' };
+    return `${label} · ${count} ${layer[new Intl.PluralRules('ru').select(count) as keyof typeof layer]}`;
   }
+
+  function renderTable(start: number, end: number) {
+    return <table className="launch-table" aria-label={start ? 'Последние проекты (продолжение)' : 'Последние проекты'}>
+      <colgroup><col /><col className="launch-document-col" /><col className="launch-date-col" /></colgroup>
+      <thead><tr><th scope="col">Проект</th><th scope="col">Документ</th><th scope="col">Изменён</th></tr></thead>
+      <tbody>{filtered.slice(start, end).map((project, index) => <tr key={project.id}
+        className={`launch-table-row ${selectedProjectId === project.id ? 'selected' : ''}`}
+        onClick={() => onSelectProject(project.id)} onDoubleClick={event => {
+          if (!(event.target instanceof Element && event.target.closest('button'))) onOpenProject(project);
+        }}>
+        <td><button type="button" className="launch-project" {...rowActions(project, start + index)}>{projectLabel(project)}</button></td>
+        <td>{documentDescription(project)}</td>
+        <td>{formatProjectDate(project.updatedAt)}</td>
+      </tr>)}</tbody>
+    </table>;
+  }
+
+  const splitIndex = wideTable ? Math.ceil(filtered.length / 2) : filtered.length;
+  const splitTable = splitIndex < filtered.length;
 
   return <div className="launch-projects-list">
     <div className="launch-filter-bar" role="group" aria-label="Фильтр проектов">
@@ -113,18 +148,10 @@ export function LauncherProjectsView({
     </div>
     {filtered.length === 0 ? <p className="launch-empty-message">{projects.length || filter !== 'all'
       ? 'В этом разделе нет проектов' : 'Проекты не найдены'}</p> :
-    viewMode === 'table' ? <table className="dt-table launch-table" aria-label="Последние проекты">
-      <colgroup><col /><col className="launch-type-col" /><col className="launch-spec-col" /><col className="launch-date-col" /></colgroup>
-      <thead><tr><th scope="col">Проект</th><th scope="col">Тип</th><th scope="col">Параметры</th><th scope="col">Изменён</th></tr></thead>
-      <tbody>{filtered.map((project, index) => <tr key={project.id}
-        className={`launch-table-row ${selectedProjectId === project.id ? 'selected' : ''}`}
-        onClick={() => onSelectProject(project.id)} onDoubleClick={event => {
-          if (!(event.target instanceof Element && event.target.closest('button'))) onOpenProject(project);
-        }}>
-        <td><button type="button" className="launch-project" {...rowActions(project, index)}>{projectLabel(project)}</button></td>
-        <td>{types[project.module].label}</td><td>{specs(project)}</td><td>{formatProjectDate(project.updatedAt)}</td>
-      </tr>)}</tbody>
-    </table> : <div className="launch-grid">
+    showTable ? <div className="launch-tables" data-split={splitTable} ref={tableContainer}>
+      {renderTable(0, splitIndex)}
+      {splitTable && renderTable(splitIndex, filtered.length)}
+    </div> : <div className="launch-grid">
       {filtered.map((project, index) => <div key={project.id} className="launch-project-tile"
         data-selected={selectedProjectId === project.id}>
         <LauncherDocumentPreview documents={documents[project.id]} board={project.module !== 'schematic'} theme={theme} />

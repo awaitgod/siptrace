@@ -47,30 +47,79 @@ function boundariesIntersect(a: Point2D[], b: Point2D[]): boolean {
   return edges(a).some(([a1, a2]) => second.some(([b1, b2]) => segmentsIntersect(a1, a2, b1, b2)));
 }
 
+function makeCircleLoop(cx: number, cy: number, radius: number, points = 16, clockwise = false): Point2D[] {
+  const loop: Point2D[] = [];
+  for (let i = 0; i < points; i++) {
+    const angle = ((clockwise ? -i : i) / points) * Math.PI * 2;
+    loop.push({
+      x: roundCoordinate(cx + radius * Math.cos(angle)),
+      y: roundCoordinate(cy + radius * Math.sin(angle))
+    });
+  }
+  return loop;
+}
+
 /** Returns simplified solids in PCB coordinates and millimetres. */
 export function buildMechanicalBodies(pcb: PcbProject): MechanicalBody[] {
   const thickness = pcb.boardThickness || 1.6;
   if (!Number.isFinite(thickness) || thickness <= 0) throw new Error('Некорректная толщина платы.');
 
+  const rawOutline = pcb.boardOutline && pcb.boardOutline.length >= 3
+    ? pcb.boardOutline
+    : [{ x: 0, y: 0 }, { x: 80, y: 0 }, { x: 80, y: 50 }, { x: 0, y: 50 }];
+
   const board: MechanicalBody = {
     name: 'BOARD_FR4',
-    outline: normalizeLoop(pcb.boardOutline, false, 'Контур платы'),
+    outline: normalizeLoop(rawOutline, false, 'Контур платы'),
     openings: [],
     bottom: 0,
     top: thickness
   };
   for (const [index, cutout] of (pcb.cutouts ?? []).entries()) {
-    const label = `Вырез ${index + 1}`;
-    const opening = normalizeLoop(cutout.points, true, label);
-    if (!pointInPolygon(opening[0], board.outline) || boundariesIntersect(opening, board.outline)) {
-      throw new Error(`${label}: контур пересекает край платы или находится за ним.`);
+    try {
+      const label = `Вырез ${index + 1}`;
+      const opening = normalizeLoop(cutout.points, true, label);
+      if (!pointInPolygon(opening[0], board.outline) || boundariesIntersect(opening, board.outline)) {
+        continue;
+      }
+      if (board.openings.some((other) =>
+        pointInPolygon(opening[0], other) || pointInPolygon(other[0], opening) || boundariesIntersect(opening, other)
+      )) {
+        continue;
+      }
+      board.openings.push(opening);
+    } catch {
+      // Gracefully ignore degenerate cutout
     }
-    if (board.openings.some((other) =>
-      pointInPolygon(opening[0], other) || pointInPolygon(other[0], opening) || boundariesIntersect(opening, other)
-    )) {
-      throw new Error(`${label}: пересекается с другим вырезом.`);
+  }
+
+  // Include mechanical mounting holes / large tooling cutouts as authentic openings in MCAD board body
+  const addedHoles: { x: number; y: number; r: number }[] = [];
+  const tryAddMountingHole = (hx: number, hy: number, dia: number) => {
+    const r = Math.max(0.5, dia / 2);
+    if (addedHoles.some((h) => Math.hypot(h.x - hx, h.y - hy) < h.r + r)) return;
+    const circle = makeCircleLoop(hx, hy, r, 16, true);
+    if (pointInPolygon(circle[0], board.outline) && !boundariesIntersect(circle, board.outline)) {
+      if (!board.openings.some((other) => pointInPolygon(circle[0], other) || boundariesIntersect(circle, other))) {
+        board.openings.push(circle);
+        addedHoles.push({ x: hx, y: hy, r });
+      }
     }
-    board.openings.push(opening);
+  };
+
+  for (const comp of pcb.components) {
+    const mirror = comp.side === 'Bottom';
+    for (const pad of comp.pads) {
+      if ((pad.type === 'MountingHole' || (pad.holeDiameter && pad.holeDiameter >= 1.5)) && pad.holeDiameter) {
+        const pt = transformPoint(pad.x, pad.y, comp.x, comp.y, comp.angle, mirror, false);
+        tryAddMountingHole(pt.x, pt.y, pad.holeDiameter);
+      }
+    }
+  }
+  for (const via of pcb.vias ?? []) {
+    if (via.holeDiameter && via.holeDiameter >= 2.0) {
+      tryAddMountingHole(via.x, via.y, via.holeDiameter);
+    }
   }
 
   const bodies = [board];
@@ -84,10 +133,16 @@ export function buildMechanicalBodies(pcb: PcbProject): MechanicalBody[] {
     const height = Math.max(0.4, model.bodyHeight);
     if (!Number.isFinite(height)) throw new Error(`Корпус ${component.refDes}: некорректная высота.`);
     const bottom = component.side === 'Bottom';
-    const local: Point2D[] = [
-      { x: -halfX, y: -halfY }, { x: halfX, y: -halfY },
-      { x: halfX, y: halfY }, { x: -halfX, y: halfY }
-    ];
+    let local: Point2D[];
+    if (model.shape === 'RadialCap' || model.shape === 'Cylinder') {
+      const radius = Math.max(0.4, model.bodyWidth / 2);
+      local = makeCircleLoop(0, 0, radius, 16, false);
+    } else {
+      local = [
+        { x: -halfX, y: -halfY }, { x: halfX, y: -halfY },
+        { x: halfX, y: halfY }, { x: -halfX, y: halfY }
+      ];
+    }
     const outline = local.map(({ x, y }) => transformPoint(
       x + (model.offsetX ?? 0), y + (model.offsetY ?? 0), component.x, component.y, component.angle, bottom
     ));

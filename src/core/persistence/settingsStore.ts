@@ -32,6 +32,9 @@ export interface AppSettings {
   approverName?: string;
   organization: string;
   recentProjects?: RecentProjectItem[];
+  aiEndpoint?: string;
+  aiKey?: string;
+  aiModel?: string;
 }
 
 function createDefaultSettings(): AppSettings {
@@ -45,6 +48,9 @@ function createDefaultSettings(): AppSettings {
     normControlName: 'Сидорова Е.К.',
     approverName: 'Козлов Д.А.',
     organization: 'АО «НИИ Приборостроения»',
+    aiEndpoint: 'https://api.aitunnel.ru/v1',
+    aiKey: '',
+    aiModel: 'deepseek-v4.1-flash-1017',
     recentProjects: [
       { id: 'rec_rs485_schematic', name: 'Гальваническая развязка RS-485', designation: 'ГТРС.468364.001 Э3', module: 'schematic', updatedAt: 'Сегодня', demoKey: 'rs485' },
       { id: 'rec_rs485_pcb', name: 'Гальваническая развязка RS-485 (ПП 90×55)', designation: 'ГТРС.468364.001 ПП', module: 'pcb', updatedAt: 'Сегодня', demoKey: 'rs485' },

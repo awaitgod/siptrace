@@ -33,6 +33,12 @@ export function snapAngle90(deg: number): PinOrientation {
   return (((Math.round(deg / 90) * 90) % 360 + 360) % 360) as PinOrientation;
 }
 
+export function safeRound3(val: number, fallback = 0, clampLimit = 1e5): number {
+  if (!Number.isFinite(val)) return fallback;
+  if (Math.abs(val) > clampLimit) return Math.sign(val) * clampLimit;
+  return Math.round(val * 1000) / 1000;
+}
+
 export function makeSymbolPin(opts: {
   number: string;
   name?: string;
@@ -48,8 +54,8 @@ export function makeSymbolPin(opts: {
     id: uid('pin'),
     number: opts.number,
     name: opts.name ?? opts.number,
-    x: Math.round(opts.x * 1000) / 1000,
-    y: Math.round(opts.y * 1000) / 1000,
+    x: safeRound3(opts.x),
+    y: safeRound3(opts.y),
     length: opts.length ?? 2.54,
     orientation: opts.orientation,
     electricalType: opts.electricalType ?? 'Passive',
@@ -85,7 +91,7 @@ export function makeComponentDef(opts: {
     patternId: opts.patternId ?? 'DIP-8',
     parts: [
       {
-        partIndex: 0,
+        partIndex: 1,
         name: 'Part 1',
         primitives: opts.primitives,
         pins: opts.pins
@@ -141,6 +147,7 @@ export function placeDefOnSheet(opts: {
   flipX?: boolean;
   flipY?: boolean;
   showValue?: boolean;
+  partIndex?: number;
 }): PlacedComponent {
   opts.customDefs[opts.def.id] = opts.def;
   return {
@@ -150,9 +157,9 @@ export function placeDefOnSheet(opts: {
     refDes: opts.refDes,
     value: opts.value ?? opts.def.defaultValue,
     typeName: opts.def.name,
-    partIndex: 0,
-    x: Math.round(opts.x * 1000) / 1000,
-    y: Math.round(opts.y * 1000) / 1000,
+    partIndex: opts.partIndex ?? 0,
+    x: safeRound3(opts.x),
+    y: safeRound3(opts.y),
     angle: opts.angle ?? 0,
     flipX: Boolean(opts.flipX),
     flipY: Boolean(opts.flipY),
@@ -207,10 +214,10 @@ export function makePadDef(opts: {
     number: opts.number,
     type: opts.isTht ? 'THT' : 'SMD',
     shape: opts.shape ?? 'Rect',
-    x: Math.round(opts.x * 1000) / 1000,
-    y: Math.round(opts.y * 1000) / 1000,
-    width: Math.max(0.15, Math.round(opts.width * 1000) / 1000),
-    height: Math.max(0.15, Math.round(opts.height * 1000) / 1000),
+    x: safeRound3(opts.x),
+    y: safeRound3(opts.y),
+    width: Math.max(0.15, safeRound3(opts.width, 1.0)),
+    height: Math.max(0.15, safeRound3(opts.height, 1.0)),
     holeDiameter: opts.isTht ? Math.max(0.2, opts.holeDiameter ?? 0.8) : 0,
     angle: opts.angle ?? 0,
     layer: opts.layer ?? (opts.isTht ? 'All' : 'Top')
@@ -279,8 +286,8 @@ export function makePcbPlacedComp(opts: {
     typeName: opts.typeName,
     patternId: opts.typeName || uid('pat'),
     side: opts.side ?? 'Top',
-    x: Math.round(opts.x * 1000) / 1000,
-    y: Math.round(opts.y * 1000) / 1000,
+    x: safeRound3(opts.x),
+    y: safeRound3(opts.y),
     angle: opts.angle ?? 0,
     showRefDes: true,
     showValue: Boolean(opts.value),

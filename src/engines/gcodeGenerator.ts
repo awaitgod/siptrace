@@ -93,7 +93,7 @@ export function generatePcbGCode(pcb: PcbProject, opts: Partial<GCodeOptions> = 
     cur = { ...pt };
   };
 
-  const emitLoop = (pts: Point2D[], depth: number, kind: 'isolation' | 'outline', mirrorX = false) => {
+  const emitPath = (pts: Point2D[], depth: number, kind: 'isolation' | 'outline', closed = true, mirrorX = false) => {
     if (pts.length < 2) return;
     const mapped = pts.map((p) => ({
       x: mirrorX ? maxX + minX - p.x : p.x,
@@ -106,14 +106,35 @@ export function generatePcbGCode(pcb: PcbProject, opts: Partial<GCodeOptions> = 
       lines.push(`G01 X${fmt(mapped[i].x)} Y${fmt(mapped[i].y)} F${Math.round(o.feedRateMmMin)}`);
       moveTo(mapped[i], false, kind);
     }
-    lines.push(`G01 X${fmt(mapped[0].x)} Y${fmt(mapped[0].y)} F${Math.round(o.feedRateMmMin)}`);
-    moveTo(mapped[0], false, kind);
+    if (closed) {
+      lines.push(`G01 X${fmt(mapped[0].x)} Y${fmt(mapped[0].y)} F${Math.round(o.feedRateMmMin)}`);
+      moveTo(mapped[0], false, kind);
+    }
     lines.push(`G00 Z${fmt(o.safeZ)}`);
+  };
+
+  const emitLoop = (pts: Point2D[], depth: number, kind: 'isolation' | 'outline', mirrorX = false) => {
+    emitPath(pts, depth, kind, true, mirrorX);
   };
 
   const millCopperLayer = (copperLayer: 'TopCopper' | 'BottomCopper', mirrorX: boolean) => {
     const halfTool = o.toolDiameterMm / 2;
     lines.push(`( === Изоляционное фрезерование: ${copperLayer} === )`);
+
+    const isConnectedEndpoint = (pt: Point2D, netName: string) => {
+      if (!netName) return false;
+      for (const wp of getWorldPads(pcb)) {
+        if (wp.netName !== netName) continue;
+        if (wp.effectiveLayer !== 'All' && wp.effectiveLayer !== copperLayer) continue;
+        const padR = Math.max(wp.pad.width, wp.pad.height) * 0.75;
+        if (Math.hypot(pt.x - wp.x, pt.y - wp.y) <= padR) return true;
+      }
+      for (const v of pcb.vias) {
+        if (v.netName !== netName) continue;
+        if (Math.hypot(pt.x - v.x, pt.y - v.y) <= v.outerDiameter * 0.6) return true;
+      }
+      return false;
+    };
 
     // 1. Pad isolation boxes
     for (const wp of getWorldPads(pcb)) {
@@ -157,31 +178,139 @@ export function generatePcbGCode(pcb: PcbProject, opts: Partial<GCodeOptions> = 
       }
     }
 
-    // 2. Trace capsule / offset perimeter isolation
+    // 2. Trace continuous contour isolation (isolates sides without severing trace joints)
     for (const tr of pcb.traces) {
       if (tr.layer !== copperLayer || tr.points.length < 2) continue;
+
+      const pts: Point2D[] = [tr.points[0]];
+      for (let i = 1; i < tr.points.length; i++) {
+        const prev = pts[pts.length - 1];
+        if (Math.hypot(tr.points[i].x - prev.x, tr.points[i].y - prev.y) > 0.001) {
+          pts.push(tr.points[i]);
+        }
+      }
+      if (pts.length < 2) continue;
+
       const off = tr.width / 2 + halfTool;
-      for (let i = 0; i < tr.points.length - 1; i++) {
-        const a = tr.points[i];
-        const b = tr.points[i + 1];
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
+      const numSegs = pts.length - 1;
+
+      const normals: Point2D[] = [];
+      const dirVecs: Point2D[] = [];
+      for (let i = 0; i < numSegs; i++) {
+        const dx = pts[i + 1].x - pts[i].x;
+        const dy = pts[i + 1].y - pts[i].y;
         const len = Math.hypot(dx, dy) || 1;
-        const nx = (-dy / len) * off;
-        const ny = (dx / len) * off;
-        const tx = (dx / len) * off;
-        const ty = (dy / len) * off;
-        emitLoop(
-          [
-            { x: a.x - tx + nx, y: a.y - ty + ny },
-            { x: b.x + tx + nx, y: b.y + ty + ny },
-            { x: b.x + tx - nx, y: b.y + ty - ny },
-            { x: a.x - tx - nx, y: a.y - ty - ny }
-          ],
-          o.engraveDepth,
-          'isolation',
-          mirrorX
-        );
+        dirVecs.push({ x: dx / len, y: dy / len });
+        normals.push({ x: -dy / len, y: dx / len });
+      }
+
+      const leftPts: Point2D[] = [{
+        x: pts[0].x + normals[0].x * off,
+        y: pts[0].y + normals[0].y * off
+      }];
+
+      for (let i = 1; i < numSegs; i++) {
+        const nPrev = normals[i - 1];
+        const nCur = normals[i];
+        const uPrev = dirVecs[i - 1];
+        const uCur = dirVecs[i];
+        const det = uPrev.x * uCur.y - uPrev.y * uCur.x;
+        const v = pts[i];
+        if (Math.abs(det) < 0.05) {
+          leftPts.push({ x: v.x + nCur.x * off, y: v.y + nCur.y * off });
+        } else {
+          const p1x = v.x + nPrev.x * off;
+          const p1y = v.y + nPrev.y * off;
+          const p2x = v.x + nCur.x * off;
+          const p2y = v.y + nCur.y * off;
+          const s = ((p2x - p1x) * uCur.y - (p2y - p1y) * uCur.x) / det;
+          const ix = p1x + s * uPrev.x;
+          const iy = p1y + s * uPrev.y;
+          const miterDist = Math.hypot(ix - v.x, iy - v.y);
+          if (miterDist <= off * 2.5) {
+            leftPts.push({ x: ix, y: iy });
+          } else {
+            leftPts.push({ x: p1x, y: p1y });
+            leftPts.push({ x: p2x, y: p2y });
+          }
+        }
+      }
+      leftPts.push({
+        x: pts[numSegs].x + normals[numSegs - 1].x * off,
+        y: pts[numSegs].y + normals[numSegs - 1].y * off
+      });
+
+      const rightPts: Point2D[] = [{
+        x: pts[numSegs].x - normals[numSegs - 1].x * off,
+        y: pts[numSegs].y - normals[numSegs - 1].y * off
+      }];
+
+      for (let i = numSegs - 1; i >= 1; i--) {
+        const nCur = normals[i];
+        const nPrev = normals[i - 1];
+        const uCur = dirVecs[i];
+        const uPrev = dirVecs[i - 1];
+        const det = uCur.x * uPrev.y - uCur.y * uPrev.x;
+        const v = pts[i];
+        if (Math.abs(det) < 0.05) {
+          rightPts.push({ x: v.x - nPrev.x * off, y: v.y - nPrev.y * off });
+        } else {
+          const p1x = v.x - nCur.x * off;
+          const p1y = v.y - nCur.y * off;
+          const p2x = v.x - nPrev.x * off;
+          const p2y = v.y - nPrev.y * off;
+          const s = ((p2x - p1x) * (-uPrev.y) - (p2y - p1y) * (-uPrev.x)) / det;
+          const ix = p1x + s * (-uCur.x);
+          const iy = p1y + s * (-uCur.y);
+          const miterDist = Math.hypot(ix - v.x, iy - v.y);
+          if (miterDist <= off * 2.5) {
+            rightPts.push({ x: ix, y: iy });
+          } else {
+            rightPts.push({ x: p1x, y: p1y });
+            rightPts.push({ x: p2x, y: p2y });
+          }
+        }
+      }
+      rightPts.push({
+        x: pts[0].x - normals[0].x * off,
+        y: pts[0].y - normals[0].y * off
+      });
+
+      const startConnected = isConnectedEndpoint(pts[0], tr.netName);
+      const endConnected = isConnectedEndpoint(pts[pts.length - 1], tr.netName);
+
+      if (startConnected && endConnected) {
+        emitPath(leftPts, o.engraveDepth, 'isolation', false, mirrorX);
+        emitPath(rightPts, o.engraveDepth, 'isolation', false, mirrorX);
+        isolationLoops += 2;
+      } else if (!startConnected && !endConnected) {
+        const lastU = dirVecs[numSegs - 1];
+        const firstU = dirVecs[0];
+        const endCap: Point2D[] = [
+          { x: pts[numSegs].x + lastU.x * off + normals[numSegs - 1].x * off, y: pts[numSegs].y + lastU.y * off + normals[numSegs - 1].y * off },
+          { x: pts[numSegs].x + lastU.x * off - normals[numSegs - 1].x * off, y: pts[numSegs].y + lastU.y * off - normals[numSegs - 1].y * off }
+        ];
+        const startCap: Point2D[] = [
+          { x: pts[0].x - firstU.x * off - normals[0].x * off, y: pts[0].y - firstU.y * off - normals[0].x * off },
+          { x: pts[0].x - firstU.x * off + normals[0].x * off, y: pts[0].y - firstU.y * off + normals[0].y * off }
+        ];
+        emitLoop([...leftPts, ...endCap, ...rightPts, ...startCap], o.engraveDepth, 'isolation', mirrorX);
+        isolationLoops++;
+      } else if (startConnected && !endConnected) {
+        const lastU = dirVecs[numSegs - 1];
+        const endCap: Point2D[] = [
+          { x: pts[numSegs].x + lastU.x * off + normals[numSegs - 1].x * off, y: pts[numSegs].y + lastU.y * off + normals[numSegs - 1].y * off },
+          { x: pts[numSegs].x + lastU.x * off - normals[numSegs - 1].x * off, y: pts[numSegs].y + lastU.y * off - normals[numSegs - 1].y * off }
+        ];
+        emitPath([...leftPts, ...endCap, ...rightPts], o.engraveDepth, 'isolation', false, mirrorX);
+        isolationLoops++;
+      } else {
+        const firstU = dirVecs[0];
+        const startCap: Point2D[] = [
+          { x: pts[0].x - firstU.x * off - normals[0].x * off, y: pts[0].y - firstU.y * off - normals[0].x * off },
+          { x: pts[0].x - firstU.x * off + normals[0].x * off, y: pts[0].y - firstU.y * off + normals[0].y * off }
+        ];
+        emitPath([...rightPts, ...startCap, ...leftPts], o.engraveDepth, 'isolation', false, mirrorX);
         isolationLoops++;
       }
     }

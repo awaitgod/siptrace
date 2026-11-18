@@ -54,6 +54,7 @@ export const commands = {
     values: z.record(id, name).optional(),
     board: z.object({
       width: size, height: size, layers: z.union([z.literal(2), z.literal(4)]),
+      allowViaInPad: z.boolean().optional(),
       clearance: size.optional(),
       outline: polygon.optional(),
       cutouts: z.array(polygon).optional(),
@@ -73,7 +74,7 @@ export const commands = {
     sheets: z.array(z.object({ sheet: id, name, format: format.optional(), form: z.enum(['Form1','Form2','Form2a','None']).optional() }).strict()).min(1)
   }).strict(),
   compare_requirements: z.object({}).strict(),
-  finalize_project: z.object({}).strict(),
+  finalize_project: z.object({ detail: z.enum(['summary','full']).optional() }).strict(),
   query_library: z.object({
     query: z.string().max(120), kind: z.enum(['component','pattern']), pins: z.number().int().positive().optional(),
     pattern: z.string().max(120).optional(), limit: z.number().int().min(1).max(10).optional(),
@@ -114,6 +115,8 @@ export const commands = {
     refDesOffset: point.optional(), valueOffset: point.optional(), labelAngle: angle.optional(),
     showRefDes: z.boolean().optional(), showValue: z.boolean().optional()
   }).strict(),
+  set_component_values: z.object({ values: z.record(id, name) }).strict(),
+  rename_net: z.object({ from: name, to: name }).strict(),
   move_schematic: z.object({ sheet: id, ids: z.array(id).min(1).max(100), dx: mm, dy: mm }).strict(),
   delete_schematic: z.object({ sheet: id, ids: z.array(id).min(1).max(100), only: z.literal('graphics').optional() }).strict(),
   wire: z.object({
@@ -123,14 +126,19 @@ export const commands = {
   add_sheet_text: z.object({ sheet: id, text: name, x: mm, y: mm, size }).strict(),
   mark_no_connect: z.object({ sheet: id, pin: terminal }).strict(),
   restore_verified: z.object({}).strict(),
-  inspect: z.object({ sheet: id.optional() }).strict(),
+  inspect: z.object({ sheet: id.optional(), pcbNet: name.optional(), detail: z.enum(['summary', 'full']).optional() }).strict(),
   create_board: z.object({
     name: name.optional(), width: size.optional(), height: size.optional(), outline: polygon.optional(),
     layers: z.union([z.literal(2), z.literal(4)]).optional(), fromSchematic: z.boolean().optional()
   }).strict(),
+  sync_board_from_schematic: z.object({}).strict(),
   board_outline: z.object({ points: polygon }).strict(),
   place_footprint: footprintPlacement,
   place_footprints: z.object({ items: z.array(footprintPlacement).min(1).max(100) }).strict(),
+  place_target_footprints: z.object({
+    patterns: z.record(id, id), defaultPattern: id.optional()
+  }).strict(),
+  sync_target_pad_nets: z.object({}).strict(),
   move_footprint: z.object({ ref: id, x: mm, y: mm, angle: z.number().min(-360).max(360).optional(), side: z.enum(['Top', 'Bottom']).optional(), locked: z.boolean().optional() }).strict(),
   board_rules: z.object({
     clearance: size.optional(), traceWidth: size.optional(), thickness: size.optional()
@@ -147,21 +155,37 @@ export const commands = {
   simulate: z.object({ mode: z.enum(['DC', 'Transient', 'AC']), stopTimeMs: size.optional() }).strict(),
   auto_place: z.object({}).strict(),
   auto_route: routeScope,
+  route_remaining: z.object({ limit: z.number().int().min(1).max(12).optional() }).strict(),
   route_net: routeScope.extend({
     net: name, pair: z.tuple([terminal, terminal]).optional(),
     replace: z.array(id).max(100).optional(), preview: z.boolean().optional()
+  }).strict(),
+  route_nets: z.object({
+    nets: z.array(z.object({ net: name, replace: z.array(id).max(100).optional() }).strict()).min(2).max(12)
   }).strict(),
   commit_route: z.object({ previewId: id }).strict(),
   route_trace: z.object({ layer, net: name, width: size, points: path }).strict(),
   add_via: z.object({ x: mm, y: mm, net: name, diameter: size, hole: size, viaInPad: z.boolean().optional() }).strict(),
   delete_board: z.object({ ids: z.array(id).min(1).max(100) }).strict(),
-  check: z.object({}).strict(),
+  check: z.object({ detail: z.enum(['summary','full']).optional() }).strict(),
   screenshot: z.object({ target: z.enum(['schematic', 'pcb']), sheet: id.optional() }).strict(),
   finish: z.object({ summary: note, limitations: note, status: z.enum(['complete', 'draft']).optional() }).strict()
 };
 
 export type CommandName = keyof typeof commands;
+const toolDescriptions: Partial<Record<CommandName, string>> = {
+  inspect: 'Для обзора используй detail:summary. Для правки листа укажи sheet, для ремонта сети — pcbNet. Без фильтра и detail возвращается вся геометрия платы.',
+  set_component_values: 'Меняет номиналы существующих позиций на схеме и связанной плате одним пакетом, сохраняя ID, выводы, провода и медь.',
+  rename_net: 'Переименовывает одну существующую явно именованную цепь в свободное имя на схеме и плате, сохраняя геометрию, ID и межлистовые порты. Не объединяет цепи.',
+  sync_board_from_schematic: 'Применяет изменения схемы к существующей плате. Сохраняет размещение и медь, ставит новые корпуса по заданным координатам и сообщает ID старой меди затронутых сетей. Применяй после изменения топологии схемы.',
+  route_net: 'Разводит одну сеть. Для локальной переразводки передай ID старых незакреплённых дорожек/via этой сети в replace. Применяется атомарно. Используй preview, только если нужно сравнить варианты.',
+  route_nets: 'Разводит несколько указанных сетей атомарно по контракту. Передай affectedNets из синхронизации/смены корпуса как {net, replace:[...traces,...vias]}. При отказе одной сети весь пакет отменяется.',
+  check: 'Промежуточная диагностика текущей ревизии. detail:full возвращает все записи ERC/DRC, координаты и сравнения.',
+  finalize_project: 'Одним вызовом проверяет текущую ревизию и отправляет PNG всех документов. Предварительные check и screenshot не требуются.',
+  route_remaining: 'Разводит пакет открытых сетей по контракту. Возвращает число закрытых связей, оставшиеся пары и конфликты.',
+  finish: 'Отчёт по просмотренным документам. Укажи результат и существенные ограничения, включая нерешённые пункты ТЗ.'
+};
 export const toolDefinitions = Object.entries(commands).map(([name, schema]) => ({
   type: 'function',
-  function: { name, parameters: z.toJSONSchema(schema, { target: 'draft-7', io: 'input' }) }
+  function: { name, description: toolDescriptions[name as CommandName], parameters: z.toJSONSchema(schema, { target: 'draft-7', io: 'input' }) }
 }));

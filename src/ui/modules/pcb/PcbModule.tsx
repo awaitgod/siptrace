@@ -17,7 +17,7 @@ import {
 import { GOST_PATTERN_LIBRARIES, findPatternById } from '../../../gost/libraries/gostPatterns';
 import { computeUnroutedRatlines, getWorldPads } from '../../../engines/drc';
 import { updateAllCopperPours } from '../../../engines/copperPour';
-import { AutorouterReport, DEFAULT_AUTOROUTER_SETTINGS, runAutorouter } from '../../../engines/autorouter';
+import { applyMeanderToTrace, AutorouterReport, DEFAULT_AUTOROUTER_SETTINGS, runAutorouter } from '../../../engines/autorouter';
 import { runAutoplacer } from '../../../engines/autoplacer';
 import { GostConversionReport, importCadPcb, serializePcb } from '../../../engines/importers';
 import { clearSavedFileHandle, nativeCadFilename, pickCadFile, saveTextFile } from '../../../core/utils/fileIo';
@@ -45,7 +45,10 @@ import { usePcbCanvasInteraction } from './interactions/usePcbCanvasInteraction'
 import { createPcbTopMenus } from './menus/pcbMenuSpec';
 import { buildViaStitchingVias, PcbCopperPourSettings } from './services/pcbActionsService';
 import { isInnerCopperLayer } from './services/pcbLayerStack';
-import { CopperLayerId, MeasureRulerState, PcbExtraSelection, PcbToolId } from './types';
+import { CopperLayerId, MeasureRulerState, PcbContextMenuState, PcbExtraSelection, PcbToolId, RoutingAngleMode } from './types';
+import { PcbContextMenu } from './components/PcbContextMenu';
+import { computeRouteDraftPoints, smoothTraceWithArcs } from './services/pcbRouteGeometry';
+import { PCB_GRID_STEPS } from './constants';
 
 /** Thin Enterprise composition root for the PCB Layout & Autorouter Editor. */
 export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onSwitchModule }) => {
@@ -86,6 +89,8 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
   const [showGrid, setShowGrid] = useState(true);
   const [showRatlines, setShowRatlines] = useState(true);
   const [routeElbowFlip, setRouteElbowFlip] = useState(false);
+  const [routeAngleMode, setRouteAngleMode] = useState<RoutingAngleMode>('45');
+  const [contextMenu, setContextMenu] = useState<PcbContextMenuState | null>(null);
 
   // Interactive drafts & selection
   const [routeNetName, setRouteNetName] = useState('');
@@ -188,6 +193,24 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
     setStatusMessage(`Добавлено ${vias.length} прошивных переходных отверстий (Via Stitching GND).`);
   }, [pcb, worldPads, commitPcb]);
 
+  const cycleRoutingAngleMode = useCallback(() => {
+    setRouteAngleMode((prev) => {
+      const next: RoutingAngleMode = prev === '45' ? '90' : prev === '90' ? 'free' : prev === 'free' ? 'arc' : '45';
+      const label = next === '45' ? '45°' : next === '90' ? '90°' : next === 'free' ? 'Свободный угол' : 'Сглаживание дугами (Arc)';
+      setStatusMessage(`Режим трассировки проводников: ${label}.`);
+      return next;
+    });
+  }, []);
+
+  const cycleGridStep = useCallback(() => {
+    commitPcb((prev) => {
+      const idx = PCB_GRID_STEPS.indexOf(prev.gridSize);
+      const nextGrid = PCB_GRID_STEPS[(idx + 1) % PCB_GRID_STEPS.length];
+      setStatusMessage(`Шаг сетки изменён: ${nextGrid} мм.`);
+      return { ...prev, gridSize: nextGrid };
+    }, false);
+  }, [commitPcb]);
+
   const switchCopperLayer = useCallback(
     (targetLayer: CopperLayerId) => {
       if (tool === 'copperPour' && targetLayer !== activeLayer) {
@@ -200,18 +223,9 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
         const last = routeDraftPts[routeDraftPts.length - 1];
         let viaPt = last;
         if (dist(cur, last) > 0.25) {
-          const dx = cur.x - last.x;
-          const dy = cur.y - last.y;
-          const minD = Math.min(Math.abs(dx), Math.abs(dy));
-          const midPt: Point2D = routeElbowFlip
-            ? { x: last.x + Math.sign(dx) * minD, y: last.y + Math.sign(dy) * minD }
-            : { x: cur.x - Math.sign(dx) * minD, y: cur.y - Math.sign(dy) * minD };
-          segmentPts = [
-            ...routeDraftPts,
-            ...(dist(midPt, last) > 0.05 && dist(midPt, cur) > 0.05 ? [midPt] : []),
-            cur
-          ];
-          viaPt = cur;
+          const segPts = computeRouteDraftPoints(last, cur, routeAngleMode, routeElbowFlip);
+          segmentPts = [...routeDraftPts, ...segPts];
+          viaPt = segmentPts[segmentPts.length - 1];
         }
         const newTrace: PcbTrace = {
           id: uid('tr'),
@@ -241,7 +255,7 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
       }
       setActiveLayer(targetLayer);
     },
-    [tool, routeDraftPts, activeLayer, routeNetName, routeElbowFlip, pcb.gridSize, pcb.designRules, commitPcb]
+    [tool, routeDraftPts, activeLayer, routeNetName, routeElbowFlip, routeAngleMode, pcb.gridSize, pcb.designRules, commitPcb]
   );
 
   // Canvas interactions & viewport
@@ -255,7 +269,9 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
-    handleWheel
+    handleWheel,
+    handleContextMenu,
+    finalizeDrafts
   } = usePcbCanvasInteraction({
     canvasRef,
     canvasWrapRef,
@@ -279,6 +295,8 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
     polyDraftPts,
     setPolyDraftPts,
     routeElbowFlip,
+    routeAngleMode,
+    setContextMenu,
     lineStartPt,
     setLineStartPt,
     pourDraft,
@@ -375,7 +393,12 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
     handleSavePcbFile: () => handleSavePcbFile(false),
     handleRunDrc,
     zoomToFit,
-    onFind: () => setShowFindDialog(true)
+    onFind: () => setShowFindDialog(true),
+    gridStepMm: pcb.gridSize,
+    cycleGridStep,
+    cycleRoutingAngleMode,
+    polyDraftPtsLength: polyDraftPts.length,
+    onFinalizeDraft: finalizeDrafts
   });
 
   useEffect(() => {
@@ -401,6 +424,7 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
       polyDraftPts,
       cursorMm,
       routeElbowFlip,
+      routeAngleMode,
       measurePts,
       drcErrors
     });
@@ -420,6 +444,7 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
     polyDraftPts,
     cursorMm,
     routeElbowFlip,
+    routeAngleMode,
     activeLayer,
     measurePts,
     drcErrors
@@ -614,7 +639,7 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onWheel={handleWheel}
-              onContextMenu={(e) => e.preventDefault()}
+              onContextMenu={handleContextMenu}
             />
           </div>
         </div>
@@ -799,6 +824,139 @@ export const PcbModule: React.FC<{ onSwitchModule?: (m: any) => void }> = ({ onS
       {conversionReport && (
         <GostConversionDialog report={conversionReport} onClose={() => setConversionReport(null)} />
       )}
+
+      {contextMenu && (() => {
+        const ctxTarget = contextMenu.target;
+        const selComp = selectedCompId ? pcb.components.find((c) => c.id === selectedCompId) : null;
+        const selTrace = selectedTraceId ? pcb.traces.find((t) => t.id === selectedTraceId) : null;
+        const selVia = selectedViaId ? pcb.vias.find((v) => v.id === selectedViaId) : null;
+        const selPour = ctxTarget.kind === 'pour' ? pcb.copperPours.find((p) => p.id === ctxTarget.pourId) : null;
+        const targetNet = selComp ? Object.values(selComp.padNets)[0] : selTrace ? selTrace.netName : selVia ? selVia.netName : selPour ? selPour.netName : undefined;
+
+        const handleCtxDelete = () => {
+          if (contextMenu.target.kind === 'component' && selectedCompId) {
+            commitPcb((prev) => ({
+              ...prev,
+              components: prev.components.filter((c) => !(c.id === selectedCompId && !c.locked))
+            }));
+            setSelectedCompId(null);
+          } else if (contextMenu.target.kind === 'trace' && selectedTraceId) {
+            commitPcb((prev) => ({
+              ...prev,
+              traces: prev.traces.filter((tr) => tr.id !== selectedTraceId)
+            }));
+            setSelectedTraceId(null);
+          } else if (contextMenu.target.kind === 'via' && selectedViaId) {
+            commitPcb((prev) => ({
+              ...prev,
+              vias: prev.vias.filter((v) => v.id !== selectedViaId)
+            }));
+            setSelectedViaId(null);
+          } else if (contextMenu.target.kind === 'pour') {
+            const pourId = contextMenu.target.pourId;
+            commitPcb((prev) => updateAllCopperPours({
+              ...prev,
+              copperPours: prev.copperPours.filter((cp) => cp.id !== pourId)
+            }));
+          }
+          setContextMenu(null);
+        };
+
+        return (
+          <PcbContextMenu
+            menu={contextMenu}
+            targetNetName={targetNet}
+            isLocked={selComp?.locked}
+            onRotate={() => {
+              if (selectedCompId) {
+                commitPcb((prev) => ({
+                  ...prev,
+                  components: prev.components.map((c) =>
+                    c.id === selectedCompId && !c.locked ? { ...c, angle: (c.angle + 90) % 360 } : c
+                  )
+                }));
+              }
+            }}
+            onFlipSide={() => {
+              if (selectedCompId) {
+                commitPcb((prev) => ({
+                  ...prev,
+                  components: prev.components.map((c) =>
+                    c.id === selectedCompId && !c.locked ? { ...c, side: c.side === 'Top' ? 'Bottom' : 'Top' } : c
+                  )
+                }));
+              }
+            }}
+            onToggleLock={() => {
+              if (selectedCompId) {
+                commitPcb((prev) => ({
+                  ...prev,
+                  components: prev.components.map((c) =>
+                    c.id === selectedCompId ? { ...c, locked: !c.locked } : c
+                  )
+                }));
+              }
+            }}
+            onDelete={handleCtxDelete}
+            onHighlightNet={(net) => setHighlightedNet(net)}
+            onAddMeander={() => {
+              if (selectedTraceId) {
+                commitPcb((prev) => ({
+                  ...prev,
+                  traces: prev.traces.map((tr) =>
+                    tr.id === selectedTraceId ? applyMeanderToTrace(tr, 4.0, 1.2, 1.2, prev) : tr
+                  )
+                }));
+                setStatusMessage('Применена змейка к проводнику.');
+              }
+            }}
+            onSmoothArcs={() => {
+              if (selectedTraceId) {
+                commitPcb((prev) => ({
+                  ...prev,
+                  traces: prev.traces.map((tr) =>
+                    tr.id === selectedTraceId ? { ...tr, points: smoothTraceWithArcs(tr.points, 1.5) } : tr
+                  )
+                }));
+                setStatusMessage('Проводник сглажен дугами (Arc smoothing).');
+              }
+            }}
+            onToggleViaStyle={() => {
+              if (selectedViaId) {
+                commitPcb((prev) => ({
+                  ...prev,
+                  vias: prev.vias.map((v) =>
+                    v.id === selectedViaId
+                      ? {
+                          ...v,
+                          viaStyle: v.viaStyle === 'Through' ? 'Blind' : 'Through',
+                          startLayer: 'TopCopper',
+                          endLayer: v.viaStyle === 'Through' ? (prev.layerCount === 4 ? 'Inner1' : 'BottomCopper') : 'BottomCopper'
+                        }
+                      : v
+                  )
+                }));
+              }
+            }}
+            onUpdatePours={handleUpdatePours}
+            onOpenProperties={() => {
+              if (contextMenu.target.kind === 'pour') setShowPourDialog(true);
+              else if (contextMenu.target.kind === 'component') setManagerTab('components');
+            }}
+            onSelectTool={() => setTool('select')}
+            onStartRoute={() => {
+              setRouteDraftPts([]);
+              setTool('routeManual');
+            }}
+            onPlaceVia={() => setTool('via')}
+            onRunDrc={handleRunDrc}
+            onCycleGrid={cycleGridStep}
+            onZoomFit={zoomToFit}
+            onClose={() => setContextMenu(null)}
+            onRestoreFocus={() => canvasRef.current?.focus({ preventScroll: true })}
+          />
+        );
+      })()}
 
       {autorouteReport && <PcbAutorouteBanner report={autorouteReport} onDismiss={() => setAutorouteReport(null)} />}
     </div>

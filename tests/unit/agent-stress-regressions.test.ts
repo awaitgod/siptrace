@@ -20,6 +20,78 @@ function boardAgent(bottom = false) {
 }
 
 describe('PCB stress regressions', () => {
+  it('rolls back a multi-net reroute if a later net fails', () => {
+    const agent = boardAgent();
+    const before = structuredClone(agent.draft.documents.pcb!);
+    const revision = agent.revision;
+    expect(() => agent.execute('route_nets', { nets: [{net:'A'}, {net:'NO_NET'}] })).toThrow('Цепь отсутствует');
+    expect(agent.draft.documents.pcb).toEqual(before);
+    expect(agent.revision).toBe(revision);
+    expect(agent.execute('route_nets', { nets: [{net:'A'}, {net:'GND'}] })).toMatchObject([
+      {net:'A', applied:true, remaining:[]}, {net:'GND', applied:true, remaining:[]}
+    ]);
+    expect(computeUnroutedRatlines(agent.draft.documents.pcb!)).toEqual([]);
+    expect(agent.revision).toBe(revision + 1);
+  });
+  it('requires the specified via-in-pad process and scopes PCB inspection to the selected net', () => {
+    const agent = boardAgent();
+    const targets = { documents:'pcb', boardRefs:['R1','R2'],
+      boardNets:{ A:[terminal('R1'),terminal('R2')], GND:[terminal('R1','2'),terminal('R2','2')] },
+      board:{width:62,height:42,layers:2} };
+    agent.setUserTargets(targets);
+    const via = { x:7.05, y:20, net:'A', diameter:.6, hole:.3, viaInPad:true };
+    expect(() => agent.execute('add_via', via)).toThrow('разрешение');
+    expect(() => agent.execute('set_targets', { ...targets, board:{...targets.board,allowViaInPad:true} })).toThrow('зафиксировано');
+    agent.setUserTargets({ ...targets, board:{...targets.board,allowViaInPad:true} });
+    agent.execute('add_via', via);
+    expect(agent.execute('inspect', {pcbNet:'A'})).toMatchObject({pads:[{pin:'1'},{pin:'1'}], vias:[{viaInPad:true}]});
+    expect(agent.execute('inspect', {pcbNet:'GND'})).toMatchObject({pads:[{pin:'2'},{pin:'2'}], vias:[]});
+  });
+  it('places and routes a standalone board from the exact contracts for pads and traces', () => {
+    const agent = createAgentWorkspace({ documents: {}, plan: '' }, 'light');
+    agent.setUserTargets({
+      documents: 'pcb', boardRefs: ['R1', 'R2', 'R3', 'R4'],
+      boardNets: { A: [terminal('R1','2'), terminal('R2')], B: [terminal('R3'), terminal('R4','2')] },
+      board: { width: 42, height: 36, layers: 2, positions: [
+        { ref:'R1', x: 14, y: 17, locked: true }, { ref:'R2', x: 42, y: 17, locked: true },
+        { ref:'R3', x: 14, y: 31, side:'Bottom' }, { ref:'R4', x: 42, y: 31, side:'Bottom' }
+      ], routes: { A: { width: .6, allowedLayers:['TopCopper'] }, B: { width: .45, allowedLayers:['BottomCopper'] } } }
+    });
+    agent.execute('create_board', {});
+    agent.execute('place_footprint', { ref:'R1', pattern, x:14, y:17, locked:true, nets:{ '2':'A', '1':'EXTRA' } });
+    expect(agent.execute('place_target_footprints', { patterns:{}, defaultPattern:pattern })).toEqual({ added:3 });
+    expect(agent.execute('sync_target_pad_nets', {})).toMatchObject({ changes:[{ref:'R1',pin:'1',previous:'EXTRA'}] });
+    const routed = agent.execute('route_remaining', {});
+    expect(routed, JSON.stringify(routed)).toMatchObject({ closed: 2, remaining: 0 });
+    const pcb = agent.draft.documents.pcb!;
+    expect(pcb.components.map(item => item.padNets)).toEqual([{'2':'A'}, {'1':'A'}, {'1':'B'}, {'2':'B'}]);
+    expect(pcb.traces).toEqual([
+      expect.objectContaining({ netName:'A', width:.6, layer:'TopCopper' }),
+      expect.objectContaining({ netName:'B', width:.45, layer:'BottomCopper' })
+    ]);
+    const revision = agent.revision;
+    expect(agent.execute('route_remaining', {})).toMatchObject({ closed:0, remaining:0 });
+    expect(agent.revision).toBe(revision);
+    expect(agent.execute('check', {})).toMatchObject({ blockers: [] });
+  });
+
+  it('preserves intentional open terminals when converting a schematic to PCB', () => {
+    const agent = createAgentWorkspace({ documents: {}, plan: '' }, 'light');
+    const nets = { A: [terminal('R1','2'), terminal('R2')] };
+    agent.setUserTargets({ documents:'both', schematicRefs:['R1','R2'], boardRefs:['R1','R2'],
+      schematicNets:nets, boardNets:nets, board:{width:80,height:60,layers:2} });
+    agent.execute('create_schematic', { name:'Open terminals' });
+    for (const [ref, x] of [['R1', 70], ['R2', 110]] as const) {
+      agent.execute('place_component', { sheet:'sheet_1', component:'COMP_R_R1_12_0805', ref, x, y:75 });
+    }
+    agent.execute('connect_net', { sheet:'sheet_1', net:'A', terminals:nets.A });
+    agent.execute('mark_no_connect', { sheet:'sheet_1', pin:terminal('R1') });
+    agent.execute('mark_no_connect', { sheet:'sheet_1', pin:terminal('R2','2') });
+    agent.execute('create_board', { fromSchematic:true });
+    expect(agent.draft.documents.pcb!.components.map(item => item.padNets)).toEqual([{'2':'A'}, {'1':'A'}]);
+    expect(agent.execute('check', {})).toMatchObject({ comparison:{inSync:true}, targetIssues:[] });
+  });
+
   it('rolls back a trace crossing a cutout and a via intersecting a same-net SMD pad', () => {
     const agent = boardAgent();
     agent.execute('add_cutout', { points: rectangle(20, 12, 34, 30) });

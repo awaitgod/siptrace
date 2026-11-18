@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { GostConversionReport } from '../../engines/importers';
 
 interface GostConversionDialogProps {
@@ -8,12 +8,36 @@ interface GostConversionDialogProps {
 
 /** Modal displaying details of automatic foreign CAD -> GOST/ESKD conversion after file import. */
 export const GostConversionDialog: React.FC<GostConversionDialogProps> = ({ report, onClose }) => {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   return (
     <div className="dt-modal-backdrop" onClick={onClose}>
-      <div className="dt-modal" style={{ width: 680, maxWidth: '94vw' }} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="dt-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="gost-conversion-dialog-title"
+        style={{ width: 680, maxWidth: '94vw' }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="dt-modal-title">
-          <strong>Отчёт автоконвертации в российские ГОСТ / ЕСКД</strong>
-          <button type="button" className="dt-btn" style={{ minWidth: 24, padding: '0 6px' }} onClick={onClose}>
+          <strong id="gost-conversion-dialog-title">Отчёт автоконвертации в российские ГОСТ / ЕСКД</strong>
+          <button
+            type="button"
+            className="dt-btn"
+            aria-label="Закрыть"
+            style={{ minWidth: 24, padding: '0 6px' }}
+            onClick={onClose}
+          >
             ×
           </button>
         </div>
@@ -33,7 +57,14 @@ export const GostConversionDialog: React.FC<GostConversionDialogProps> = ({ repo
           )}
 
           {report.items.length > 0 ? (
-            <div style={{ maxHeight: 300, overflowY: 'auto', border: '1px solid #b5b5b5', background: '#fff' }}>
+            <div
+              style={{
+                maxHeight: 300,
+                overflowY: 'auto',
+                border: '1px solid var(--ui-border, #b5b5b5)',
+                background: 'var(--ui-surface, #fff)'
+              }}
+            >
               <table className="dt-table">
                 <thead>
                   <tr>
@@ -60,7 +91,14 @@ export const GostConversionDialog: React.FC<GostConversionDialogProps> = ({ repo
               </table>
             </div>
           ) : (
-            <div style={{ padding: 10, fontSize: 11.5, background: '#fff', border: '1px solid #c0c0c0' }}>
+            <div
+              style={{
+                padding: 10,
+                fontSize: 11.5,
+                background: 'var(--ui-surface, #fff)',
+                border: '1px solid var(--ui-border, #c0c0c0)'
+              }}
+            >
               Нет данных о преобразованных компонентах.
             </div>
           )}

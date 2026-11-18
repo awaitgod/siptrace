@@ -10,6 +10,7 @@ audit-ui-results/
 audit/screenshots/
 audit/diptrace-samples/
 audit/format-corpus/
+audit/agent-runs/
 *.log
 .env
 .env.*

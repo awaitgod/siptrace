@@ -5,6 +5,14 @@ import { snapPoint } from '../../../core/units';
 import { broadcastEdaEvent, loadUserPatterns, openAppModule, registerImportedLibraryBundle, saveUserPatterns, subscribeEdaEvents } from '../../../core/store';
 import { GOST_PATTERN_LIBRARIES } from '../../../gost/libraries/gostPatterns';
 import { PatternGeneratorFamily, generateParametricPattern } from '../../../engines/patternGenerator';
+import {
+  IPC_BGA_PRESETS,
+  IPC_CHIP_PRESETS,
+  IPC_GULLWING_PRESETS,
+  IPC_QFN_DFN_PRESETS,
+  IPC_QFP_PRESETS,
+  IPC_THD_PRESETS
+} from '../../../engines/parametricPattern';
 import { GostConversionReport, importCadLibrary, importExternalCadLibrary } from '../../../engines/importers';
 import { pickCadFiles, saveTextFile } from '../../../core/utils/fileIo';
 import { CadLibraryManagerDialog } from '../../components/CadLibraryManagerDialog';
@@ -15,6 +23,7 @@ import { DipIcon } from '../../theme/DipTraceIcons';
 import { nextAvailableNumber } from '../libraryEditors/numbering';
 import { useLibraryDraft } from '../libraryEditors/useLibraryDraft';
 import { changePadType, renumberPads, validatePatternGenerator } from './patternEditing';
+import { validatePattern } from './patternValidation';
 import '../libraryEditors/libraryEditor.css';
 
 type PatToolId = 'select' | 'padSmd' | 'padTht' | 'hole' | 'silkLine' | 'silkRect';
@@ -56,6 +65,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
   const [showGenDialog, setShowGenDialog] = useState(false);
   const [conversionReport, setConversionReport] = useState<GostConversionReport | null>(null);
   const [showCadLibDialog, setShowCadLibDialog] = useState(false);
+  const [verificationIssues, setVerificationIssues] = useState<string[] | null>(null);
 
   const handleImportPatternLibrary = async () => {
     if (!acceptReplacement()) return;
@@ -141,7 +151,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
       }
     });
     const onKeyDown = (e: KeyboardEvent) => {
-      if (showGenDialog || conversionReport || showCadLibDialog) return;
+      if (showGenDialog || conversionReport || showCadLibDialog || verificationIssues) return;
       if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's' || e.code === 'KeyS')) {
         e.preventDefault();
         handleSavePattern();
@@ -298,6 +308,27 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
         ctx.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
         ctx.closePath();
         ctx.fill();
+      } else if (pad.shape === 'Polygon') {
+        const hw = pad.width / 2;
+        const hh = pad.height / 2;
+        const c = Math.min(hw, hh) * 0.3;
+        const pts = (pad.polygonPoints && pad.polygonPoints.length >= 3)
+          ? pad.polygonPoints
+          : [
+              { x: -hw + c, y: -hh },
+              { x: hw - c, y: -hh },
+              { x: hw, y: -hh + c },
+              { x: hw, y: hh - c },
+              { x: hw - c, y: hh },
+              { x: -hw + c, y: hh },
+              { x: -hw, y: hh - c },
+              { x: -hw, y: -hh + c }
+            ];
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.closePath();
+        ctx.fill();
       } else {
         ctx.fillRect(-pad.width / 2, -pad.height / 2, pad.width, pad.height);
       }
@@ -434,6 +465,8 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
       setGenName('LQFP-48_ГОСТ'); setGenPins(48); setGenPitch(0.5); setGenRowSpan(8.4); setGenPadW(1.3); setGenPadH(0.32); setGenHole(0); setGenBodyW(7.0); setGenBodyL(7.0);
     } else if (fam === 'QFN') {
       setGenName('QFN-32_ГОСТ'); setGenPins(32); setGenPitch(0.5); setGenRowSpan(4.8); setGenPadW(0.85); setGenPadH(0.28); setGenHole(0); setGenBodyW(5.0); setGenBodyL(5.0); setGenThermalPad(3.2);
+    } else if (fam === 'DFN') {
+      setGenName('DFN-8_3x3_ГОСТ'); setGenPins(8); setGenPitch(0.5); setGenRowSpan(2.8); setGenPadW(0.7); setGenPadH(0.28); setGenHole(0); setGenBodyW(3.0); setGenBodyL(3.0); setGenThermalPad(1.7);
     } else if (fam === 'SOT23') {
       setGenName('SOT-23_ГОСТ'); setGenPins(3); setGenPitch(0.95); setGenRowSpan(2.2); setGenPadW(1.0); setGenPadH(0.6); setGenHole(0); setGenBodyW(1.3); setGenBodyL(2.9);
     } else if (fam === 'ChipSMD') {
@@ -444,6 +477,8 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
       setGenName('РАДИАЛ_5x11'); setGenPins(2); setGenPitch(2.5); setGenRowSpan(2.5); setGenPadW(1.8); setGenPadH(1.8); setGenHole(0.8); setGenBodyW(5.0); setGenBodyL(5.0);
     } else if (fam === 'Header') {
       setGenName('PLS-10_2.54'); setGenPins(10); setGenPitch(2.54); setGenRowSpan(2.54); setGenPadW(1.8); setGenPadH(1.8); setGenHole(1.0); setGenBodyW(5.1); setGenBodyL(12.7);
+    } else if (fam === 'SIP') {
+      setGenName('SIP-8_2.54_ГОСТ'); setGenPins(8); setGenPitch(2.54); setGenRowSpan(0); setGenPadW(1.7); setGenPadH(1.7); setGenHole(0.85); setGenBodyW(2.8); setGenBodyL(20.4);
     } else if (fam === 'BGA') {
       setGenName('BGA-16_1.0'); setGenPins(16); setGenPitch(1.0); setGenRowSpan(3.0); setGenPadW(0.5); setGenPadH(0.5); setGenHole(0); setGenBodyW(5.0); setGenBodyL(5.0);
     }
@@ -454,6 +489,20 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
     for (const l of GOST_PATTERN_LIBRARIES) arr.push(...l.patterns);
     return arr;
   }, [userPatterns]);
+
+  const duplicatePadNumbers = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of pattern.pads) {
+      const n = p.number.trim();
+      if (!n) continue;
+      counts.set(n, (counts.get(n) ?? 0) + 1);
+    }
+    const dupes = new Set<string>();
+    for (const [n, count] of counts.entries()) {
+      if (count > 1) dupes.add(n);
+    }
+    return dupes;
+  }, [pattern.pads]);
 
   const openGenerator = () => {
     setGeneratorIssue(null);
@@ -472,9 +521,9 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
       holeDiameter: genHole,
       bodyWidth: genBodyW,
       bodyLength: genBodyL,
-      bodyHeight: genFamily === 'DIP' ? 3.5 : 1.6,
+      bodyHeight: genFamily === 'DIP' || genFamily === 'SIP' ? 3.5 : 1.6,
       densityLevel: genDensity,
-      thermalPadSize: genFamily === 'QFN' ? genThermalPad : undefined
+      thermalPadSize: (genFamily === 'QFN' || genFamily === 'DFN') ? genThermalPad : undefined
     };
     const issue = validatePatternGenerator(parameters);
     if (issue) {
@@ -525,7 +574,8 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
       label: 'Корпус',
       items: [
         { label: 'Генератор корпусов (IPC-7351 / ГОСТ)...', onClick: openGenerator },
-        { label: 'Автонумерация контактных площадок (1..N)', onClick: () => setPattern((p) => ({ ...p, pads: renumberPads(p.pads) })) }
+        { label: 'Автонумерация контактных площадок (1..N)', onClick: () => setPattern((p) => ({ ...p, pads: renumberPads(p.pads) })) },
+        { label: 'Проверить корпус (IPC-7351 / ГОСТ)...', onClick: () => setVerificationIssues(validatePattern(pattern)) }
       ]
     },
     {
@@ -575,6 +625,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
         <button className="dt-btn" onClick={handleImportPatternLibrary}>Импорт САПР/DXF...</button>
         <button className="dt-btn" data-testid="pated-cadlib-btn" onClick={() => setShowCadLibDialog(true)}>Библиотеки CAD...</button>
         <button className="dt-btn" onClick={() => setShowGenDialog(true)}>Генератор корпусов (IPC-7351)...</button>
+        <button className="dt-btn" onClick={() => setVerificationIssues(validatePattern(pattern))}>Проверить корпус</button>
         <button className="dt-btn primary" onClick={handleSavePattern}>Сохранить в библиотеку</button>
       </div>
 
@@ -697,8 +748,13 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
                       <td>
                         <input
                           className="dt-prop-input"
-                          style={{ width: 24 }}
+                          style={{
+                            width: 24,
+                            borderColor: duplicatePadNumbers.has(pad.number.trim()) ? '#d9534f' : undefined,
+                            backgroundColor: duplicatePadNumbers.has(pad.number.trim()) ? '#fff0f0' : undefined
+                          }}
                           value={pad.number}
+                          title={duplicatePadNumbers.has(pad.number.trim()) ? `Дубликат номера площадки «${pad.number}»` : undefined}
                           aria-label={`Номер площадки ${pad.number || 'без номера'}`}
                           disabled={pad.type === 'MountingHole' && !pad.number}
                           onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === pad.id ? { ...x, number: e.target.value } : x) }))}
@@ -752,6 +808,78 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
                 </tbody>
               </table>
             </div>
+            {pattern.pads.find((p) => p.id === selectedPadId) && (() => {
+              const selPad = pattern.pads.find((p) => p.id === selectedPadId)!;
+              return (
+                <div style={{ padding: '6px 8px', borderTop: '1px solid #ddd', background: '#f8f9fa', fontSize: 11, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ fontWeight: 600 }}>
+                    Свойства площадки №{selPad.number || '—'} ({selPad.type})
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                    <label>Форма:
+                      <select
+                        className="dt-select"
+                        style={{ width: '100%' }}
+                        value={selPad.shape}
+                        aria-label={`Форма площадки ${selPad.number || 'без номера'}`}
+                        onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === selPad.id ? { ...x, shape: e.target.value as PadShape } : x) }))}
+                      >
+                        <option value="RoundedRect">RoundedRect (Скруглённый прямоуг.)</option>
+                        <option value="Rect">Rect (Прямоугольный)</option>
+                        <option value="Round">Round (Круглый)</option>
+                        <option value="Oval">Oval (Овальный)</option>
+                        <option value="Polygon">Polygon (Полигональный / Срезанный)</option>
+                      </select>
+                    </label>
+                    <label>Угол (°):
+                      <input
+                        className="dt-input"
+                        type="number"
+                        step="45"
+                        value={selPad.angle ?? 0}
+                        aria-label={`Угол площадки ${selPad.number || 'без номера'}`}
+                        onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === selPad.id ? { ...x, angle: parseFloat(e.target.value) || 0 } : x) }))}
+                      />
+                    </label>
+                    <label>Маска (мм):
+                      <input
+                        className="dt-input"
+                        type="number"
+                        step="0.01"
+                        value={selPad.solderMaskExpansion ?? 0.05}
+                        aria-label={`Маска площадки ${selPad.number || 'без номера'}`}
+                        onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === selPad.id ? { ...x, solderMaskExpansion: parseFloat(e.target.value) || 0 } : x) }))}
+                      />
+                    </label>
+                    <label>Паста (мм):
+                      <input
+                        className="dt-input"
+                        type="number"
+                        step="0.01"
+                        value={selPad.pasteMaskExpansion ?? 0}
+                        aria-label={`Паста площадки ${selPad.number || 'без номера'}`}
+                        onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === selPad.id ? { ...x, pasteMaskExpansion: parseFloat(e.target.value) || 0 } : x) }))}
+                      />
+                    </label>
+                    <label style={{ gridColumn: '1 / -1' }}>Термобарьер:
+                      <select
+                        className="dt-select"
+                        style={{ width: '100%' }}
+                        value={selPad.thermalMode ?? 'Inherited'}
+                        aria-label={`Термобарьер площадки ${selPad.number || 'без номера'}`}
+                        onChange={(e) => setPattern((p) => ({ ...p, pads: p.pads.map((x) => x.id === selPad.id ? { ...x, thermalMode: e.target.value as any } : x) }))}
+                      >
+                        <option value="Inherited">По умолчанию (Inherited)</option>
+                        <option value="4Spoke">4 спицы (крест)</option>
+                        <option value="2Spoke">2 спицы</option>
+                        <option value="Direct">Сплошной контакт (Direct)</option>
+                        <option value="None">Без термобарьера</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -761,7 +889,7 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
       {/* IPC-7351 / GOST Parametric Pattern Generator Modal */}
       {showGenDialog && (
         <div className="dt-modal-backdrop">
-          <div className="dt-modal" style={{ width: 520 }}>
+          <div className="dt-modal" style={{ width: 520 }} role="dialog" aria-label="Параметрический генератор корпусов (IPC-7351 / ГОСТ)">
             <div className="dt-modal-title">
               <span>Параметрический генератор корпусов (IPC-7351 / ГОСТ)</span>
               <button className="dt-btn" style={{ minWidth: 22, height: 18, padding: 0 }} onClick={() => setShowGenDialog(false)}>×</button>
@@ -774,11 +902,13 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
                     <option value="DIP">DIP (Штыревой двухрядный ГОСТ 2.54 мм)</option>
                     <option value="QFP">QFP / LQFP (Четырёхсторонний планарный)</option>
                     <option value="QFN">QFN (С термопадом)</option>
+                    <option value="DFN">DFN (Двухрядный с термопадом)</option>
                     <option value="SOT23">SOT-23 (3-выводной SMD)</option>
                     <option value="ChipSMD">Chip SMD (Резистор / Конденсатор)</option>
                     <option value="AxialTHT">Осевой THT (МЛТ / КД)</option>
                     <option value="RadialTHT">Радиальный THT (Электролит)</option>
                     <option value="Header">Штыревая вилка (PLS)</option>
+                    <option value="SIP">SIP (Штыревой однорядный)</option>
                     <option value="BGA">Матрица выводов (BGA)</option>
                   </select>
                 </label>
@@ -787,6 +917,164 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
                     <option value="A">Уровень A (Максимальный припой)</option>
                     <option value="B">Уровень B (Номинальный — Стандарт)</option>
                     <option value="C">Уровень C (Минимальный / Высокая плотность)</option>
+                  </select>
+                </label>
+                <label style={{ gridColumn: '1 / -1' }}>Быстрый выбор типоразмера IPC / ГОСТ:
+                  <select
+                    className="dt-select"
+                    style={{ width: '100%' }}
+                    value=""
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (!val) return;
+                      if (val.startsWith('CHIP_')) {
+                        const code = val.replace('CHIP_', '');
+                        const p = IPC_CHIP_PRESETS[code];
+                        if (p) {
+                          setGenFamily('ChipSMD');
+                          setGenName(`ЧИП_${p.imperialName} (${p.metricName})`);
+                          setGenPins(2);
+                          setGenPitch(0);
+                          setGenRowSpan(p.rowSpacing);
+                          setGenPadW(p.padLength);
+                          setGenPadH(p.padWidth);
+                          setGenHole(0);
+                          setGenBodyW(p.bodyWidth);
+                          setGenBodyL(p.bodyLength);
+                        }
+                      } else if (val.startsWith('GW_')) {
+                        const code = val.replace('GW_', '');
+                        const p = IPC_GULLWING_PRESETS[code];
+                        if (p) {
+                          setGenFamily('SOIC');
+                          setGenName(p.name);
+                          setGenPins(p.pinCount);
+                          setGenPitch(p.pitch);
+                          setGenRowSpan(p.rowSpacing);
+                          setGenPadW(p.padWidth);
+                          setGenPadH(p.padHeight);
+                          setGenHole(0);
+                          setGenBodyW(p.bodyWidth);
+                          setGenBodyL(p.bodyLength);
+                        }
+                      } else if (val.startsWith('QFP_')) {
+                        const code = val.replace('QFP_', '');
+                        const p = IPC_QFP_PRESETS[code];
+                        if (p) {
+                          setGenFamily('QFP');
+                          setGenName(p.name);
+                          setGenPins(p.pinCount);
+                          setGenPitch(p.pitch);
+                          setGenRowSpan(p.rowSpacing);
+                          setGenPadW(p.padWidth);
+                          setGenPadH(p.padHeight);
+                          setGenHole(0);
+                          setGenBodyW(p.bodyWidth);
+                          setGenBodyL(p.bodyLength);
+                        }
+                      } else if (val.startsWith('QFN_') || val.startsWith('DFN_')) {
+                        const code = val;
+                        const p = IPC_QFN_DFN_PRESETS[code.replace('QFN_', '').replace('DFN_', '')];
+                        if (p) {
+                          setGenFamily(p.family);
+                          setGenName(p.name);
+                          setGenPins(p.pinCount);
+                          setGenPitch(p.pitch);
+                          setGenRowSpan(p.rowSpacing);
+                          setGenPadW(p.padWidth);
+                          setGenPadH(p.padHeight);
+                          setGenHole(0);
+                          setGenBodyW(p.bodyWidth);
+                          setGenBodyL(p.bodyLength);
+                          setGenThermalPad(p.thermalPadSize);
+                        }
+                      } else if (val.startsWith('BGA_')) {
+                        const code = val.replace('BGA_', '');
+                        const p = IPC_BGA_PRESETS[code];
+                        if (p) {
+                          setGenFamily('BGA');
+                          setGenName(p.name);
+                          setGenPins(p.pinCount);
+                          setGenPitch(p.pitch);
+                          setGenRowSpan(p.pitch * (p.cols - 1));
+                          setGenPadW(p.padDiameter);
+                          setGenPadH(p.padDiameter);
+                          setGenHole(0);
+                          setGenBodyW(p.bodyWidth);
+                          setGenBodyL(p.bodyLength);
+                        }
+                      } else if (val.startsWith('THD_')) {
+                        const code = val.replace('THD_', '');
+                        const p = IPC_THD_PRESETS[code];
+                        if (p) {
+                          setGenFamily(p.family);
+                          setGenName(p.name);
+                          setGenPins(p.pinCount);
+                          setGenPitch(p.pitch);
+                          setGenRowSpan(p.rowSpacing);
+                          setGenPadW(p.padWidth);
+                          setGenPadH(p.padHeight);
+                          setGenHole(p.holeDiameter);
+                          setGenBodyW(p.bodyWidth);
+                          setGenBodyL(p.bodyLength);
+                        }
+                      }
+                    }}
+                  >
+                    <option value="">-- Выберите типовой корпус IPC / ГОСТ --</option>
+                    <optgroup label="Чип-компоненты (SMD резисторы / конденсаторы)">
+                      <option value="CHIP_0201">0201 (0603M)</option>
+                      <option value="CHIP_0402">0402 (1005M)</option>
+                      <option value="CHIP_0603">0603 (1608M)</option>
+                      <option value="CHIP_0805">0805 (2012M)</option>
+                      <option value="CHIP_1206">1206 (3216M)</option>
+                      <option value="CHIP_1210">1210 (3225M)</option>
+                      <option value="CHIP_2512">2512 (6432M)</option>
+                    </optgroup>
+                    <optgroup label="SOIC / SOP / TSSOP / MSOP">
+                      <option value="GW_SOIC-8">SOIC-8 (шаг 1.27 мм)</option>
+                      <option value="GW_SOIC-14">SOIC-14 (шаг 1.27 мм)</option>
+                      <option value="GW_SOIC-16">SOIC-16 (шаг 1.27 мм)</option>
+                      <option value="GW_SOIC-16W">SOIC-16W (широкий 7.5 мм)</option>
+                      <option value="GW_TSSOP-14">TSSOP-14 (шаг 0.65 мм)</option>
+                      <option value="GW_TSSOP-16">TSSOP-16 (шаг 0.65 мм)</option>
+                      <option value="GW_TSSOP-20">TSSOP-20 (шаг 0.65 мм)</option>
+                      <option value="GW_MSOP-8">MSOP-8 (шаг 0.65 мм)</option>
+                      <option value="GW_MSOP-10">MSOP-10 (шаг 0.50 мм)</option>
+                    </optgroup>
+                    <optgroup label="QFP / LQFP / TQFP">
+                      <option value="QFP_QFP-32_0.8">QFP-32 (шаг 0.8 мм, 7×7 мм)</option>
+                      <option value="QFP_QFP-44_0.8">QFP-44 (шаг 0.8 мм, 10×10 мм)</option>
+                      <option value="QFP_LQFP-48_0.5">LQFP-48 (шаг 0.5 мм, 7×7 мм)</option>
+                      <option value="QFP_LQFP-64_0.5">LQFP-64 (шаг 0.5 мм, 10×10 мм)</option>
+                      <option value="QFP_TQFP-100_0.4">TQFP-100 (шаг 0.4 мм, 14×14 мм)</option>
+                      <option value="QFP_TQFP-100_0.5">TQFP-100 (шаг 0.5 мм, 14×14 мм)</option>
+                    </optgroup>
+                    <optgroup label="QFN / DFN (с термопадом)">
+                      <option value="DFN_DFN-6_2x2">DFN-6 (2×2 мм, шаг 0.65 мм, EP 1.2 мм)</option>
+                      <option value="DFN_DFN-8_3x3">DFN-8 (3×3 мм, шаг 0.50 мм, EP 1.7 мм)</option>
+                      <option value="QFN_QFN-16_3x3">QFN-16 (3×3 мм, шаг 0.50 мм, EP 1.65 мм)</option>
+                      <option value="QFN_QFN-24_4x4">QFN-24 (4×4 мм, шаг 0.50 мм, EP 2.45 мм)</option>
+                      <option value="QFN_QFN-32_5x5">QFN-32 (5×5 мм, шаг 0.50 мм, EP 3.20 мм)</option>
+                      <option value="QFN_QFN-48_7x7">QFN-48 (7×7 мм, шаг 0.50 мм, EP 5.10 мм)</option>
+                    </optgroup>
+                    <optgroup label="BGA (матрица выводов)">
+                      <option value="BGA_BGA-16_1.0">BGA-16 (шаг 1.0 мм, 4×4, пады Ø0.5 мм)</option>
+                      <option value="BGA_BGA-64_0.8">BGA-64 (шаг 0.8 мм, 8×8, пады Ø0.4 мм)</option>
+                      <option value="BGA_BGA-100_0.8">BGA-100 (шаг 0.8 мм, 10×10, пады Ø0.4 мм)</option>
+                      <option value="BGA_BGA-144_0.8">BGA-144 (шаг 0.8 мм, 12×12, пады Ø0.4 мм)</option>
+                      <option value="BGA_BGA-256_1.0">BGA-256 (шаг 1.0 мм, 16×16, пады Ø0.5 мм)</option>
+                      <option value="BGA_BGA-256_0.5">BGA-256 (шаг 0.5 мм, 16×16, пады Ø0.3 мм)</option>
+                    </optgroup>
+                    <optgroup label="DIP / SIP (штыревые корпуса)">
+                      <option value="THD_DIP-8">DIP-8 (шаг 2.54 мм, ширина 7.62 мм)</option>
+                      <option value="THD_DIP-14">DIP-14 (шаг 2.54 мм, ширина 7.62 мм)</option>
+                      <option value="THD_DIP-16">DIP-16 (шаг 2.54 мм, ширина 7.62 мм)</option>
+                      <option value="THD_DIP-28">DIP-28 (шаг 2.54 мм, ширина 15.24 мм)</option>
+                      <option value="THD_SIP-4">SIP-4 (шаг 2.54 мм, однорядный)</option>
+                      <option value="THD_SIP-8">SIP-8 (шаг 2.54 мм, однорядный)</option>
+                      <option value="THD_SIP-10">SIP-10 (шаг 2.54 мм, однорядный)</option>
+                    </optgroup>
                   </select>
                 </label>
                 <label>Название корпуса: <input className="dt-input" style={{ width: '100%' }} value={genName} onChange={(e) => setGenName(e.target.value)} /></label>
@@ -802,8 +1090,8 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
                     <input className="dt-input" style={{ width: '50%' }} type="number" step="0.5" value={genBodyL} onChange={(e) => setGenBodyL(parseFloat(e.target.value) || 6)} />
                   </div>
                 </label>
-                {genFamily === 'QFN' && (
-                  <label>Термопад QFN (мм):
+                {(genFamily === 'QFN' || genFamily === 'DFN') && (
+                  <label>Термопад {genFamily} (мм):
                     <input className="dt-input" style={{ width: '100%' }} type="number" step="0.1" value={genThermalPad} onChange={(e) => setGenThermalPad(Math.max(0, parseFloat(e.target.value) || 0))} />
                   </label>
                 )}
@@ -834,6 +1122,31 @@ export const PatternEditorModule: React.FC<{ onSwitchModule?: (m: any) => void }
             return true;
           }}
         />
+      )}
+
+      {verificationIssues && (
+        <div className="dt-modal-backdrop">
+          <div className="dt-modal" role="dialog" aria-modal="true" aria-label="Проверка корпуса" style={{ width: 520, maxWidth: '95vw' }}>
+            <div className="dt-modal-title">
+              <span>Проверка корпуса (IPC-7351 / ГОСТ)</span>
+              <button className="dt-btn" aria-label="Закрыть проверку" onClick={() => setVerificationIssues(null)}>×</button>
+            </div>
+            <div className="dt-modal-body" style={{ maxHeight: '55vh', overflowY: 'auto' }}>
+              {verificationIssues.length === 0 ? (
+                <p>Корпус «{pattern.name}» прошёл проверку: геометрия площадок, зазоры маски и пасты соответствуют нормам.</p>
+              ) : (
+                <ul>
+                  {verificationIssues.map((issue, index) => (
+                    <li key={index}>{issue}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="dt-modal-footer">
+              <button className="dt-btn" onClick={() => setVerificationIssues(null)}>Закрыть</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

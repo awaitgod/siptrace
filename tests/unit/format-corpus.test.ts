@@ -29,7 +29,7 @@ async function run(label: string, files: string[], kind: 'sch' | 'pcb' | 'lib') 
         if (!s.components.length && !s.wires.length && !s.netPorts.length) empty++;
       } else if (kind === 'pcb') {
         const p = (await importCadPcb(buf, n)).pcb;
-        if (!p.components.length && !p.traces.length && !p.vias.length && !p.shapes.length) empty++;
+        if (!p.components.length && !p.traces.length && !p.vias.length && !p.shapes.length && (!p.boardOutline || p.boardOutline.length === 0)) empty++;
       } else {
         const l = await importCadLibrary(buf, n);
         if (!l.components.length && !l.patterns.length) empty++;
@@ -55,7 +55,8 @@ describe('Real-world corpus (skipped if absent)', () => {
       await run('eagle lbr', walk(corpus, ['.lbr']).slice(0, 25), 'lib'),
       await run('ltspice(40)', walk(corpus, ['.asc']).slice(0, 40), 'sch'),
       await run('proteus(25)', walk(corpus, ['.pdsprj']).slice(0, 25), 'sch'),
-      await run('altium', walk(corpus, ['.schdoc']), 'sch'),
+      await run('altium sch', walk(corpus, ['.schdoc']), 'sch'),
+      await run('altium pcb', walk(corpus, ['.pcbdoc']), 'pcb'),
       await run('diptrace elixml', walk(dt, ['.elixml']), 'lib'),
       await run('diptrace libxml', walk(dt, ['.libxml']), 'lib')
     ];

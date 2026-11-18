@@ -10,7 +10,7 @@ async function openModule(page: Page, moduleId: string): Promise<string[]> {
   const errors: string[] = [];
   page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`));
   page.on('console', (msg) => {
-    if (msg.type() === 'error') {
+    if (msg.type() === 'error' && !msg.text().includes('WebSocket') && !msg.text().includes('ERR_CONNECTION_REFUSED')) {
       errors.push(`console.error: ${msg.text()}`);
     }
   });

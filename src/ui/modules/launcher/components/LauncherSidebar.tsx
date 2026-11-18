@@ -84,7 +84,7 @@ export const LauncherSidebar: React.FC<LauncherSidebarProps> = ({
       </nav>
 
       {/* Editors Quick Launch Section with dt-black-bar */}
-      <section className="launch-editors-section" aria-label="Редакторы" aria-labelledby="launch-editors-title">
+      <section className="launch-editors-section" aria-label="Редакторы">
         <div className="dt-black-bar" id="launch-editors-title">
           Запуск редакторов
         </div>

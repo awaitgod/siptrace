@@ -8,8 +8,10 @@ export type PatternGeneratorFamily =
   | 'SOIC'
   | 'QFP'
   | 'QFN'
+  | 'DFN'
   | 'SOT23'
   | 'Header'
+  | 'SIP'
   | 'BGA';
 
 export interface PatternGeneratorParams {
@@ -27,7 +29,8 @@ export interface PatternGeneratorParams {
   densityLevel: 'A' | 'B' | 'C'; // IPC-7351A/B/C: A=Maximum, B=Nominal, C=Minimum
   bgaCols?: number;
   bgaRows?: number;
-  thermalPadSize?: number; // mm for QFN
+  bgaDepopulateCorners?: boolean;
+  thermalPadSize?: number; // mm for QFN / DFN
   polarized?: boolean;
   bodyShape?: 'circle' | 'rect';
 }
@@ -308,11 +311,96 @@ export function generateParametricPattern(p: PatternGeneratorParams): PatternDef
       width: 0.15,
       fill: true
     });
+  } else if (p.family === 'DFN') {
+    const perSide = Math.max(1, Math.floor(p.pinCount / 2));
+    const yStart = -((perSide - 1) * p.pitch) / 2;
+    const xSpan = p.rowSpacing / 2;
+    for (let i = 0; i < perSide; i++) {
+      pads.push({
+        id: `pad_${i + 1}`,
+        number: String(i + 1),
+        type: 'SMD',
+        shape: 'RoundedRect',
+        x: -xSpan,
+        y: Number((yStart + i * p.pitch).toFixed(3)),
+        width: padW,
+        height: padH,
+        cornerRadius: 0.06,
+        layer: 'Top',
+        solderMaskExpansion: 0.05
+      });
+    }
+    for (let i = 0; i < perSide; i++) {
+      const pinNum = perSide + 1 + i;
+      pads.push({
+        id: `pad_${pinNum}`,
+        number: String(pinNum),
+        type: 'SMD',
+        shape: 'RoundedRect',
+        x: xSpan,
+        y: Number((yStart + (perSide - 1 - i) * p.pitch).toFixed(3)),
+        width: padW,
+        height: padH,
+        cornerRadius: 0.06,
+        layer: 'Top',
+        solderMaskExpansion: 0.05
+      });
+    }
+    if ((p.thermalPadSize ?? 0) > 0) {
+      const ep = p.thermalPadSize!;
+      pads.push({
+        id: `pad_EP`,
+        number: String(perSide * 2 + 1),
+        type: 'SMD',
+        shape: 'Rect',
+        x: 0,
+        y: 0,
+        width: ep,
+        height: ep,
+        layer: 'Top',
+        solderMaskExpansion: 0.05,
+        pasteMaskExpansion: -0.05
+      });
+    }
+    addSilkRect(p.bodyWidth, p.bodyLength, 'TopAssembly', 0.1);
+    const xInner = Math.max(0.3, Math.min(p.bodyWidth / 2, xSpan - padW / 2 - 0.2));
+    graphics.push(
+      { type: 'line', layer: 'TopSilk', x1: -xInner, y1: -p.bodyLength / 2, x2: xInner, y2: -p.bodyLength / 2, width: 0.15 },
+      { type: 'line', layer: 'TopSilk', x1: -xInner, y1: p.bodyLength / 2, x2: xInner, y2: p.bodyLength / 2, width: 0.15 },
+      { type: 'circle', layer: 'TopSilk', cx: -xSpan - padW / 2 - 0.35, cy: yStart, r: 0.2, width: 0.15, fill: true }
+    );
+  } else if (p.family === 'SIP') {
+    const yStart = -((p.pinCount - 1) * p.pitch) / 2;
+    for (let i = 0; i < p.pinCount; i++) {
+      pads.push({
+        id: `pad_${i + 1}`,
+        number: String(i + 1),
+        type: 'THT',
+        shape: i === 0 ? 'Rect' : 'Round',
+        x: 0,
+        y: Number((yStart + i * p.pitch).toFixed(3)),
+        width: padW,
+        height: padH,
+        holeDiameter: p.holeDiameter || 0.85,
+        layer: 'All',
+        solderMaskExpansion: 0.05
+      });
+    }
+    addSilkRect(p.bodyWidth, p.bodyLength, 'TopSilk', 0.18);
+    graphics.push({
+      type: 'circle',
+      layer: 'TopSilk',
+      cx: -p.bodyWidth / 2 - 0.4,
+      cy: yStart,
+      r: 0.25,
+      width: 0.15,
+      fill: true
+    });
   } else if (p.family === 'SOT23') {
     pads.push(
-      { id: 'pad_1', number: '1', type: 'SMD', shape: 'RoundedRect', x: -1.1, y: -0.95, width: padW, height: padH, cornerRadius: 0.08, layer: 'Top' },
-      { id: 'pad_2', number: '2', type: 'SMD', shape: 'RoundedRect', x: -1.1, y: 0.95, width: padW, height: padH, cornerRadius: 0.08, layer: 'Top' },
-      { id: 'pad_3', number: '3', type: 'SMD', shape: 'RoundedRect', x: 1.1, y: 0, width: padW, height: padH, cornerRadius: 0.08, layer: 'Top' }
+      { id: 'pad_1', number: '1', type: 'SMD', shape: 'RoundedRect', x: -1.1, y: -0.95, width: padW, height: padH, cornerRadius: 0.08, layer: 'Top', solderMaskExpansion: 0.05 },
+      { id: 'pad_2', number: '2', type: 'SMD', shape: 'RoundedRect', x: -1.1, y: 0.95, width: padW, height: padH, cornerRadius: 0.08, layer: 'Top', solderMaskExpansion: 0.05 },
+      { id: 'pad_3', number: '3', type: 'SMD', shape: 'RoundedRect', x: 1.1, y: 0, width: padW, height: padH, cornerRadius: 0.08, layer: 'Top', solderMaskExpansion: 0.05 }
     );
     addSilkRect(p.bodyWidth, p.bodyLength, 'TopAssembly', 0.1);
     graphics.push(
@@ -338,7 +426,8 @@ export function generateParametricPattern(p: PatternGeneratorParams): PatternDef
           width: padW,
           height: padH,
           holeDiameter: p.holeDiameter || 1.0,
-          layer: 'All'
+          layer: 'All',
+          solderMaskExpansion: 0.05
         });
         n++;
       }
@@ -352,7 +441,11 @@ export function generateParametricPattern(p: PatternGeneratorParams): PatternDef
     const yStart = -((rows - 1) * p.pitch) / 2;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        const name = `${rowLetters[r % rowLetters.length]}${c + 1}`;
+        if (p.bgaDepopulateCorners && ((r === 0 || r === rows - 1) && (c === 0 || c === cols - 1))) {
+          continue;
+        }
+        const letter = r < rowLetters.length ? rowLetters[r] : `${rowLetters[Math.floor(r / rowLetters.length) - 1]}${rowLetters[r % rowLetters.length]}`;
+        const name = `${letter}${c + 1}`;
         pads.push({
           id: `pad_${name}`,
           number: name,
@@ -362,11 +455,22 @@ export function generateParametricPattern(p: PatternGeneratorParams): PatternDef
           y: Number((yStart + r * p.pitch).toFixed(3)),
           width: padW,
           height: padW,
-          layer: 'Top'
+          layer: 'Top',
+          solderMaskExpansion: 0.05,
+          pasteMaskExpansion: 0
         });
       }
     }
     addSilkRect(p.bodyWidth, p.bodyLength, 'TopSilk', 0.15);
+    graphics.push({
+      type: 'circle',
+      layer: 'TopSilk',
+      cx: -p.bodyWidth / 2 - 0.45,
+      cy: -p.bodyLength / 2 + 0.45,
+      r: 0.25,
+      width: 0.15,
+      fill: true
+    });
   }
 
   const bodySpanX = p.family === 'ChipSMD' || p.family === 'AxialTHT' ? p.bodyLength : p.bodyWidth;
@@ -398,7 +502,11 @@ export function generateParametricPattern(p: PatternGeneratorParams): PatternDef
                 ? 'QFP'
                 : p.family === 'QFN'
                   ? 'QFN'
-                  : p.family === 'SOT23'
+                  : p.family === 'DFN'
+                    ? 'QFN'
+                    : p.family === 'SIP'
+                      ? 'Header'
+                      : p.family === 'SOT23'
                     ? 'SOT23'
                     : p.family === 'Header'
                       ? 'Header'
